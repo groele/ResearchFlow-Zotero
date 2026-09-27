@@ -4867,27 +4867,27 @@ select option {
 
 /* --- ResearchFlow for Zotero Enhancements --- */
 @keyframes rfHighlightPulse {
-  0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.6); transform: scale(1); }
-  50% { box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); transform: scale(1.02); }
-  100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); transform: scale(1); }
+  0% { box-shadow: 0 0 0 0 rgba(204, 41, 43, 0.6); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgba(204, 41, 43, 0); transform: scale(1.015); }
+  100% { box-shadow: 0 0 0 0 rgba(204, 41, 43, 0); transform: scale(1); }
 }
 
 .highlight-pulse {
   animation: rfHighlightPulse 1.2s ease-in-out 2;
-  border-color: #0284c7 !important;
+  border-color: #cc292b !important;
 }
 
 .zotero-link-banner {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.08), rgba(6, 182, 212, 0.08));
-  border: 1px solid rgba(2, 132, 199, 0.35);
-  border-radius: 10px;
+  background: var(--material-background, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-color);
+  border-left: 3px solid #cc292b;
+  border-radius: 6px;
   padding: 10px 14px;
   margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.06);
 }
 
 .kanban-zotero-row {
@@ -4901,9 +4901,9 @@ select option {
 
 .zotero-card-badge {
   cursor: pointer;
-  background: rgba(204, 0, 0, 0.08);
-  color: #b91c1c;
-  border: 1px solid rgba(204, 0, 0, 0.2);
+  background: rgba(204, 41, 43, 0.08);
+  color: #cc292b;
+  border: 1px solid rgba(204, 41, 43, 0.2);
   border-radius: 4px;
   padding: 2px 6px;
   font-weight: 600;
@@ -4915,8 +4915,8 @@ select option {
 }
 
 .zotero-card-badge:hover {
-  background: rgba(204, 0, 0, 0.16);
-  border-color: rgba(204, 0, 0, 0.35);
+  background: rgba(204, 41, 43, 0.16);
+  border-color: rgba(204, 41, 43, 0.35);
 }
 
 .zotero-pdf-badge {
@@ -4940,27 +4940,28 @@ select option {
 
 .zotero-sync-note-badge {
   cursor: pointer;
-  background: rgba(2, 132, 199, 0.1);
-  color: #0284c7;
-  border: 1px solid rgba(2, 132, 199, 0.25);
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.22);
   border-radius: 4px;
   padding: 2px 6px;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
   user-select: none;
 }
 
 .zotero-sync-note-badge:hover {
-  background: rgba(2, 132, 199, 0.2);
+  background: rgba(37, 99, 235, 0.16);
+  border-color: rgba(37, 99, 235, 0.35);
 }
 
 .zotero-modal-action-bar {
-  background: rgba(2, 132, 199, 0.06);
-  border: 1px solid rgba(2, 132, 199, 0.22);
-  border-radius: 8px;
+  background: var(--material-background, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 12px;
   display: flex;
@@ -4971,15 +4972,21 @@ select option {
 
 /* Compact layout for companion floating subwindow mode */
 .subwindow-mode .sidebar {
-  width: 60px !important;
-  min-width: 60px !important;
-  padding: 12px 6px !important;
+  width: 56px !important;
+  min-width: 56px !important;
+  padding: 12px 4px !important;
 }
 
 .subwindow-mode .sidebar .brand-title,
+.subwindow-mode .sidebar .brand > div:not(.logo-orb),
 .subwindow-mode .sidebar .nav-item span,
 .subwindow-mode .sidebar .sidebar-sync-card {
   display: none !important;
+}
+
+.subwindow-mode .sidebar .brand {
+  justify-content: center !important;
+  padding-bottom: 12px !important;
 }
 
 .subwindow-mode .sidebar .nav-item {
@@ -4991,6 +4998,23 @@ select option {
   padding: 12px 14px !important;
 }
 
+.subwindow-mode .view-header {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+
+.subwindow-mode .grid-cols-2,
+.subwindow-mode .grid-cols-3,
+.subwindow-mode .grid-cols-4 {
+  grid-template-columns: 1fr !important;
+}
+
+.subwindow-mode .timeline-summary-header {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+}
+
 .subwindow-mode .kanban-board {
   grid-template-columns: 1fr !important;
   gap: 12px !important;
@@ -5000,6 +5024,31 @@ select option {
   min-width: 0 !important;
   max-height: 480px;
   overflow-y: auto;
+}
+
+.subwindow-mode .submission-split-layout {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+.subwindow-mode .submission-tools-row {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+
+.subwindow-mode .modal-card {
+  width: calc(100vw - 20px) !important;
+  max-width: none !important;
+  padding: 16px 14px !important;
+  margin: 10px auto !important;
+}
+
+.subwindow-mode .modal-backdrop {
+  padding: 10px !important;
+  align-items: flex-start !important;
+  overflow-y: auto !important;
 }
 
 /* Zotero live search dropdown in manuscript modal */

@@ -3837,32 +3837,35 @@ function renderKanban() {
     }
 
     const pendingLinkBtnHtml = window._pendingZoteroLinkItem ? `
-      <button class="btn-primary" style="padding: 2px 8px; font-size:10px; height: 24px; background:#0284c7; border-color:#0284c7;" id="btn-link-this-${m.id}">🔗 关联此文献</button>
+      <button class="btn-primary" style="padding: 2px 8px; font-size:10px; height: 24px; background:#cc292b; border-color:#cc292b;" id="btn-link-this-${m.id}">🔗 ${currentLanguage === 'zh' ? '关联此文献' : 'Link Item'}</button>
     ` : '';
+
+    const targetJournalLabel = currentLanguage === 'zh' ? '目标期刊' : 'Target';
+    const editLabel = currentLanguage === 'zh' ? '编辑' : 'Edit';
 
     card.innerHTML = `
       <div class="kanban-card-title-row">
         <h4>${escapeHTML(m.title)}</h4>
         <span class="kanban-status-pill">${escapeHTML(getManuscriptStatusLabel(m.status))}</span>
       </div>
-      <p>Target: <strong>${m.targetJournals?.[0] || 'TBD'}</strong></p>
+      <p>${targetJournalLabel}: <strong>${escapeHTML(m.targetJournals?.[0] || (currentLanguage === 'zh' ? '待定' : 'TBD'))}</strong></p>
       ${zoteroRowHtml}
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px;">
         <select class="kanban-card-select" id="sel-man-status-${m.id}" style="width: auto; padding: 2px 4px !important; font-size: 10px !important; height: 24px; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; color:hsl(var(--text-primary)); outline:none;">
-          <option value="idea" ${m.status === 'idea' ? 'selected' : ''}>Idea</option>
-          <option value="outline" ${m.status === 'outline' ? 'selected' : ''}>Outline</option>
-          <option value="figure_preparation" ${m.status === 'figure_preparation' ? 'selected' : ''}>Figures</option>
-          <option value="drafting" ${m.status === 'drafting' ? 'selected' : ''}>Drafting</option>
-          <option value="internal_review" ${m.status === 'internal_review' ? 'selected' : ''}>Review</option>
-          <option value="submitted" ${m.status === 'submitted' ? 'selected' : ''}>Submitted</option>
-          <option value="under_review" ${m.status === 'under_review' ? 'selected' : ''}>Under Review</option>
-          <option value="revision" ${m.status === 'revision' ? 'selected' : ''}>Revision</option>
-          <option value="accepted" ${m.status === 'accepted' ? 'selected' : ''}>Accepted</option>
-          <option value="published" ${m.status === 'published' ? 'selected' : ''}>Published</option>
+          <option value="idea" ${m.status === 'idea' ? 'selected' : ''}>${escapeHTML(t('statusIdea'))}</option>
+          <option value="outline" ${m.status === 'outline' ? 'selected' : ''}>${escapeHTML(t('statusOutline'))}</option>
+          <option value="figure_preparation" ${m.status === 'figure_preparation' ? 'selected' : ''}>${escapeHTML(t('statusFiguresPrep'))}</option>
+          <option value="drafting" ${m.status === 'drafting' ? 'selected' : ''}>${escapeHTML(t('statusDrafting'))}</option>
+          <option value="internal_review" ${m.status === 'internal_review' ? 'selected' : ''}>${escapeHTML(t('statusInternalReview'))}</option>
+          <option value="submitted" ${m.status === 'submitted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('submitted'))}</option>
+          <option value="under_review" ${m.status === 'under_review' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('under_review'))}</option>
+          <option value="revision" ${m.status === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
+          <option value="accepted" ${m.status === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
+          <option value="published" ${m.status === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
         </select>
         <div style="display:flex; gap:6px; align-items:center;">
           ${pendingLinkBtnHtml}
-          <button class="btn-secondary" style="padding: 2px 6px; font-size:10px; height: 24px;" id="btn-edit-man-${m.id}">Edit</button>
+          <button class="btn-secondary" style="padding: 2px 6px; font-size:10px; height: 24px;" id="btn-edit-man-${m.id}">${editLabel}</button>
         </div>
       </div>
     `;
@@ -4041,19 +4044,19 @@ function normalizeKanbanStatusClass(status) {
 
 function getManuscriptStatusLabel(status) {
   const labels = {
-    idea: 'Idea',
-    outline: 'Outline',
-    data_collection: 'Data',
-    figure_preparation: 'Figures',
-    drafting: 'Drafting',
-    internal_review: 'Review',
-    submitted: 'Submitted',
-    under_review: 'Under Review',
-    revision: 'Revision',
-    accepted: 'Accepted',
-    published: 'Published'
+    idea: t('statusIdea'),
+    outline: t('statusOutline'),
+    data_collection: currentLanguage === 'zh' ? '数据整理' : 'Data Collection',
+    figure_preparation: t('statusFiguresPrep'),
+    drafting: t('statusDrafting'),
+    internal_review: t('statusInternalReview'),
+    submitted: getSubmissionStatusLabel('submitted'),
+    under_review: getSubmissionStatusLabel('under_review'),
+    revision: getSubmissionStatusLabel('revision'),
+    accepted: getSubmissionStatusLabel('accepted'),
+    published: getSubmissionStatusLabel('published')
   };
-  return labels[status] || String(status || 'Idea').replace(/_/g, ' ');
+  return labels[status] || String(status || 'idea').replace(/_/g, ' ');
 }
 
 function getSubmissionStatusLabel(status) {
@@ -4170,7 +4173,9 @@ function openManuscriptModal(man = null, prefill = null) {
       : prefill?.authors);
   const initialDoi = isEdit ? man.doi : prefill?.doi;
   const initialArticleUrl = isEdit ? man.articleUrl : (prefill?.articleUrl || prefill?.pdfUrl);
-  const initialStatus = isEdit ? man.status : (prefill ? 'published' : 'idea');
+  const initialStatus = isEdit
+    ? man.status
+    : (prefill?.status || (prefill?.isCapturedPublication ? 'published' : 'idea'));
 
   let currentZoteroItemKey = isEdit ? (man.zoteroItemKey || null) : (prefill?.zoteroItemKey || null);
   let currentZoteroUri = isEdit ? (man.zoteroUri || null) : (prefill?.zoteroUri || null);
@@ -4186,7 +4191,7 @@ function openManuscriptModal(man = null, prefill = null) {
   );
 
   const zoteroActionBarHtml = isZoteroEnv ? `
-    <div class="zotero-modal-action-bar" style="background:rgba(2,132,199,0.06); border:1px solid rgba(2,132,199,0.22); border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">
+    <div class="zotero-modal-action-bar" style="background:var(--material-background, rgba(0,0,0,0.02)); border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
         <div id="zotero-bind-status" style="font-size:12px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           ${currentZoteroItemKey
@@ -4210,7 +4215,7 @@ function openManuscriptModal(man = null, prefill = null) {
           <button type="button" class="btn-secondary" id="btn-zotero-open-pdf" style="padding:3px 8px; font-size:11px; color:#059669; ${currentZoteroItemKey ? '' : 'display:none;'}" title="在 Zotero 阅读器中打开 PDF">
             📖 PDF
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-sync-note" style="padding:3px 8px; font-size:11px; color:#0284c7; ${currentZoteroItemKey ? '' : 'display:none;'}" title="同步稿件进展至 Zotero 云笔记">
+          <button type="button" class="btn-secondary" id="btn-zotero-sync-note" style="padding:3px 8px; font-size:11px; color:#cc292b; border-color:rgba(204,41,43,0.3); font-weight:500; ${currentZoteroItemKey ? '' : 'display:none;'}" title="同步稿件进展至 Zotero 云笔记">
             📝 同步笔记
           </button>
           <button type="button" class="btn-secondary" id="btn-zotero-locate" style="padding:3px 8px; font-size:11px; ${currentZoteroItemKey ? '' : 'display:none;'}" title="在 Zotero 文献库中定位该条目">
@@ -4465,7 +4470,7 @@ function openManuscriptModal(man = null, prefill = null) {
           batchBar.className = 'zotero-batch-toolbar';
           batchBar.innerHTML = `
             <span>共检测到 <strong>${annos.length}</strong> 条 PDF 批注划线</span>
-            <button type="button" class="btn-secondary" id="btn-batch-insert-annos" style="font-size:10px; padding:2px 8px; color:#0284c7; cursor:pointer;">
+            <button type="button" class="btn-secondary" id="btn-batch-insert-annos" style="font-size:10px; padding:2px 8px; color:var(--text-accent, #cc292b); font-weight:600; cursor:pointer;">
               ➕ 全部汇入研读草稿
             </button>
           `;
@@ -4488,7 +4493,7 @@ function openManuscriptModal(man = null, prefill = null) {
           itemEl.className = 'zotero-annotation-item';
           itemEl.innerHTML = `
             <div class="zotero-annotation-head">
-              <span style="font-weight:600; color:${a.color || '#0284c7'};">● 第 ${a.page} 页 ${a.type === 'note' ? '独立批注' : '高亮划线'}</span>
+              <span style="font-weight:600; color:${a.color || '#cc292b'};">● 第 ${a.page} 页 ${a.type === 'note' ? '独立批注' : '高亮划线'}</span>
               <span>${a.date ? new Date(a.date).toLocaleDateString() : ''}</span>
             </div>
             ${a.text ? `<div class="zotero-annotation-body" style="border-left-color:${a.color || '#ffd400'};">${escapeHTML(a.text)}</div>` : ''}
@@ -7573,34 +7578,34 @@ window.showLinkManuscriptModal = function(item) {
   }
 
   const listHtml = manuscripts.map(m => `
-    <div class="zotero-link-manuscript-item" data-id="${m.id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:8px; background:hsl(var(--card-bg));">
+    <div class="zotero-link-manuscript-item" data-id="${m.id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:8px; background:hsl(var(--card-bg));">
       <div style="flex:1; margin-right:12px; min-width:0;">
         <div style="font-weight:600; font-size:13px; color:hsl(var(--text-primary)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(m.title)}</div>
         <div style="font-size:11px; color:hsl(var(--text-secondary)); margin-top:2px; display:flex; gap:8px;">
-          <span>状态: <strong>${escapeHTML(getSubmissionStatusLabel(m.status) || m.status)}</strong></span>
-          ${m.targetJournals?.[0] ? `<span>期刊: ${escapeHTML(m.targetJournals[0])}</span>` : ''}
-          ${m.zoteroItemKey ? `<span style="color:#059669;">(已关联文献)</span>` : '<span style="color:#64748b;">(未关联文献)</span>'}
+          <span>${currentLanguage === 'zh' ? '状态' : 'Status'}: <strong>${escapeHTML(getManuscriptStatusLabel(m.status))}</strong></span>
+          ${m.targetJournals?.[0] ? `<span>${currentLanguage === 'zh' ? '期刊' : 'Journal'}: ${escapeHTML(m.targetJournals[0])}</span>` : ''}
+          ${m.zoteroItemKey ? `<span style="color:#059669;">(${currentLanguage === 'zh' ? '已关联文献' : 'Linked'})</span>` : `<span style="color:#64748b;">(${currentLanguage === 'zh' ? '未关联文献' : 'Unlinked'})</span>`}
         </div>
       </div>
       <button type="button" class="btn-primary btn-bind-manuscript" data-id="${m.id}" style="padding:4px 10px; font-size:11px; white-space:nowrap; cursor:pointer;">
-        🔗 绑定此稿件
+        🔗 ${currentLanguage === 'zh' ? '绑定此稿件' : 'Bind Manuscript'}
       </button>
     </div>
   `).join('');
 
   openModal(`
     <div class="modal-header">
-      <h2>🔗 关联 Zotero 文献至稿件管线</h2>
+      <h2>🔗 ${currentLanguage === 'zh' ? '关联 Zotero 文献至稿件管线' : 'Link Zotero Item to Pipeline'}</h2>
       <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
     </div>
-    <div style="background:rgba(2,132,199,0.06); border:1px solid rgba(2,132,199,0.2); border-radius:8px; padding:10px; margin-bottom:14px; font-size:12px;">
-      <div style="font-weight:600; color:#0369a1;">选中 Zotero 文献：</div>
-      <div style="margin-top:2px; color:hsl(var(--text-primary)); font-size:13px; font-weight:500;">${escapeHTML(item.title || '未命名文献')}</div>
+    <div style="background:var(--material-background, rgba(0,0,0,0.02)); border:1px solid var(--border-color); border-radius:6px; padding:10px; margin-bottom:14px; font-size:12px;">
+      <div style="font-weight:600; color:var(--text-accent, #cc292b);">${currentLanguage === 'zh' ? '选中 Zotero 文献：' : 'Selected Zotero Item:'}</div>
+      <div style="margin-top:2px; color:hsl(var(--text-primary)); font-size:13px; font-weight:500;">${escapeHTML(item.title || (currentLanguage === 'zh' ? '未命名文献' : 'Untitled Literature'))}</div>
       <div style="font-size:11px; color:hsl(var(--text-secondary)); margin-top:2px;">
         ${escapeHTML(item.authors || '')} (${escapeHTML(item.year || '')}) ${item.citekey ? `<code>[@${escapeHTML(item.citekey)}]</code>` : ''}
       </div>
     </div>
-    <div style="font-size:12px; font-weight:600; margin-bottom:8px; color:hsl(var(--text-primary));">请选择要绑定的 ResearchFlow 稿件：</div>
+    <div style="font-size:12px; font-weight:600; margin-bottom:8px; color:hsl(var(--text-primary));">${currentLanguage === 'zh' ? '请选择要绑定的 ResearchFlow 稿件：' : 'Select a ResearchFlow manuscript to link:'}</div>
     <div style="max-height:300px; overflow-y:auto; padding-right:4px;">
       ${listHtml}
     </div>
@@ -7649,6 +7654,7 @@ function setupZoteroIntegrations() {
   const quickImportBtn = document.getElementById('btn-zotero-quick-import');
   if (quickImportBtn) {
     quickImportBtn.style.display = 'inline-flex';
+    quickImportBtn.innerHTML = `<span>📥 ${currentLanguage === 'zh' ? '从 Zotero 选中导入' : 'Import from Zotero Selection'}</span>`;
     if (!quickImportBtn.dataset.bound) {
       quickImportBtn.dataset.bound = 'true';
       quickImportBtn.addEventListener('click', async () => {

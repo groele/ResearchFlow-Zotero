@@ -411,7 +411,8 @@ const ZoteroBridge = {
             citationApa: item.citationApa || '',
             relatedItems: item.relatedItems || [],
             collections: item.collections || [],
-            tags: item.tags || []
+            tags: item.tags || [],
+            status: 'idea'
           });
           if (typeof window.showGlobalToast === 'function') {
             window.showGlobalToast(`已从 Zotero 文献《${(item.title || '').slice(0, 18)}…》导入元数据`, 'success');
@@ -450,7 +451,8 @@ const ZoteroBridge = {
             citekey: options.item?.citekey || '',
             bibtex: options.item?.bibtex || '',
             citationApa: options.item?.citationApa || '',
-            relatedItems: options.item?.relatedItems || []
+            relatedItems: options.item?.relatedItems || [],
+            status: 'idea'
           });
           if (typeof window.showGlobalToast === 'function') {
             window.showGlobalToast(`已从 PDF 第 ${options.page || 1} 页载入摘录内容与文献关联`, 'success');
@@ -473,7 +475,8 @@ const ZoteroBridge = {
             doi: '',
             zoteroItemKey: colItems[0]?.key || '',
             zoteroUri: colItems[0]?.zoteroUri || '',
-            pdfUri: colItems[0]?.pdfUri || ''
+            pdfUri: colItems[0]?.pdfUri || '',
+            status: 'idea'
           });
           if (typeof window.showGlobalToast === 'function') {
             window.showGlobalToast(`已基于分类【${options.collectionName || ''}】初始化论文稿件管线`, 'success');

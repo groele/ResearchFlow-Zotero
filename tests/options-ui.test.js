@@ -192,5 +192,11 @@ assert(optionsJs.includes("toast.setAttribute('role', 'status')"),
   'global toast should expose non-blocking updates to assistive technology');
 assert(optionsJs.includes('clearTimeout(toast._hideTimer)'),
   'repeated toast updates should reset the pending dismissal timer');
+assert(optionsJs.includes("prefill?.status || (prefill?.isCapturedPublication ? 'published' : 'idea')"),
+  'manuscript review form should default prefilled records to idea status unless captured publication');
+assert(optionsJs.includes('function getManuscriptStatusLabel(status)'),
+  'workspace should format localized manuscript status labels');
+assert(!optionsCss.includes('#0284c7'),
+  'workspace CSS should not contain legacy cyan #0284c7');
 
 console.log('restored main workspace tests passed');
