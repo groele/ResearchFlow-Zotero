@@ -310,7 +310,7 @@
 
 <div class="form-group">
 <label for="route-db">Database JSON Sync Destination</label>
-<select id="route-db">
+<select id="route-db" onchange="window.updateSyncProviderVisibility?.()" oninput="window.updateSyncProviderVisibility?.()">
 <option value="local">None (Local Cache Only)</option>
 <option value="webdav">WebDAV Drive (Jianguoyun, Nextcloud)</option>
 <option value="github">GitHub Private Repository</option>
@@ -348,7 +348,7 @@
 <div>
 
 <h3 id="settings-local-title">Local cache only</h3>
-<p class="text-muted" id="settings-local-help">Research data remains inside this Chrome profile until you export or select a cloud route.</p>
+<p class="text-muted" id="settings-local-help">Research data remains inside this local device (Zotero data directory) until you export or select a cloud route.</p>
 </div>
 </div>
 <div class="settings-local-points">

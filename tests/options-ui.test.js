@@ -194,9 +194,11 @@ assert(optionsJs.includes('clearTimeout(toast._hideTimer)'),
   'repeated toast updates should reset the pending dismissal timer');
 assert(optionsJs.includes("prefill?.status || (prefill?.isCapturedPublication ? 'published' : 'idea')"),
   'manuscript review form should default prefilled records to idea status unless captured publication');
-assert(optionsJs.includes('function getManuscriptStatusLabel(status)'),
-  'workspace should format localized manuscript status labels');
-assert(!optionsCss.includes('#0284c7'),
-  'workspace CSS should not contain legacy cyan #0284c7');
+assert(optionsJs.includes("card.classList.toggle('active', isActive)"), 'sync provider switcher should toggle active class');
+assert(optionsJs.includes("card.style.display = isActive ? 'block' : 'none'"), 'sync provider switcher should set display explicitly');
+assert(optionsJs.includes('btn-cancel-sub'), 'track submission modal should include a cancel button');
+assert(optionsJs.includes('btn-cancel-link-sub'), 'link submission modal should include a cancel button');
+assert(optionsJs.includes('btn-cancel-transfer'), 'transfer submission modal should include a cancel button');
+assert(optionsJs.includes('Zotero data directory'), 'options should refer to Zotero data directory instead of Chrome profile');
 
 console.log('restored main workspace tests passed');

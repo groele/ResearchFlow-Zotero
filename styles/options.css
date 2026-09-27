@@ -1945,6 +1945,8 @@
 .modal-card input[type="text"],
 .modal-card input[type="url"],
 .modal-card input[type="date"],
+.modal-card input[type="password"],
+.modal-card input[type="email"],
 .modal-card input[type="number"],
 .modal-card select,
 .modal-card textarea {
@@ -1954,16 +1956,32 @@
   font-size: 13px;
   font-family: var(--font-body);
   color: hsl(var(--text-primary));
-  background: var(--input-bg, #ffffff);
-  border: 1px solid var(--input-border, #cbd5e1);
+  background: #ffffff;
+  border: 1px solid #94a3b8;
   border-radius: 6px;
   outline: none;
   min-height: 38px;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.modal-card select {
+  cursor: pointer;
+  padding-right: 32px;
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
 }
 
 .modal-card input[type="text"]::placeholder,
 .modal-card input[type="url"]::placeholder,
+.modal-card input[type="password"]::placeholder,
+.modal-card input[type="email"]::placeholder,
 .modal-card textarea::placeholder {
   color: #94a3b8;
   opacity: 1;
@@ -1973,8 +1991,33 @@
 .modal-card select:focus,
 .modal-card textarea:focus {
   border-color: #cc292b;
-  box-shadow: 0 0 0 3px rgba(204, 41, 43, 0.15);
-  background: hsl(var(--card-bg));
+  box-shadow: 0 0 0 3px rgba(204, 41, 43, 0.18);
+  background: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-card input[type="text"],
+  .modal-card input[type="url"],
+  .modal-card input[type="date"],
+  .modal-card input[type="password"],
+  .modal-card input[type="email"],
+  .modal-card input[type="number"],
+  .modal-card select,
+  .modal-card textarea {
+    background: #18191e;
+    border-color: #475569;
+    color: #f8fafc;
+  }
+  .modal-card select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  }
+  .modal-card input:focus,
+  .modal-card select:focus,
+  .modal-card textarea:focus {
+    background: #1e2028;
+    border-color: #f87171;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.22);
+  }
 }
 
 .modal-card textarea {

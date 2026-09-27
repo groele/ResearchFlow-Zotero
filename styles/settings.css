@@ -127,8 +127,13 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+.sync-provider-card[hidden],
+.sync-provider-card:not(.active) {
+  display: none !important;
 }
-.sync-provider-card[hidden] { display: none !important; }
+.sync-provider-card.active {
+  display: block !important;
+}
 .settings-provider-stage .settings-panel-mark { display: none; }
 .settings-provider-stage .settings-panel-head { margin-bottom: 14px; }
 .settings-credential-grid, .settings-preference-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

@@ -153,7 +153,7 @@ const I18N = {
     settingsRoutePrivacy: 'Secrets are stored only on this device.',
     settingsLocalEyebrow: 'Active route',
     settingsLocalTitle: 'Local cache only',
-    settingsLocalHelp: 'Research data remains inside this Chrome profile until you export or select a cloud route.',
+    settingsLocalHelp: 'Research data remains inside this local device (Zotero data directory) until you export or select a cloud route.',
     settingsLocalPointAccount: 'No account required',
     settingsLocalPointSync: 'Manual cloud sync is off',
     settingsLocalPointBackup: 'JSON backup remains available',
@@ -648,7 +648,7 @@ const I18N = {
     settingsRoutePrivacy: '密码与令牌只保存在当前设备。',
     settingsLocalEyebrow: '当前存储方式',
     settingsLocalTitle: '仅使用本地缓存',
-    settingsLocalHelp: '研究数据保存在当前 Chrome 配置文件中，直到你导出备份或选择云端同步。',
+    settingsLocalHelp: '研究数据保存在当前本地设备（Zotero 数据目录）中，直到你导出备份或选择云端同步。',
     settingsLocalPointAccount: '无需注册同步账号',
     settingsLocalPointSync: '云端手动同步已关闭',
     settingsLocalPointBackup: '仍可随时导出 JSON',
@@ -1321,7 +1321,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (targetView === 'view-dashboard') renderDashboard();
       if (targetView === 'view-manuscripts') renderKanban();
       if (targetView === 'view-submissions') renderSubmissions();
-      if (targetView === 'view-settings') loadSettings().catch(console.error);
+      if (targetView === 'view-settings') {
+        loadSettings().catch(console.error).finally(() => {
+          updateSyncProviderVisibility();
+        });
+      }
     });
   });
 
@@ -2195,10 +2199,15 @@ function openTimelineEventManager(subId) {
   openModal(`
     <div class="modal-header">
       <h2>${t('timelineEvents')}</h2>
-      <button class="btn-secondary btn-icon" id="btn-close-modal" title="${escapeHTML(t('close'))}">×</button>
+      <button class="btn-secondary btn-icon" id="btn-close-modal" title="${escapeHTML(t('close'))}">✕</button>
     </div>
     ${buildTimelineEventManager(sub, { inModal: true }) || `<p class="empty-state">${t('noEventYet')}</p>`}
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" id="btn-footer-close-events">${escapeHTML(t('close') || '关闭')}</button>
+    </div>
   `);
+
+  document.getElementById('btn-footer-close-events')?.addEventListener('click', closeModal);
 
   modalContent.querySelectorAll('.btn-event-edit').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -5765,10 +5774,15 @@ function openLinkSubmissionModal(submission) {
       <label for="submission-link-manuscript">${escapeHTML(t('workflowManuscriptLabel'))}</label>
       <select id="submission-link-manuscript">${manuscriptOptions}</select>
     </div>
-    <button type="button" class="btn-primary w-full" id="btn-confirm-submission-link">
-      ${escapeHTML(t('linkSubmissionConfirm'))}
-    </button>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" id="btn-cancel-link-sub">${escapeHTML(t('cancel') || '取消')}</button>
+      <button type="button" class="btn-primary" id="btn-confirm-submission-link" style="min-width:130px;">
+        ${escapeHTML(t('linkSubmissionConfirm'))}
+      </button>
+    </div>
   `);
+
+  document.getElementById('btn-cancel-link-sub')?.addEventListener('click', closeModal);
 
   document.getElementById('btn-confirm-submission-link').addEventListener('click', async () => {
     const manuscriptId = document.getElementById('submission-link-manuscript').value;
@@ -6423,8 +6437,13 @@ function openTransferSubmissionModal(sourceSub) {
       <textarea id="transfer-rejection-note" rows="3" placeholder="${escapeHTML(t('rejectionNotePlaceholder'))}"></textarea>
     </div>
 
-    <button class="btn-primary w-full" id="btn-create-transfer-sub">${t('transferButton')}</button>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" id="btn-cancel-transfer">${escapeHTML(t('cancel') || '取消')}</button>
+      <button type="button" class="btn-primary" id="btn-create-transfer-sub" style="min-width:130px;">${t('transferButton')}</button>
+    </div>
   `);
+
+  document.getElementById('btn-cancel-transfer')?.addEventListener('click', closeModal);
 
   document.getElementById('btn-create-transfer-sub').addEventListener('click', async () => {
     const targetJournal = document.getElementById('transfer-target-journal').value.trim();
@@ -6572,45 +6591,46 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     ${buildSubmissionCaptureReview(captureDraft)}
 
     <div class="form-group">
-      <label>${t('manuscriptPaper')}</label>
+      <label for="sub-man-select">${t('manuscriptPaper')}</label>
       <select id="sub-man-select">${manOpts}</select>
     </div>
 
     <div class="quick-new-manuscript-panel" id="sub-new-manuscript-panel" ${defaultManuscriptMode === '__new__' ? '' : 'hidden'}>
-      <div class="form-group">
-        <label>${escapeHTML(t('newManuscriptTitleLabel'))}</label>
+      <div class="form-group" style="margin-bottom:0;">
+        <label for="sub-new-man-title">${escapeHTML(t('newManuscriptTitleLabel'))}</label>
         <input type="text" id="sub-new-man-title" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
       </div>
     </div>
 
-    <div class="submission-first-author-module submission-first-author-create">
-      <div class="submission-first-author-identity">
-        <span class="submission-first-author-index" aria-hidden="true">1</span>
-        <div>
-          <label for="sub-first-author">${escapeHTML(t('firstAuthorLabel'))}</label>
-          <small>${escapeHTML(t('firstAuthorHelp'))}</small>
-        </div>
+    <div class="grid-cols-2">
+      <div class="form-group">
+        <label for="sub-first-author">${escapeHTML(t('firstAuthorLabel'))}</label>
+        <input type="text" id="sub-first-author" value="${escapeHTML(captureDraft?.firstAuthor || firstAuthorFromList(captureDraft?.authors) || '')}" placeholder="${escapeHTML(t('firstAuthorPlaceholder'))}">
       </div>
-      <input type="text" id="sub-first-author" value="${escapeHTML(captureDraft?.firstAuthor || firstAuthorFromList(captureDraft?.authors) || '')}" placeholder="${escapeHTML(t('firstAuthorPlaceholder'))}">
+      <div class="form-group">
+        <label for="sub-journal">${t('targetJournalInput')}</label>
+        <input type="text" id="sub-journal" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>${t('targetJournalInput')}</label>
-      <input type="text" id="sub-journal" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
+    <div class="grid-cols-2">
+      <div class="form-group">
+        <label for="sub-journal-url">${escapeHTML(t('submissionPortalUrl'))}</label>
+        <input type="url" id="sub-journal-url" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label for="sub-date">${t('initialSubmissionDate')}</label>
+        <input type="date" id="sub-date" value="${new Date().toISOString().split('T')[0]}">
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>${escapeHTML(t('submissionPortalUrl'))}</label>
-      <input type="url" id="sub-journal-url" placeholder="https://...">
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" id="btn-cancel-sub">${escapeHTML(t('cancel') || '取消')}</button>
+      <button type="button" class="btn-primary" id="btn-submit-sub" style="min-width:140px;">${captureDraft ? t('confirmCreateProject') : t('trackSubmissionButton')}</button>
     </div>
-
-    <div class="form-group">
-      <label>${t('initialSubmissionDate')}</label>
-      <input type="date" id="sub-date" value="${new Date().toISOString().split('T')[0]}">
-    </div>
-
-    <button class="btn-primary w-full" id="btn-submit-sub">${captureDraft ? t('confirmCreateProject') : t('trackSubmissionButton')}</button>
   `);
+
+  document.getElementById('btn-cancel-sub')?.addEventListener('click', closeModal);
 
   const manuscriptSelect = document.getElementById('sub-man-select');
   const newManuscriptPanel = document.getElementById('sub-new-manuscript-panel');
@@ -6945,6 +6965,8 @@ function updateSyncProviderVisibility() {
   document.querySelectorAll('[data-sync-provider]').forEach((card) => {
     const isActive = card.dataset.syncProvider === provider;
     card.hidden = !isActive;
+    card.style.display = isActive ? 'block' : 'none';
+    card.classList.toggle('active', isActive);
     card.setAttribute('aria-hidden', String(!isActive));
   });
 
@@ -6978,6 +7000,7 @@ function updateSyncProviderVisibility() {
     autoSyncHelp.textContent = t(localOnly ? 'autoCloudSyncLocalHelp' : 'autoCloudSyncHelp');
   }
 }
+window.updateSyncProviderVisibility = updateSyncProviderVisibility;
 
 async function loadSettings() {
   const syncProviders = db.settings?.syncProviders || DEFAULT_DB.settings.syncProviders;
@@ -7099,7 +7122,11 @@ function setupSettingsListeners() {
   }
 
   const routeSelect = document.getElementById('route-db');
-  routeSelect.addEventListener('change', updateSyncProviderVisibility);
+  if (routeSelect) {
+    routeSelect.addEventListener('change', updateSyncProviderVisibility);
+    routeSelect.addEventListener('input', updateSyncProviderVisibility);
+    updateSyncProviderVisibility();
+  }
 
   const autoSyncToggle = document.getElementById('auto-cloud-sync');
   if (autoSyncToggle) {
