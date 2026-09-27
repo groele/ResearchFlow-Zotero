@@ -332,7 +332,8 @@ const ZoteroBridge = {
     try {
       const zotero = window.Zotero || window.parent?.Zotero;
       if (zotero?.ResearchFlow?.exportDatabaseFile) {
-        return await zotero.ResearchFlow.exportDatabaseFile(window);
+        const res = await zotero.ResearchFlow.exportDatabaseFile();
+        if (res && (res.success || res.cancelled)) return res;
       }
     } catch (_) {}
     return await this.request('RESEARCHFLOW_EXPORT_DB');
@@ -342,7 +343,8 @@ const ZoteroBridge = {
     try {
       const zotero = window.Zotero || window.parent?.Zotero;
       if (zotero?.ResearchFlow?.importDatabaseFile) {
-        return await zotero.ResearchFlow.importDatabaseFile(mode, window);
+        const res = await zotero.ResearchFlow.importDatabaseFile(mode);
+        if (res && (res.success || res.cancelled)) return res;
       }
     } catch (_) {}
     return await this.request('RESEARCHFLOW_IMPORT_DB', { mode });
@@ -352,7 +354,8 @@ const ZoteroBridge = {
     try {
       const zotero = window.Zotero || window.parent?.Zotero;
       if (zotero?.ResearchFlow?.exportDiagnosticsFile) {
-        return await zotero.ResearchFlow.exportDiagnosticsFile(report, window);
+        const res = await zotero.ResearchFlow.exportDiagnosticsFile(report);
+        if (res && (res.success || res.cancelled)) return res;
       }
     } catch (_) {}
     return await this.request('RESEARCHFLOW_EXPORT_DIAGNOSTICS', { report });

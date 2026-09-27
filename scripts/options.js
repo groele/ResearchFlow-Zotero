@@ -7141,11 +7141,18 @@ function setupSettingsListeners() {
       (typeof window !== 'undefined' && (window.Zotero || window.parent?.Zotero))
     );
     if (isZoteroEnv && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.exportDatabase) {
-      const res = await ZoteroBridge.exportDatabase();
-      if (res?.success) {
-        showGlobalToast(t('databaseExported'), 'success');
+      try {
+        const res = await ZoteroBridge.exportDatabase();
+        if (res?.success) {
+          showGlobalToast(t('databaseExported'), 'success');
+          return;
+        }
+        if (res?.cancelled) {
+          return;
+        }
+      } catch (e) {
+        console.warn('[ResearchFlow] Zotero native export failed, falling back to browser download:', e);
       }
-      return;
     }
     const safeDb = window.storage.sanitizeDatabaseForExternalUse(db);
     const exportBlob = new Blob([JSON.stringify(safeDb, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -7156,7 +7163,7 @@ function setupSettingsListeners() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    setTimeout(() => URL.revokeObjectURL(exportUrl), 0);
+    setTimeout(() => URL.revokeObjectURL(exportUrl), 1000);
     showGlobalToast(t('databaseExported'), 'success');
   });
 
@@ -7205,11 +7212,18 @@ function setupSettingsListeners() {
       (typeof window !== 'undefined' && (window.Zotero || window.parent?.Zotero))
     );
     if (isZoteroEnv && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.exportDiagnostics) {
-      const res = await ZoteroBridge.exportDiagnostics(diagnosticReport);
-      if (res?.success) {
-        showGlobalToast(t('diagnosticsExported'), 'success');
+      try {
+        const res = await ZoteroBridge.exportDiagnostics(diagnosticReport);
+        if (res?.success) {
+          showGlobalToast(t('diagnosticsExported'), 'success');
+          return;
+        }
+        if (res?.cancelled) {
+          return;
+        }
+      } catch (e) {
+        console.warn('[ResearchFlow] Zotero native diagnostics export failed, falling back to blob:', e);
       }
-      return;
     }
 
     const diagnosticBlob = new Blob(
@@ -7223,7 +7237,7 @@ function setupSettingsListeners() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(diagnosticUrl), 0);
+    setTimeout(() => URL.revokeObjectURL(diagnosticUrl), 1000);
     showGlobalToast(t('diagnosticsExported'), 'success');
   });
 
@@ -7234,25 +7248,33 @@ function setupSettingsListeners() {
       (typeof window !== 'undefined' && (window.Zotero || window.parent?.Zotero))
     );
     if (isZoteroEnv && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.importDatabase) {
-      const res = await ZoteroBridge.importDatabase('merge');
-      if (res?.success && res.data) {
-        db = res.data;
-        await renderAllViews();
-        await loadSettings();
-        showGlobalToast(t('databaseImported') || '数据库导入成功！', 'success');
+      try {
+        const res = await ZoteroBridge.importDatabase('merge');
+        if (res?.success && res.data) {
+          db = res.data;
+          await renderAllViews();
+          await loadSettings();
+          showGlobalToast(t('databaseImported') || '数据库导入成功！', 'success');
+          return;
+        }
+        if (res?.cancelled) {
+          return;
+        }
+      } catch (e) {
+        console.warn('[ResearchFlow] Zotero native import failed, falling back to file input:', e);
       }
-      return;
     }
     document.getElementById('import-db-file').click();
   });
 
   document.getElementById('btn-restore-import-backup').addEventListener('click', async () => {
+    if (!confirm(t('restoreImportConfirm'))) return;
+
     const isZoteroEnv = Boolean(
       (typeof ZoteroBridge !== 'undefined' && ZoteroBridge.isZotero) ||
       (typeof window !== 'undefined' && (window.Zotero || window.parent?.Zotero))
     );
     if (isZoteroEnv && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.restoreBackup) {
-      if (!confirm(t('restoreImportConfirm'))) return;
       try {
         const res = await ZoteroBridge.restoreBackup();
         if (res?.success && res.data) {
@@ -7260,13 +7282,15 @@ function setupSettingsListeners() {
           await renderAllViews();
           await loadSettings();
           showGlobalToast(t('importBackupRestored'), 'success');
-        } else {
-          showGlobalToast(res?.error || t('noImportBackup'), 'error');
+          return;
         }
-      } catch (err) {
-        showGlobalToast(err.message || t('invalidBackup'), 'error');
+        if (res?.error) {
+          showGlobalToast(res.error, 'error');
+          return;
+        }
+      } catch (e) {
+        console.warn('[ResearchFlow] Zotero restore failed, trying browser storage:', e);
       }
-      return;
     }
 
     const result = await new Promise((resolve) => {
@@ -7277,7 +7301,6 @@ function setupSettingsListeners() {
       showGlobalToast(t('noImportBackup'), 'error');
       return;
     }
-    if (!confirm(t('restoreImportConfirm'))) return;
 
     try {
       const normalizedBackup = await window.storage.ensureDbShape(backup.database, { stamp: false });
@@ -7290,6 +7313,7 @@ function setupSettingsListeners() {
       showGlobalToast(err.message || t('invalidBackup'), 'error');
     }
   });
+
 
   // Handle Imported JSON File and Adapt Schema Format
   document.getElementById('import-db-file').addEventListener('change', (e) => {

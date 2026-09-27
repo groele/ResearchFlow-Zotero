@@ -15,6 +15,10 @@
     return;
   }
 
+  const Cc = typeof Components !== 'undefined' ? Components.classes : null;
+  const Ci = typeof Components !== 'undefined' ? Components.interfaces : null;
+  const Cu = typeof Components !== 'undefined' ? Components.utils : null;
+
   const ADDON_ID = 'researchflow@groele.org';
   const CHROME_ROOT = 'chrome://researchflow/content/';
   const PREF_PREFIX = 'extensions.researchflow.';
@@ -413,10 +417,7 @@
     generateAPACitation,
     getRelatedItems,
     getLiteratureItem,
-    exportDatabaseFile(win) { return this.exportDatabaseFile(win); },
-    importDatabaseFile(mode, win) { return this.importDatabaseFile(mode, win); },
-    exportDiagnosticsFile(report, win) { return this.exportDiagnosticsFile(report, win); },
-    restoreBackupDatabase() { return this.restoreBackupDatabase(); },
+
     localizedDocs: new Set(),
     _cachedData: null,
     _dataListeners: new Set(),
@@ -820,9 +821,11 @@
 
     async exportDatabaseFile(window = null) {
       try {
+        if (!Cc || !Ci) throw new Error('Components.classes or interfaces not available');
         const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-        const win = window || Zotero.getMainWindow?.() || Services.wm.getMostRecentWindow('navigator:browser');
+        const win = Zotero.getMainWindow?.() || (typeof Services !== 'undefined' && Services.wm?.getMostRecentWindow('navigator:browser')) || null;
         fp.init(win, '导出 ResearchFlow 数据库', Ci.nsIFilePicker.modeSave);
+        fp.defaultExtension = 'json';
         fp.appendFilter('JSON Files (*.json)', '*.json');
         const dateStr = new Date().toISOString().split('T')[0];
         fp.defaultString = `researchflow-export-${dateStr}.json`;
@@ -846,9 +849,11 @@
 
     async importDatabaseFile(mode = 'merge', window = null) {
       try {
+        if (!Cc || !Ci) throw new Error('Components.classes or interfaces not available');
         const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-        const win = window || Zotero.getMainWindow?.() || Services.wm.getMostRecentWindow('navigator:browser');
+        const win = Zotero.getMainWindow?.() || (typeof Services !== 'undefined' && Services.wm?.getMostRecentWindow('navigator:browser')) || null;
         fp.init(win, '选择 ResearchFlow JSON 备份文件导入', Ci.nsIFilePicker.modeOpen);
+        fp.defaultExtension = 'json';
         fp.appendFilter('JSON Files (*.json)', '*.json');
 
         const res = await new Promise((resolve) => fp.open(resolve));
@@ -875,9 +880,11 @@
 
     async exportDiagnosticsFile(report = null, window = null) {
       try {
+        if (!Cc || !Ci) throw new Error('Components.classes or interfaces not available');
         const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-        const win = window || Zotero.getMainWindow?.() || Services.wm.getMostRecentWindow('navigator:browser');
+        const win = Zotero.getMainWindow?.() || (typeof Services !== 'undefined' && Services.wm?.getMostRecentWindow('navigator:browser')) || null;
         fp.init(win, '导出 ResearchFlow 诊断报告', Ci.nsIFilePicker.modeSave);
+        fp.defaultExtension = 'json';
         fp.appendFilter('JSON Files (*.json)', '*.json');
         const dateStr = new Date().toISOString().slice(0, 10);
         fp.defaultString = `researchflow-diagnostics-${dateStr}.json`;
