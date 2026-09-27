@@ -1850,10 +1850,23 @@
 }
 
 .quick-new-manuscript-panel {
-  padding: 12px;
-  border: 1px solid hsl(var(--accent-cyan) / 0.18);
-  border-radius: 10px;
-  background: hsl(var(--accent-cyan) / 0.06);
+  padding: 12px 14px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  margin-top: 4px;
+}
+
+:root[data-theme="dark"] .quick-new-manuscript-panel {
+  border-color: #334155;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  .quick-new-manuscript-panel {
+    border-color: #334155;
+    background: rgba(255, 255, 255, 0.03);
+  }
 }
 
 /* Rebuttal Response Matrix Grid */
@@ -2020,6 +2033,31 @@
   }
 }
 
+:root[data-theme="dark"] .modal-card input[type="text"],
+:root[data-theme="dark"] .modal-card input[type="url"],
+:root[data-theme="dark"] .modal-card input[type="date"],
+:root[data-theme="dark"] .modal-card input[type="password"],
+:root[data-theme="dark"] .modal-card input[type="email"],
+:root[data-theme="dark"] .modal-card input[type="number"],
+:root[data-theme="dark"] .modal-card select,
+:root[data-theme="dark"] .modal-card textarea {
+  background: #18191e;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+:root[data-theme="dark"] .modal-card select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] .modal-card input:focus,
+:root[data-theme="dark"] .modal-card select:focus,
+:root[data-theme="dark"] .modal-card textarea:focus {
+  background: #1e2028;
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.22);
+}
+
 .modal-card textarea {
   min-height: 80px;
   resize: vertical;
@@ -2036,14 +2074,31 @@
   justify-content: flex-end;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid hsl(var(--card-border));
+  border-top: 1px solid var(--border-color, #e2e8f0);
   position: sticky;
   bottom: -24px;
+  margin-left: -28px;
+  margin-right: -28px;
+  margin-bottom: -24px;
+  padding-left: 28px;
+  padding-right: 28px;
+  padding-bottom: 20px;
   background: hsl(var(--card-bg));
-  padding-bottom: 4px;
-  z-index: 10;
+  z-index: 20;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+:root[data-theme="dark"] .modal-footer {
+  border-top-color: #334155;
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-footer {
+    border-top-color: #334155;
+  }
 }
 
 body.submission-capture-mode,
@@ -5172,14 +5227,31 @@ select option {
 .subwindow-mode .modal-card {
   width: calc(100vw - 20px) !important;
   max-width: none !important;
+  max-height: calc(100vh - 20px) !important;
+  overflow-y: auto !important;
   padding: 16px 14px !important;
-  margin: 10px auto !important;
+  margin: 0 auto !important;
 }
 
 .subwindow-mode .modal-backdrop {
   padding: 10px !important;
-  align-items: flex-start !important;
-  overflow-y: auto !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.subwindow-mode .modal-footer {
+  bottom: -16px !important;
+  margin-left: -14px !important;
+  margin-right: -14px !important;
+  margin-bottom: -16px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+.subwindow-mode .submission-first-author-module {
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
 }
 
 /* Zotero live search dropdown in manuscript modal */

@@ -6590,6 +6590,11 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
 
     ${buildSubmissionCaptureReview(captureDraft)}
 
+    <div id="sub-zotero-active-item-banner" class="zotero-active-item-banner" style="display:none; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; background:rgba(204,0,0,0.06); border:1px solid rgba(204,0,0,0.22); border-radius:8px; margin-bottom:12px;">
+      <span id="sub-zotero-active-item-text" style="font-size:12px; color:hsl(var(--text-primary)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;"></span>
+      <button type="button" class="btn-secondary" id="btn-sub-zotero-quick-bind-active" style="padding:4px 10px; font-size:11px; white-space:nowrap; border-color:rgba(204,0,0,0.3); color:#cc0000; font-weight:600; cursor:pointer;">⚡ 一键载入</button>
+    </div>
+
     <div class="form-group">
       <label for="sub-man-select">${t('manuscriptPaper')}</label>
       <select id="sub-man-select">${manOpts}</select>
@@ -6597,19 +6602,22 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
 
     <div class="quick-new-manuscript-panel" id="sub-new-manuscript-panel" ${defaultManuscriptMode === '__new__' ? '' : 'hidden'}>
       <div class="form-group" style="margin-bottom:0;">
-        <label for="sub-new-man-title">${escapeHTML(t('newManuscriptTitleLabel'))}</label>
-        <input type="text" id="sub-new-man-title" placeholder="${escapeHTML(t('paperTitlePlaceholder'))}">
+        <label for="sub-new-man-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>${escapeHTML(t('newManuscriptTitleLabel'))}</span>
+          <span style="font-size:10px; font-weight:normal; text-transform:none; color:hsl(var(--text-muted));">${escapeHTML(currentLanguage === 'zh' ? '将同步创建稿件条目' : 'Will create manuscript entry')}</span>
+        </label>
+        <input type="text" id="sub-new-man-title" placeholder="${escapeHTML(currentLanguage === 'zh' ? '输入论文稿件标题 (如: Deep Learning for Genomic Effect...)' : t('paperTitlePlaceholder'))}">
       </div>
     </div>
 
     <div class="grid-cols-2">
       <div class="form-group">
         <label for="sub-first-author">${escapeHTML(t('firstAuthorLabel'))}</label>
-        <input type="text" id="sub-first-author" value="${escapeHTML(captureDraft?.firstAuthor || firstAuthorFromList(captureDraft?.authors) || '')}" placeholder="${escapeHTML(t('firstAuthorPlaceholder'))}">
+        <input type="text" id="sub-first-author" value="${escapeHTML(captureDraft?.firstAuthor || firstAuthorFromList(captureDraft?.authors) || '')}" placeholder="${escapeHTML(currentLanguage === 'zh' ? '例如: Zhang San' : t('firstAuthorPlaceholder'))}">
       </div>
       <div class="form-group">
         <label for="sub-journal">${t('targetJournalInput')}</label>
-        <input type="text" id="sub-journal" placeholder="${escapeHTML(t('targetJournalPlaceholder'))}">
+        <input type="text" id="sub-journal" placeholder="${escapeHTML(currentLanguage === 'zh' ? '例如: Nature / IEEE TPAMI' : t('targetJournalPlaceholder'))}">
       </div>
     </div>
 
@@ -6634,9 +6642,86 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
 
   const manuscriptSelect = document.getElementById('sub-man-select');
   const newManuscriptPanel = document.getElementById('sub-new-manuscript-panel');
+
+  const autoFillFromManuscript = (mId) => {
+    if (mId && mId !== '__new__') {
+      const selectedMan = (db.manuscripts || []).find(m => m.id === mId);
+      if (selectedMan) {
+        const authorInput = document.getElementById('sub-first-author');
+        const journalInput = document.getElementById('sub-journal');
+        const urlInput = document.getElementById('sub-journal-url');
+        if (authorInput && !authorInput.value.trim() && selectedMan.authors) {
+          authorInput.value = firstAuthorFromList(selectedMan.authors) || selectedMan.authors;
+        }
+        if (journalInput && !journalInput.value.trim() && (selectedMan.journal || selectedMan.publication)) {
+          journalInput.value = selectedMan.journal || selectedMan.publication;
+        }
+        if (urlInput && !urlInput.value.trim() && (selectedMan.articleUrl || selectedMan.doi)) {
+          urlInput.value = selectedMan.articleUrl || (selectedMan.doi ? `https://doi.org/${selectedMan.doi}` : '');
+        }
+      }
+    }
+  };
+
   manuscriptSelect.addEventListener('change', () => {
-    newManuscriptPanel.hidden = manuscriptSelect.value !== '__new__';
+    const isNew = manuscriptSelect.value === '__new__';
+    newManuscriptPanel.hidden = !isNew;
+    if (isNew) {
+      document.getElementById('sub-new-man-title')?.focus();
+    } else {
+      autoFillFromManuscript(manuscriptSelect.value);
+    }
   });
+
+  if (defaultManuscriptMode !== '__new__') {
+    autoFillFromManuscript(defaultManuscriptMode);
+  }
+
+  // Active item detection in Zotero
+  setTimeout(async () => {
+    try {
+      if (typeof ZoteroBridge !== 'undefined' && !captureDraft) {
+        const activeItem = await ZoteroBridge.getActiveItem();
+        const banner = document.getElementById('sub-zotero-active-item-banner');
+        const textEl = document.getElementById('sub-zotero-active-item-text');
+        const quickBindBtn = document.getElementById('btn-sub-zotero-quick-bind-active');
+        if (activeItem && activeItem.title && banner && textEl) {
+          textEl.innerHTML = `📌 <strong>${escapeHTML(currentLanguage === 'zh' ? '检测到 Zotero 选中文献：' : 'Active Zotero item: ')}</strong>《${escapeHTML(activeItem.title)}》`;
+          banner.style.display = 'flex';
+          quickBindBtn?.addEventListener('click', () => {
+            const match = (db.manuscripts || []).find(m =>
+              (m.zoteroItemKey && m.zoteroItemKey === activeItem.key) ||
+              (m.title && m.title.trim().toLowerCase() === activeItem.title.trim().toLowerCase())
+            );
+            if (match) {
+              manuscriptSelect.value = match.id;
+              newManuscriptPanel.hidden = true;
+            } else {
+              manuscriptSelect.value = '__new__';
+              newManuscriptPanel.hidden = false;
+              const titleInput = document.getElementById('sub-new-man-title');
+              if (titleInput) titleInput.value = activeItem.title;
+            }
+            const authorInput = document.getElementById('sub-first-author');
+            const journalInput = document.getElementById('sub-journal');
+            const urlInput = document.getElementById('sub-journal-url');
+            if (authorInput && activeItem.authors) {
+              authorInput.value = firstAuthorFromList(activeItem.authors) || activeItem.authors;
+            }
+            if (journalInput && activeItem.publication) {
+              journalInput.value = activeItem.publication;
+            }
+            if (urlInput) {
+              urlInput.value = activeItem.url || (activeItem.doi ? `https://doi.org/${activeItem.doi}` : '');
+            }
+            banner.style.display = 'none';
+            showGlobalToast(currentLanguage === 'zh' ? '已从 Zotero 选中文献载入投稿信息' : 'Loaded submission metadata from active Zotero item', 'success');
+          });
+        }
+      }
+    } catch (_) {}
+  }, 60);
+
   if (captureDraft) {
     manuscriptSelect.disabled = true;
     manuscriptSelect.setAttribute('aria-describedby', 'submission-capture-review');
