@@ -3023,6 +3023,13 @@ async function persistManuscriptStatusChange(manuscript, nextStatus) {
   if (!savedManuscript) throw new Error(t('manuscriptNotFound'));
   Object.assign(manuscript, savedManuscript);
 
+  if (typeof ZoteroBridge !== 'undefined' && ZoteroBridge.isZotero && savedManuscript.zoteroItemKey) {
+    try {
+      ZoteroBridge.syncStatusTag(savedManuscript.zoteroItemKey, savedManuscript.status);
+      ZoteroBridge.syncNote(savedManuscript.zoteroItemKey);
+    } catch (_) {}
+  }
+
   return {
     manuscript: savedManuscript,
     shouldCelebrate: window.RFUI.shouldCelebrateAcceptance(
@@ -3293,6 +3300,14 @@ function renderDashboard() {
           </div>
           <div class="pipeline-link-row">
             ${doiHtml}
+            ${man?.zoteroItemKey ? `
+              <span class="zotero-card-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="在 Zotero 文献库中选中此条目" style="margin-left: 6px;">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H6.4l5.6 6v2H2v-2h7.6L4 5V3z"/></svg>
+                Zotero
+              </span>
+              ${man.citekey ? `<span class="zotero-citekey-badge" data-citekey="${escapeHTML(man.citekey)}" title="点击复制 Citation Key">[@${escapeHTML(man.citekey)}]</span>` : ''}
+              ${man.pdfUri ? `<span class="zotero-pdf-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="在 Zotero 阅读器中打开 PDF">📖 PDF</span>` : ''}
+            ` : ''}
           </div>
           <div class="pipeline-actions" style="margin-top: 12px; display: flex; gap: 8px;">
             <button class="btn-secondary btn-sm btn-pipeline-add" data-sub-id="${escapeHTML(sub.id)}">${t('addEvent')}</button>
@@ -3389,6 +3404,36 @@ function renderDashboard() {
       btn.addEventListener('click', (event) => {
         event.stopPropagation();
         openSubmissionSharePreview(btn.getAttribute('data-sub-id'), btn);
+      });
+    });
+
+    ganttBox.querySelectorAll('.zotero-card-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = badge.getAttribute('data-item-key');
+        if (key && typeof ZoteroBridge !== 'undefined') {
+          ZoteroBridge.selectItemInZotero(key);
+        }
+      });
+    });
+
+    ganttBox.querySelectorAll('.zotero-citekey-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const ck = badge.getAttribute('data-citekey');
+        if (ck && typeof ZoteroBridge !== 'undefined') {
+          ZoteroBridge.copyText(`[@${ck}]`, currentLanguage === 'zh' ? `已复制 Citation Key: [@${ck}]` : `Copied Citation Key: [@${ck}]`);
+        }
+      });
+    });
+
+    ganttBox.querySelectorAll('.zotero-pdf-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = badge.getAttribute('data-item-key');
+        if (key && typeof ZoteroBridge !== 'undefined') {
+          ZoteroBridge.openPdf(key);
+        }
       });
     });
 
@@ -3957,7 +4002,7 @@ function renderKanban() {
       citeBadge.addEventListener('click', (e) => {
         e.stopPropagation();
         if (typeof ZoteroBridge !== 'undefined') {
-          ZoteroBridge.copyText(`[@${m.citekey}]`, `已复制 Citation Key: [@${m.citekey}]`);
+          ZoteroBridge.copyText(`[@${m.citekey}]`, currentLanguage === 'zh' ? `已复制 Citation Key: [@${m.citekey}]` : `Copied Citation Key: [@${m.citekey}]`);
         }
       });
     }
@@ -3967,15 +4012,15 @@ function renderKanban() {
       syncBadge.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (typeof ZoteroBridge !== 'undefined') {
-          syncBadge.textContent = '⏳ 同步中';
+          syncBadge.textContent = currentLanguage === 'zh' ? '⏳ 同步中' : '⏳ Syncing';
           const ok = await ZoteroBridge.syncNote(m.zoteroItemKey);
           if (ok) {
-            syncBadge.textContent = '✅ 已同步';
-            showGlobalToast('审稿进展已成功同步至 Zotero 云端笔记！', 'success');
-            setTimeout(() => { syncBadge.textContent = '📝 同步'; }, 2000);
+            syncBadge.textContent = currentLanguage === 'zh' ? '✅ 已同步' : '✅ Synced';
+            showGlobalToast(currentLanguage === 'zh' ? '审稿进展已成功同步至 Zotero 云端笔记！' : 'Synced pipeline progress to Zotero child note!', 'success');
+            setTimeout(() => { syncBadge.textContent = currentLanguage === 'zh' ? '📝 同步' : '📝 Sync'; }, 2000);
           } else {
-            syncBadge.textContent = '❌ 失败';
-            setTimeout(() => { syncBadge.textContent = '📝 同步'; }, 2000);
+            syncBadge.textContent = currentLanguage === 'zh' ? '❌ 失败' : '❌ Failed';
+            setTimeout(() => { syncBadge.textContent = currentLanguage === 'zh' ? '📝 同步' : '📝 Sync'; }, 2000);
           }
         }
       });
@@ -4218,16 +4263,16 @@ function openManuscriptModal(man = null, prefill = null) {
           <button type="button" class="btn-secondary" id="btn-zotero-sync-note" style="padding:3px 8px; font-size:11px; color:#cc292b; border-color:rgba(204,41,43,0.3); font-weight:500; ${currentZoteroItemKey ? '' : 'display:none;'}" title="同步稿件进展至 Zotero 云笔记">
             📝 同步笔记
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-locate" style="padding:3px 8px; font-size:11px; ${currentZoteroItemKey ? '' : 'display:none;'}" title="在 Zotero 文献库中定位该条目">
-            🔗 定位
+          <button type="button" class="btn-secondary" id="btn-zotero-locate" style="padding:3px 8px; font-size:11px; ${currentZoteroItemKey ? '' : 'display:none;'}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 文献库中定位该条目' : 'Locate item in Zotero library')}">
+            🔗 ${escapeHTML(currentLanguage === 'zh' ? '定位' : 'Locate')}
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-unlink" style="padding:3px 8px; font-size:11px; color:#ef4444; ${currentZoteroItemKey ? '' : 'display:none;'}" title="解除与 Zotero 文献的绑定">
-            ✕ 解绑
+          <button type="button" class="btn-secondary" id="btn-zotero-unlink" style="padding:3px 8px; font-size:11px; color:#ef4444; ${currentZoteroItemKey ? '' : 'display:none;'}" title="${escapeHTML(currentLanguage === 'zh' ? '解除与 Zotero 文献的绑定' : 'Unlink from Zotero item')}">
+            ✕ ${escapeHTML(currentLanguage === 'zh' ? '解绑' : 'Unlink')}
           </button>
         </div>
       </div>
       <div style="position:relative; width:100%;">
-        <input type="text" id="ipt-zotero-live-search" placeholder="🔍 检索 Zotero 10 文献库 (输入标题/作者/DOI/年份) 快速关联..." style="font-size:11px; padding:5px 8px; width:100%; box-sizing:border-box; background:var(--input-bg); color:hsl(var(--text-primary)); border:1px solid var(--input-border); border-radius:6px; outline:none;">
+        <input type="text" id="ipt-zotero-live-search" placeholder="${escapeHTML(currentLanguage === 'zh' ? '🔍 检索 Zotero 10 文献库 (输入标题/作者/DOI/年份) 快速关联...' : '🔍 Search Zotero 10 library (title/author/DOI/year) to link...')}" style="font-size:11px; padding:5px 8px; width:100%; box-sizing:border-box; background:var(--input-bg); color:hsl(var(--text-primary)); border:1px solid var(--input-border); border-radius:6px; outline:none;">
         <div id="zotero-search-results-dropdown" class="zotero-search-dropdown" style="display:none;"></div>
       </div>
       <div id="man-zotero-annotations-panel" class="zotero-annotations-panel" style="display:none;"></div>
@@ -4372,7 +4417,7 @@ function openManuscriptModal(man = null, prefill = null) {
         currentCitationApa = '';
         currentRelatedItems = [];
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:#64748b;">未绑定 Zotero 文献条目</span>`;
+          statusEl.innerHTML = `<span style="color:#64748b;">${escapeHTML(currentLanguage === 'zh' ? '未绑定 Zotero 文献条目' : 'No Zotero item linked')}</span>`;
         }
         if (pdfBtn) pdfBtn.style.display = 'none';
         if (syncBtn) syncBtn.style.display = 'none';
@@ -4624,13 +4669,13 @@ function openManuscriptModal(man = null, prefill = null) {
           return;
         }
         searchTimer = setTimeout(async () => {
-          dropdown.innerHTML = '<div class="zotero-search-empty">🔍 检索中...</div>';
+          dropdown.innerHTML = `<div class="zotero-search-empty">🔍 ${escapeHTML(currentLanguage === 'zh' ? '检索中...' : 'Searching...')}</div>`;
           dropdown.style.display = 'block';
           const results = typeof ZoteroBridge !== 'undefined'
             ? await ZoteroBridge.searchLibrary(query, 10)
             : [];
           if (!results || results.length === 0) {
-            dropdown.innerHTML = '<div class="zotero-search-empty">未找到匹配的 Zotero 文献</div>';
+            dropdown.innerHTML = `<div class="zotero-search-empty">${escapeHTML(currentLanguage === 'zh' ? '未找到匹配的 Zotero 文献' : 'No matching Zotero items found')}</div>`;
             return;
           }
           dropdown.innerHTML = '';
@@ -5198,6 +5243,13 @@ async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
   if (!savedSub) throw new Error(t('submissionNotFound'));
   Object.assign(sub, savedSub);
 
+  if (typeof ZoteroBridge !== 'undefined' && ZoteroBridge.isZotero && workingMan?.zoteroItemKey) {
+    try {
+      ZoteroBridge.syncStatusTag(workingMan.zoteroItemKey, workingMan.status || savedSub.status);
+      ZoteroBridge.syncNote(workingMan.zoteroItemKey);
+    } catch (_) {}
+  }
+
   const shouldCelebrate = window.RFUI.shouldCelebrateAcceptance(
     previousStatus,
     normalizeSubmissionStatus(savedSub.status)
@@ -5417,6 +5469,12 @@ function renderSubmissions() {
         <div class="submission-card-footer">
           <span class="${window.RFUI.getSubmissionStatusBadgeClass(sub.status)}">${escapeHTML(statusText)}</span>
           ${transferText}
+          ${man?.zoteroItemKey ? `
+            <span class="zotero-card-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 文献库中选中此条目' : 'Select in Zotero library')}" style="padding:1px 6px; font-size:10px; margin-left:auto;">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H6.4l5.6 6v2H2v-2h7.6L4 5V3z"/></svg>
+              Zotero
+            </span>
+          ` : ''}
         </div>
       `;
 
@@ -5429,6 +5487,17 @@ function renderSubmissions() {
         event.stopPropagation();
         openSubmissionForEditing(sub, { focusEditCenter: true });
       });
+
+      const cardZoteroBadge = card.querySelector('.zotero-card-badge');
+      if (cardZoteroBadge) {
+        cardZoteroBadge.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const key = cardZoteroBadge.getAttribute('data-item-key');
+          if (key && typeof ZoteroBridge !== 'undefined') {
+            ZoteroBridge.selectItemInZotero(key);
+          }
+        });
+      }
 
       cards.appendChild(card);
     });
@@ -5784,6 +5853,14 @@ function renderSubmissionDetails(sub) {
           <span class="badge badge-purple">${escapeHTML(man ? t('linkedManuscriptBadge') : t('detachedSubmissionBadge'))}</span>
           <span class="${statusBadgeClass}" data-submission-status-badge="editor">${escapeHTML(statusText)}</span>
           ${articleUrl ? `<a class="doi-link" href="${escapeHTML(articleUrl)}" target="_blank" rel="noopener noreferrer">${t('articlePage')}</a>` : ''}
+          ${man?.zoteroItemKey ? `
+            <span class="zotero-card-badge" id="sub-detail-zotero-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 文献库中选中此条目' : 'Select in Zotero library')}">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H6.4l5.6 6v2H2v-2h7.6L4 5V3z"/></svg>
+              Zotero
+            </span>
+            ${man.citekey ? `<span class="zotero-citekey-badge" id="sub-detail-citekey-badge" data-citekey="${escapeHTML(man.citekey)}" title="${escapeHTML(currentLanguage === 'zh' ? '点击复制 Citation Key' : 'Click to copy Citation Key')}">[@${escapeHTML(man.citekey)}]</span>` : ''}
+            ${man.pdfUri ? `<span class="zotero-pdf-badge" id="sub-detail-pdf-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 阅读器中打开 PDF' : 'Open PDF in Zotero reader')}">📖 PDF</span>` : ''}
+          ` : ''}
         </div>
       </div>
 
@@ -5956,6 +6033,12 @@ function renderSubmissionDetails(sub) {
           </div>
         </div>
         <div class="submission-work-actions">
+          ${man?.zoteroItemKey ? `
+          <button class="btn-secondary submission-work-button" id="btn-sync-submission-to-zotero" title="${escapeHTML(currentLanguage === 'zh' ? '同步审稿回复与修回矩阵至 Zotero 笔记' : 'Sync Review & Rebuttal Matrix to Zotero Note')}">
+            <svg class="svg-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 3h12v2H6.4l5.6 6v2H2v-2h7.6L4 5V3z"/></svg>
+            <span>${escapeHTML(currentLanguage === 'zh' ? '同步至 Zotero 笔记' : 'Sync to Zotero Note')}</span>
+          </button>
+          ` : ''}
           <button class="btn-secondary submission-work-button" id="btn-export-rebuttal-table">
             <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>${escapeHTML(t('exportTable'))}</span>
@@ -6041,6 +6124,47 @@ function renderSubmissionDetails(sub) {
   renderSubmissionReviewMatrixEditor(sub, manAbstract);
   renderSubmissionReviewPreview(sub, checklistKeys);
   setupSubmissionAutoSave(sub);
+
+  const btnSyncSubZotero = document.getElementById('btn-sync-submission-to-zotero');
+  if (btnSyncSubZotero) {
+    btnSyncSubZotero.addEventListener('click', () => {
+      if (typeof ZoteroBridge !== 'undefined' && man?.zoteroItemKey) {
+        btnSyncSubZotero.disabled = true;
+        try {
+          ZoteroBridge.syncNote(man.zoteroItemKey);
+          showGlobalToast(currentLanguage === 'zh' ? '已触发同步审稿记录与修回矩阵至 Zotero 笔记' : 'Triggered sync of review & rebuttal matrix to Zotero note', 'success');
+        } catch (_) {}
+        setTimeout(() => { btnSyncSubZotero.disabled = false; }, 1200);
+      }
+    });
+  }
+
+  const subZoteroBadge = detailPanel.querySelector('#sub-detail-zotero-badge');
+  if (subZoteroBadge) {
+    subZoteroBadge.addEventListener('click', () => {
+      if (man?.zoteroItemKey && typeof ZoteroBridge !== 'undefined') {
+        ZoteroBridge.selectItemInZotero(man.zoteroItemKey);
+      }
+    });
+  }
+
+  const subCitekeyBadge = detailPanel.querySelector('#sub-detail-citekey-badge');
+  if (subCitekeyBadge && man?.citekey) {
+    subCitekeyBadge.addEventListener('click', () => {
+      if (typeof ZoteroBridge !== 'undefined') {
+        ZoteroBridge.copyText(`[@${man.citekey}]`, currentLanguage === 'zh' ? `已复制 Citation Key: [@${man.citekey}]` : `Copied Citation Key: [@${man.citekey}]`);
+      }
+    });
+  }
+
+  const subPdfBadge = detailPanel.querySelector('#sub-detail-pdf-badge');
+  if (subPdfBadge) {
+    subPdfBadge.addEventListener('click', () => {
+      if (man?.zoteroItemKey && typeof ZoteroBridge !== 'undefined') {
+        ZoteroBridge.openPdf(man.zoteroItemKey);
+      }
+    });
+  }
 
   // Action: Export LaTeX & Markdown Rebuttal Table
   document.getElementById('btn-export-rebuttal-table').addEventListener('click', () => {
@@ -7556,7 +7680,7 @@ window.showLinkManuscriptModal = function(item) {
   if (!item) return;
   const manuscripts = db.manuscripts || [];
   if (manuscripts.length === 0) {
-    showGlobalToast('当前管线中暂无稿件，正在为您直接新建稿件...', 'info');
+    showGlobalToast(currentLanguage === 'zh' ? '当前管线中暂无稿件，正在为您直接新建稿件...' : 'No manuscripts found in pipeline. Creating new manuscript...', 'info');
     openManuscriptModal(null, {
       title: item.title || '',
       publication: item.publication || '',
@@ -7634,7 +7758,9 @@ window.showLinkManuscriptModal = function(item) {
       renderKanban();
       renderDashboard();
       renderSubmissions();
-      showGlobalToast(`成功将《${(item.title || '').slice(0, 16)}…》关联至稿件《${(targetMan.title || '').slice(0, 16)}…》！`, 'success');
+      showGlobalToast(currentLanguage === 'zh'
+        ? `成功将《${(item.title || '').slice(0, 16)}…》关联至稿件《${(targetMan.title || '').slice(0, 16)}…》！`
+        : `Successfully linked "${(item.title || '').slice(0, 16)}..." to manuscript "${(targetMan.title || '').slice(0, 16)}..."!`, 'success');
     });
   });
 };
@@ -7719,12 +7845,24 @@ function setupZoteroIntegrations() {
   const zSettingsCard = document.getElementById('zotero-native-settings-card');
   if (zSettingsCard) {
     zSettingsCard.style.display = 'block';
+    if (currentLanguage === 'en') {
+      const h3 = zSettingsCard.querySelector('h3');
+      if (h3) h3.textContent = 'Zotero 10 Native Integration';
+      const p = zSettingsCard.querySelector('.text-muted');
+      if (p) p.textContent = 'Manage Zotero database storage and bi-directional child note synchronization';
+      const desc = zSettingsCard.querySelector('div[style*="font-size:12px"]');
+      if (desc) desc.innerHTML = 'ResearchFlow is running directly inside Zotero 10. Data is persisted to <code>researchflow-data.json</code> in your Zotero data directory.';
+      const syncBtnText = zSettingsCard.querySelector('#btn-zotero-sync-all-notes span');
+      if (syncBtnText) syncBtnText.textContent = '📝 Batch sync all manuscript pipelines to Zotero child notes';
+      const prefsBtnText = zSettingsCard.querySelector('#btn-zotero-open-prefs span');
+      if (prefsBtnText) prefsBtnText.textContent = '⚙️ Open Zotero Preferences Pane';
+    }
   }
   const syncAllNotesBtn = document.getElementById('btn-zotero-sync-all-notes');
   if (syncAllNotesBtn && !syncAllNotesBtn.dataset.bound) {
     syncAllNotesBtn.dataset.bound = 'true';
     syncAllNotesBtn.addEventListener('click', async () => {
-      showGlobalToast('正在同步所有关联文献的云端子笔记...', 'info');
+      showGlobalToast(currentLanguage === 'zh' ? '正在同步所有关联文献的云端子笔记...' : 'Syncing child notes to Zotero...', 'info');
       let count = 0;
       for (const m of db.manuscripts || []) {
         if (m.zoteroItemKey && typeof ZoteroBridge !== 'undefined') {
@@ -7732,7 +7870,9 @@ function setupZoteroIntegrations() {
           if (ok) count++;
         }
       }
-      showGlobalToast(`同步成功！已将 ${count} 篇文献的管线与审稿矩阵同步至 Zotero 云端子笔记。`, 'success');
+      showGlobalToast(currentLanguage === 'zh'
+        ? `同步成功！已将 ${count} 篇文献的管线与审稿矩阵同步至 Zotero 云端子笔记。`
+        : `Synced ${count} manuscript pipelines to Zotero child notes!`, 'success');
     });
   }
   const openPrefsBtn = document.getElementById('btn-zotero-open-prefs');
@@ -7754,7 +7894,7 @@ function setupZoteroIntegrations() {
     if (collections && collections.length > 0) {
       if (collectionFilterContainer) collectionFilterContainer.style.display = 'inline-flex';
       const prevVal = collectionSelect.value;
-      collectionSelect.innerHTML = '<option value="">📁 全部文献分类</option>';
+      collectionSelect.innerHTML = `<option value="">📁 ${escapeHTML(currentLanguage === 'zh' ? '全部文献分类' : 'All Collections')}</option>`;
       collections.forEach(col => {
         const opt = document.createElement('option');
         opt.value = col.key;

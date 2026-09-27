@@ -14,6 +14,16 @@ const ZoteroBridge = {
       document.body?.classList?.add('zotero-env');
       this.sendToHost({ type: 'RESEARCHFLOW_READY' });
       console.log('[ResearchFlow] Running in Zotero environment');
+
+      if (typeof document !== 'undefined') {
+        document.addEventListener('click', (e) => {
+          const link = e.target?.closest?.('a[href^="http"]');
+          if (link && !link.dataset.internal) {
+            e.preventDefault();
+            this.openExternal(link.href);
+          }
+        });
+      }
     }
 
     // Process initial options from window.arguments or window._researchflowPending
@@ -483,16 +493,6 @@ const ZoteroBridge = {
           }
         }
       }, 200);
-    } else if (options.action === 'link_item_to_manuscript' && options.item) {
-      window._pendingZoteroLinkItem = options.item;
-      const kanbanBtn = document.querySelector('.nav-item[data-view="view-manuscripts"]');
-      if (kanbanBtn) kanbanBtn.click();
-      if (typeof window.renderKanban === 'function') {
-        window.renderKanban();
-      }
-      if (typeof window.showGlobalToast === 'function') {
-        window.showGlobalToast(`请选择要关联文献《${options.item.title.slice(0, 18)}…》的论文稿件卡片`, 'info');
-      }
     } else if (options.manuscriptId) {
       const kanbanBtn = document.querySelector('.nav-item[data-view="view-manuscripts"]');
       if (kanbanBtn) kanbanBtn.click();
@@ -522,6 +522,23 @@ const ZoteroBridge = {
       }
     } catch (_) {}
     this.sendToHost({ type: 'RESEARCHFLOW_SELECT_ITEM', itemKey });
+  },
+
+  openExternal(url) {
+    if (!url) return;
+    try {
+      const zotero = window.Zotero || window.parent?.Zotero;
+      if (typeof zotero?.launchURL === 'function') {
+        zotero.launchURL(url);
+        return;
+      }
+    } catch (_) {}
+    this.sendToHost({ type: 'RESEARCHFLOW_OPEN_EXTERNAL', url });
+    try {
+      if (typeof window !== 'undefined' && window.open) {
+        window.open(url, '_blank');
+      }
+    } catch (_) {}
   }
 };
 

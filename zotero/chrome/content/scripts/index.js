@@ -945,7 +945,7 @@
 
         let noteHtml = `<h1>🚀 [ResearchFlow] 论文稿件与审稿跟踪快报</h1>`;
         noteHtml += `<p><strong>稿件标题：</strong>${escapeHtml(targetMan.title)}</p>`;
-        noteHtml += `<p><strong>目标期刊：</strong>${escapeHtml(targetMan.targetJournal || targetMan.targetJournals?.[0] || '待定')} | <strong>当前状态：</strong><span style="color:#0284c7; font-weight:700;">${escapeHtml(statusText)}</span></p>`;
+        noteHtml += `<p><strong>目标期刊：</strong>${escapeHtml(targetMan.targetJournal || targetMan.targetJournals?.[0] || '待定')} | <strong>当前状态：</strong><span style="color:#cc292b; font-weight:700;">${escapeHtml(statusText)}</span></p>`;
         if (targetMan.citekey || meta.citekey) {
           noteHtml += `<p><strong>Citation Key:</strong> <code>[@${escapeHtml(targetMan.citekey || meta.citekey)}]</code></p>`;
         }
@@ -971,8 +971,25 @@
         }
 
         if (sub?.refereeFeedback) {
-          noteHtml += `<h3>📝 审稿人意见与修回要点</h3>`;
+          noteHtml += `<h3>📝 审稿人总体意见与修回要点</h3>`;
           noteHtml += `<blockquote>${escapeHtml(sub.refereeFeedback).replace(/\n/g, '<br/>')}</blockquote>`;
+        }
+
+        const reviewRows = (Array.isArray(sub?.reviewMatrix) && sub.reviewMatrix.length > 0)
+          ? sub.reviewMatrix
+          : (Array.isArray(sub?.rebuttalMatrix) ? sub.rebuttalMatrix : []);
+
+        if (reviewRows.length > 0) {
+          noteHtml += `<h3>📋 审稿人逐条意见与修回回复矩阵 (Response Matrix)</h3>`;
+          noteHtml += `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%; font-size:12px; border-color:#cbd5e1;">`;
+          noteHtml += `<tr style="background:#f1f5f9; font-weight:600;"><th style="width:45%; text-align:left;">审稿人意见 (Reviewer Comment)</th><th style="width:55%; text-align:left;">作者修回回复 (Author Response)</th></tr>`;
+          for (let i = 0; i < reviewRows.length; i++) {
+            const r = reviewRows[i];
+            const cmt = escapeHtml(r.comment || '').replace(/\n/g, '<br/>');
+            const resp = escapeHtml(r.response || '').replace(/\n/g, '<br/>');
+            noteHtml += `<tr><td style="vertical-align:top; background:#f8fafc;"><strong>#${i + 1}</strong><br/>${cmt || '<em style="color:#94a3b8;">暂无内容</em>'}</td><td style="vertical-align:top;">${resp || '<em style="color:#94a3b8;">待撰写回复</em>'}</td></tr>`;
+          }
+          noteHtml += `</table>`;
         }
 
         noteHtml += `<hr/><p style="font-size:11px;color:#94a3b8;">由 ResearchFlow for Zotero 自动生成并同步至 Zotero 云端笔记 | 更新时间：${new Date().toLocaleString()}</p>`;
@@ -1505,6 +1522,19 @@
           }
           if (data.type === 'RESEARCHFLOW_OPEN_PREFS') {
             this.openPreferencesPane(window);
+            return;
+          }
+          if (data.type === 'RESEARCHFLOW_OPEN_EXTERNAL' && data.url) {
+            try {
+              if (typeof Zotero.launchURL === 'function') {
+                Zotero.launchURL(data.url);
+              } else {
+                const uri = Services.io.newURI(data.url);
+                Cc['@mozilla.org/uriloader/external-protocol-service;1']
+                  ?.getService(Ci.nsIExternalProtocolService)
+                  ?.loadURI(uri);
+              }
+            } catch (_) {}
             return;
           }
         } catch (err) {
