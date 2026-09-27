@@ -1,21 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    // Zotero / Gecko Runtime Bridge Polyfills
-    window.process = window.process || { env: { NODE_ENV: 'production' } };
-    window.global = window.global || window;
-    try {
-      if (window.arguments && window.arguments[0]) {
-        if (window.arguments[0].Zotero) {
-          window.Zotero = window.arguments[0].Zotero;
-        }
-        if (window.arguments[0].options) {
-          window._researchflowPending = window.arguments[0].options;
-        }
-      }
-    } catch (_) {}
-  </script>
+  <script src="scripts/zotero-window-polyfill.js"></script>
   
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,6 +12,7 @@
   <link rel="stylesheet" href="styles/workspace.css">
   <link rel="stylesheet" href="styles/settings.css">
   <link rel="stylesheet" href="styles/share-studio.css">
+  <link rel="stylesheet" href="styles/readability.css">
 </head>
 <body>
   <div class="dashboard-wrapper">
@@ -36,7 +23,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v9.0.0 Companion</span>
+          <span class="version">v9.1.0 Companion</span>
         </div>
       </div>
 
@@ -310,7 +297,7 @@
 
 <div class="form-group">
 <label for="route-db">Database JSON Sync Destination</label>
-<select id="route-db" onchange="window.updateSyncProviderVisibility?.()" oninput="window.updateSyncProviderVisibility?.()">
+<select id="route-db">
 <option value="local">None (Local Cache Only)</option>
 <option value="webdav">WebDAV Drive (Jianguoyun, Nextcloud)</option>
 <option value="github">GitHub Private Repository</option>

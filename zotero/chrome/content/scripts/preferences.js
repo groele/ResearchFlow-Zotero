@@ -1,27 +1,13 @@
 /* ResearchFlow settings pane script for Zotero 7+ & 10 */
 window.ResearchFlow_Preferences = (() => {
+  let initialized = false;
   const PREFIX = 'extensions.researchflow.';
   const HTML = 'http://www.w3.org/1999/xhtml';
 
   const DEFAULTS = {
     // Window Modes
     windowMode: 'tab',
-    subwindowAlwaysOnTop: false,
-    subwindowCompactMode: true,
-
-    // Display & Views
-    defaultView: 'view-dashboard',
-    theme: 'system',
-    language: 'zh',
-
-    // ItemPane Sidebar
-    enableItemPane: true,
-    locateOnManuscriptClick: true,
-    autoLinkSelectedPaper: true,
-
-    // Sync & Backup
-    autoSync: true,
-    autoBackupOnSave: true
+    subwindowAlwaysOnTop: false
   };
 
   const FIELDS = {
@@ -31,30 +17,7 @@ window.ResearchFlow_Preferences = (() => {
         ['subwindow', '🗗 伴读紧凑子窗口 (480×780，轻量悬浮，边读文献边跟踪稿件)'],
         ['window', '⬚ 独立桌面大窗口 (1240×820，大屏全景规划)']
       ]],
-      ['subwindowAlwaysOnTop', '伴读子窗口始终置顶 (Always on Top，悬浮于 PDF 阅读器之上)', 'check'],
-      ['subwindowCompactMode', '伴读子窗口启用紧凑工作台流式布局', 'check'],
-    ],
-    view: [
-      ['defaultView', '工作区默认视图', 'select', [
-        ['view-dashboard', '📊 仪表盘概览 (Dashboard Overview)'],
-        ['view-manuscripts', '📋 论文稿件看板 (Manuscripts Kanban)'],
-        ['view-submissions', '🚀 期刊投稿与同行评审 (Submissions & Review)'],
-        ['view-settings', '⚙️ 多云同步与备份 (Multi-Cloud Settings)']
-      ]],
-      ['theme', '视觉外观主题', 'select', [
-        ['system', '🔄 跟随操作系统外观'],
-        ['light', '☀️ 清爽明亮 (Light)'],
-        ['dark', '🌙 专注暗黑 (Dark)']
-      ]],
-      ['language', '界面默认语言', 'select', [
-        ['zh', '🇨🇳 简体中文'],
-        ['en', '🌐 English']
-      ]]
-    ],
-    literature: [
-      ['enableItemPane', '在文献右侧详情栏中展示“稿件管线”面板', 'check'],
-      ['locateOnManuscriptClick', '在工作台中点击文献引用时，在 Zotero 文献库中高亮定位对应条目', 'check'],
-      ['autoLinkSelectedPaper', '新建稿件管线时自动引用当前选中的文献条目', 'check']
+      ['subwindowAlwaysOnTop', '伴读子窗口始终置顶', 'check']
     ]
   };
 
@@ -131,13 +94,13 @@ window.ResearchFlow_Preferences = (() => {
 
   return {
     init(window) {
+      if (initialized) return;
+      initialized = true;
       const doc = window.document;
       const status = doc.getElementById('rf-pref-status');
       if (status) status.textContent = '首选项已就绪。所有更改将实时生效并保存。';
 
       renderSection(doc, 'rf-pref-window', FIELDS.window);
-      renderSection(doc, 'rf-pref-view', FIELDS.view);
-      renderSection(doc, 'rf-pref-literature', FIELDS.literature);
 
       // Display data path
       try {
@@ -161,20 +124,13 @@ window.ResearchFlow_Preferences = (() => {
       // Export Buttons
       doc.getElementById('rf-btn-export-db')?.addEventListener('click', async () => {
         try {
-          const db = await Zotero?.ResearchFlow?.loadDatabase?.();
-          if (!db) return;
-          const fp = Components.classes['@mozilla.org/filepicker;1'].createInstance(Components.interfaces.nsIFilePicker);
-          fp.init(window, '导出 ResearchFlow 完整数据库', Components.interfaces.nsIFilePicker.modeSave);
-          fp.defaultExtension = 'json';
-          fp.defaultString = `researchflow_backup_${new Date().toISOString().slice(0, 10)}.json`;
-          fp.appendFilter('JSON Files', '*.json');
-          const rv = await new Promise((resolve) => fp.open(resolve));
-          if (rv === Components.interfaces.nsIFilePicker.returnOK || rv === Components.interfaces.nsIFilePicker.returnReplace) {
-            await IOUtils.writeUTF8(fp.file.path, JSON.stringify(db, null, 2));
-            alert('导出成功！已将科研数据库保存至：\n' + fp.file.path);
-          }
+          if (!Zotero?.ResearchFlow?.exportDatabaseFile) throw new Error('ResearchFlow 宿主尚未就绪');
+          const result = await Zotero.ResearchFlow.exportDatabaseFile();
+          if (result?.cancelled) return;
+          if (!result?.success) throw new Error(result?.error || '数据库导出失败');
+          if (status) status.textContent = `数据库已导出至：${result.filePath}`;
         } catch (e) {
-          alert('导出失败：' + e.message);
+          if (status) status.textContent = `导出失败：${e.message}`;
         }
       });
 
@@ -184,7 +140,7 @@ window.ResearchFlow_Preferences = (() => {
           const diag = {
             exportedAt: new Date().toISOString(),
             zoteroVersion: Zotero.version,
-            researchflowVersion: '9.0.0',
+            researchflowVersion: '9.1.0',
             schemaVersion: db?.schemaVersion,
             counts: {
               manuscripts: db?.manuscripts?.length || 0,
@@ -193,55 +149,61 @@ window.ResearchFlow_Preferences = (() => {
               tasks: db?.tasks?.length || 0
             }
           };
-          const fp = Components.classes['@mozilla.org/filepicker;1'].createInstance(Components.interfaces.nsIFilePicker);
-          fp.init(window, '导出 ResearchFlow 诊断报告', Components.interfaces.nsIFilePicker.modeSave);
-          fp.defaultExtension = 'json';
-          fp.defaultString = `researchflow_diagnostics_${new Date().toISOString().slice(0, 10)}.json`;
-          fp.appendFilter('JSON Files', '*.json');
-          const rv = await new Promise((resolve) => fp.open(resolve));
-          if (rv === Components.interfaces.nsIFilePicker.returnOK || rv === Components.interfaces.nsIFilePicker.returnReplace) {
-            await IOUtils.writeUTF8(fp.file.path, JSON.stringify(diag, null, 2));
-            alert('诊断报告已成功导出！');
-          }
+          if (!Zotero?.ResearchFlow?.exportDiagnosticsFile) throw new Error('ResearchFlow 宿主尚未就绪');
+          const result = await Zotero.ResearchFlow.exportDiagnosticsFile(diag);
+          if (result?.cancelled) return;
+          if (!result?.success) throw new Error(result?.error || '诊断报告导出失败');
+          if (status) status.textContent = `诊断报告已导出至：${result.filePath}`;
         } catch (e) {
-          alert('诊断报告导出失败：' + e.message);
+          if (status) status.textContent = `诊断报告导出失败：${e.message}`;
         }
       });
 
       // Import File Button
       doc.getElementById('rf-btn-import-file')?.addEventListener('click', async () => {
+        const statusEl = doc.getElementById('rf-import-status');
         try {
-          const fp = Components.classes['@mozilla.org/filepicker;1'].createInstance(Components.interfaces.nsIFilePicker);
-          fp.init(window, '选择 ResearchFlow 数据库备份', Components.interfaces.nsIFilePicker.modeOpen);
-          fp.appendFilter('JSON Files', '*.json');
-          const rv = await new Promise((resolve) => fp.open(resolve));
-          if (rv === Components.interfaces.nsIFilePicker.returnOK && fp.file) {
-            const content = await IOUtils.readUTF8(fp.file.path);
-            const imported = JSON.parse(content);
-            const mode = doc.getElementById('rf-import-mode')?.value || 'merge';
-            const res = await Zotero?.ResearchFlow?.importDatabase?.(imported, mode);
-            const statusEl = doc.getElementById('rf-import-status');
-            if (statusEl) {
-              statusEl.textContent = `✅ 导入成功！(${mode === 'merge' ? '已智能合并' : '已完全替换'}，当前共 ${res?.manuscripts?.length || 0} 个稿件管线)`;
-            }
-          }
+          if (!Zotero?.ResearchFlow?.importDatabaseFile) throw new Error('ResearchFlow 宿主尚未就绪');
+          const mode = doc.getElementById('rf-import-mode')?.value || 'merge';
+          const result = await Zotero.ResearchFlow.importDatabaseFile(mode);
+          if (result?.cancelled) return;
+          if (!result?.success) throw new Error(result?.error || '数据库导入失败');
+          if (statusEl) statusEl.textContent = `✅ 导入成功！(${mode === 'merge' ? '已智能合并' : '已完全替换'}，当前共 ${result.data?.manuscripts?.length || 0} 个稿件管线)`;
         } catch (e) {
-          alert('导入失败：' + e.message);
+          if (statusEl) statusEl.textContent = `导入失败：${e.message}`;
         }
       });
 
       // Restore Backup Button
       doc.getElementById('rf-btn-restore-backup')?.addEventListener('click', async () => {
+        const statusEl = doc.getElementById('rf-import-status');
         try {
-          const res = await Zotero?.ResearchFlow?.restoreBackupDatabase?.();
-          const statusEl = doc.getElementById('rf-import-status');
+          if (!Zotero?.ResearchFlow?.restoreBackupDatabase) throw new Error('ResearchFlow 宿主尚未就绪');
+          const res = await Zotero.ResearchFlow.restoreBackupDatabase();
           if (statusEl) {
             statusEl.textContent = `✅ 备份恢复成功！(当前共 ${res?.manuscripts?.length || 0} 个稿件管线)`;
           }
         } catch (e) {
-          alert('恢复备份失败：' + e.message);
+          if (statusEl) statusEl.textContent = `恢复备份失败：${e.message}`;
         }
       });
     }
   };
+})();
+
+// Zotero loads preference scripts before inserting the pane markup. Observe the
+// insertion so every control is initialized on first open, even when XUL's
+// synthetic showing event is not delivered to an imported HTML/XUL fragment.
+(() => {
+  const paneId = 'researchflow-preferences-pane';
+  const start = () => {
+    if (!window.document.getElementById(paneId)) return false;
+    window.ResearchFlow_Preferences.init(window);
+    return true;
+  };
+  if (start()) return;
+  const observer = new window.MutationObserver(() => {
+    if (start()) observer.disconnect();
+  });
+  observer.observe(window.document.documentElement, { childList: true, subtree: true });
 })();

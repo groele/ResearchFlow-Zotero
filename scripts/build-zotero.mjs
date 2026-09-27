@@ -71,6 +71,14 @@ async function main() {
     .replace(/\.\.\/assets\//g, 'assets/')
     .replace(/\.\.\/data\//g, 'data/');
 
+  // Load the Zotero implementation of the small Chrome UI API before shared scripts.
+  if (!indexHtml.includes('scripts/zotero-chrome-compat.js')) {
+    indexHtml = indexHtml.replace(
+      '<script src="scripts/zotero-bridge.js"></script>',
+      '<script src="scripts/zotero-chrome-compat.js"></script>\n  <script src="scripts/zotero-bridge.js"></script>'
+    );
+  }
+
   // Ensure zotero-bridge.js is included before storage.js
   if (!indexHtml.includes('scripts/zotero-bridge.js')) {
     indexHtml = indexHtml.replace(
@@ -79,34 +87,17 @@ async function main() {
     );
   }
 
-  // Inject Gecko runtime polyfills & Zotero argument binding
-  const zoteroPolyfill = `
-  <script>
-    // Zotero / Gecko Runtime Bridge Polyfills
-    window.process = window.process || { env: { NODE_ENV: 'production' } };
-    window.global = window.global || window;
-    try {
-      if (window.arguments && window.arguments[0]) {
-        if (window.arguments[0].Zotero) {
-          window.Zotero = window.arguments[0].Zotero;
-        }
-        if (window.arguments[0].options) {
-          window._researchflowPending = window.arguments[0].options;
-        }
-      }
-    } catch (_) {}
-  </script>
-  `;
-  indexHtml = indexHtml.replace('<head>', '<head>' + zoteroPolyfill);
+  // Bind Zotero's window arguments before loading the shared page scripts.
+  indexHtml = indexHtml.replace('<head>', '<head>\n  <script src="scripts/zotero-window-polyfill.js"></script>');
 
   fs.writeFileSync(path.join(contentDir, 'index.html'), indexHtml, 'utf-8');
-  fs.writeFileSync(path.join(projectRoot, 'index.html'), indexHtml, 'utf-8');
 
   console.log('🔍 [3/4] Validating JavaScript syntax...');
   execSync(`node --check "${path.join(zoteroStaging, 'bootstrap.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(zoteroStaging, 'chrome', 'content', 'scripts', 'index.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(zoteroStaging, 'chrome', 'content', 'scripts', 'preferences.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'zotero-bridge.js')}"`, { stdio: 'inherit' });
+  execSync(`node --check "${path.join(contentDir, 'scripts', 'zotero-chrome-compat.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'storage.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'ui-utils.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'core', 'research-core.js')}"`, { stdio: 'inherit' });

@@ -4,11 +4,11 @@
 
 **简体中文** · [English](README.md)
 
-- 当前版本：**9.0.0**
+- 当前版本：**9.1.0**
 - 浏览器要求：**Google Chrome 116 或更高版本**
 - 运行方式：**Manifest V3、原生 JavaScript、无需构建**
 
-**9.0 新增：**分享工作台支持 13 种卡片风格可视化选择、三档品牌大小，以及标准／高清／超清 PNG 导出。长图自动控制位图尺寸并明确提示；重置设计保留隐私选择，预览失败可直接重试。现有数据和设置继续兼容。详见 [发布说明](RELEASE_NOTES_v9.0.0.md)。
+**9.1 新增：**Zotero 插件设置已整合到 Zotero 首选项，修复 JSON 文件操作与三视图关联；工作区提升长标题、时间轴和看板的阅读效率，并可直达投稿详情。详见 [9.1 发布说明](RELEASE_NOTES_v9.1.0.md)。
 
 > ResearchFlow 将论文从撰写、投稿、审稿、返修到接收和发表的过程集中到一个工作区，重点保存最容易散落在投稿网站、邮件、表格和笔记中的流程信息。
 
@@ -660,6 +660,7 @@ ftp://dav.example.com/researchflow
 
 实际安装版本以 `manifest.json` 为准。当前主要文档：
 
+- [ResearchFlow Companion v9.1.0 发布说明](RELEASE_NOTES_v9.1.0.md)
 - [ResearchFlow Companion v9.0.0 发布说明](RELEASE_NOTES_v9.0.0.md)
 - [ResearchFlow Companion v6.1.0 发布说明](RELEASE_NOTES_v6.1.0.md)
 - [架构说明](ARCHITECTURE.md)

@@ -12,7 +12,7 @@ const manifestPath = path.join(distZotero, 'manifest.json');
 assert(fs.existsSync(manifestPath), 'dist-zotero/manifest.json must exist');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert.equal(manifest.applications?.zotero?.id, 'researchflow@groele.org');
-assert.equal(manifest.version, '9.0.0');
+assert.equal(manifest.version, '9.1.0');
 
 // 2. Verify bootstrap.js and chrome.manifest
 const bootstrapPath = path.join(distZotero, 'bootstrap.js');
@@ -28,6 +28,7 @@ assert(hostScript.includes('showToast'), 'host script must support ProgressWindo
 assert(hostScript.includes('initNotifier'), 'host script must support Zotero.Notifier reactive observer');
 assert(hostScript.includes('searchLibrary'), 'host script must support Zotero.Search library search');
 assert(hostScript.includes('registerMenus'), 'host script must support Zotero.MenuManager menus');
+assert.match(hostScript, /id:\s*'researchflow-preferences-pane'/, 'preference pane ID must match the navigation target');
 
 const chromeManifestPath = path.join(distZotero, 'chrome.manifest');
 assert(fs.existsSync(chromeManifestPath), 'chrome.manifest must exist');
@@ -39,13 +40,18 @@ const indexPath = path.join(distZotero, 'chrome', 'content', 'index.html');
 assert(fs.existsSync(indexPath), 'chrome/content/index.html must exist');
 const indexHtml = fs.readFileSync(indexPath, 'utf8');
 assert(indexHtml.includes('scripts/zotero-bridge.js'), 'index.html must include zotero-bridge.js');
+assert(indexHtml.includes('scripts/zotero-chrome-compat.js'), 'index.html must include Zotero Chrome API compatibility');
+assert(indexHtml.indexOf('scripts/zotero-chrome-compat.js') < indexHtml.indexOf('scripts/storage.js'), 'Zotero compatibility must load before shared storage');
 
 const prefXhtml = path.join(distZotero, 'chrome', 'content', 'preferences.xhtml');
 assert(fs.existsSync(prefXhtml), 'chrome/content/preferences.xhtml must exist');
+const prefMarkup = fs.readFileSync(prefXhtml, 'utf8');
+assert.match(prefMarkup, /onshowing="ResearchFlow_Preferences\.init\(window\)"/, 'Zotero must initialize the preference pane when displayed');
+assert.match(prefMarkup, /id="rf-cloud-settings-frame"/, 'cloud settings must be embedded in Zotero preferences');
 
 // 4. Verify XPI archive
-const xpiPath = path.join(distZip, 'researchflow-zotero-9.0.0.xpi');
-assert(fs.existsSync(xpiPath), 'researchflow-zotero-9.0.0.xpi must exist in dist-zip');
+const xpiPath = path.join(distZip, 'researchflow-zotero-9.1.0.xpi');
+assert(fs.existsSync(xpiPath), 'researchflow-zotero-9.1.0.xpi must exist in dist-zip');
 const xpiStats = fs.statSync(xpiPath);
 assert(xpiStats.size > 50000, 'XPI file must be at least 50KB');
 

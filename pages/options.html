@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="../styles/workspace.css">
   <link rel="stylesheet" href="../styles/settings.css">
   <link rel="stylesheet" href="../styles/share-studio.css">
+  <link rel="stylesheet" href="../styles/readability.css">
+  <script src="../scripts/settings-only.js"></script>
 </head>
 <body>
   <div class="dashboard-wrapper">
@@ -20,7 +22,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v9.0.0 Companion</span>
+          <span class="version">v9.1.0 Companion</span>
         </div>
       </div>
 
@@ -43,16 +45,6 @@
         </button>
       </nav>
 
-      <!-- Sync Status Indicator Card -->
-      <div class="sidebar-sync-card glass-card">
-        <div class="sync-indicator">
-          <span class="indicator-dot active" id="sync-dot"></span>
-          <span id="sync-status-text" role="status" aria-live="polite">Saved on this device</span>
-        </div>
-        <button id="btn-manual-sync" class="btn-secondary w-full" style="padding: 6px 10px; font-size: 11px; margin-top: 8px;">
-          🔄 Force Sync
-        </button>
-      </div>
     </aside>
 
     <!-- Main Content Workspace -->
@@ -143,6 +135,10 @@
         </header>
 
         <!-- Kanban Columns -->
+        <div class="kanban-view-options">
+          <span id="kanban-stage-summary" role="status" aria-live="polite"></span>
+          <button type="button" class="btn-secondary" id="btn-toggle-empty-kanban" aria-pressed="false">Show empty stages</button>
+        </div>
         <div class="kanban-board">
 
           <div class="kanban-col glass-panel" data-status="idea">
@@ -294,7 +290,7 @@
 
 <div class="form-group">
 <label for="route-db">Database JSON Sync Destination</label>
-<select id="route-db" onchange="window.updateSyncProviderVisibility?.()" oninput="window.updateSyncProviderVisibility?.()">
+<select id="route-db">
 <option value="local">None (Local Cache Only)</option>
 <option value="webdav">WebDAV Drive (Jianguoyun, Nextcloud)</option>
 <option value="github">GitHub Private Repository</option>
@@ -439,6 +435,7 @@
 </svg>
 <span id="settings-route-privacy-note">Secrets are stored only on this device.</span>
 </div>
+<button type="button" class="btn-secondary" id="btn-sync-cloud-now" disabled>立即同步云端</button>
 <button class="btn-primary" id="btn-save-settings">
 <svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
 <path d="M20 6 9 17l-5-5"></path>

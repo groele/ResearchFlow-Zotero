@@ -101,49 +101,6 @@
   height: 18px;
 }
 
-/* Sidebar Sync Card */
-.sidebar-sync-card {
-  margin-top: auto;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: hsl(var(--card-bg));
-  border: 1px solid hsl(var(--card-border));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-.sync-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: hsl(var(--text-muted));
-}
-
-.indicator-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: hsl(var(--text-placeholder));
-  display: inline-block;
-}
-
-.indicator-dot.active {
-  background: #059669;
-  box-shadow: 0 0 6px rgba(5, 150, 105, 0.4);
-}
-
-.indicator-dot.syncing {
-  background: #d97706;
-  box-shadow: 0 0 6px rgba(217, 119, 6, 0.4);
-  animation: pulse 1s infinite;
-}
-
-.indicator-dot.error {
-  background: #dc2626;
-  box-shadow: 0 0 6px rgba(220, 38, 38, 0.4);
-}
-
 /* Main Workspace */
 .main-content {
   flex: 1;
@@ -2620,6 +2577,59 @@ body.academic-capture-mode .modal-backdrop {
   color: hsl(var(--text-muted));
 }
 
+/* Quick submission destinations: compact icon tiles with separate, keyboard
+   reachable open and edit actions. */
+.submission-tools-row .journal-portals-dock { align-items: start; }
+.journal-portals-dock .portal-dock-list {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 9px;
+  padding: 2px;
+}
+.journal-portals-dock .portal-item-card {
+  width: 104px;
+  min-width: 104px;
+  max-width: 104px;
+  height: 82px;
+  padding: 0;
+  border-radius: 12px;
+  cursor: default;
+}
+.journal-portals-dock .portal-open {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 7px 6px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: inherit;
+}
+.journal-portals-dock .portal-open:focus-visible,
+.journal-portals-dock .portal-actions button:focus-visible {
+  outline: 2px solid #cc292b;
+  outline-offset: 2px;
+}
+.journal-portals-dock .portal-info { flex-direction: column; gap: 5px; }
+.journal-portals-dock .portal-avatar { width: 32px; height: 32px; font-size: 13px; }
+.journal-portals-dock .portal-name { max-width: 90px; text-align: center; }
+.journal-portals-dock .portal-actions { top: -7px; right: -7px; gap: 2px; }
+.journal-portals-dock .portal-item-card:hover .portal-actions,
+.journal-portals-dock .portal-item-card:focus-within .portal-actions { opacity: 1; }
+.journal-portals-dock .portal-actions button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid hsl(var(--card-border));
+  border-radius: 50%;
+  background: hsl(var(--card-bg));
+  color: hsl(var(--text-primary));
+  cursor: pointer;
+  font-size: 11px;
+}
+.journal-portals-dock .btn-portal-add { width: 42px; height: 42px; align-self: center; }
+
 .btn-delete-portal {
   background: transparent;
   border: none;
@@ -4911,43 +4921,6 @@ select option {
     height: 19px;
   }
 
-  .sidebar-sync-card {
-    padding: 9px 6px;
-  }
-
-  .sync-indicator {
-    justify-content: center;
-  }
-
-  #sync-status-text {
-    display: none;
-  }
-
-  #btn-manual-sync {
-    position: relative;
-    width: 34px;
-    min-width: 34px;
-    height: 30px;
-    margin: 7px auto 0;
-    padding: 0;
-    overflow: hidden;
-    color: transparent;
-    font-size: 0;
-    text-indent: -9999px;
-  }
-
-  #btn-manual-sync::before {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    content: "↻";
-    color: hsl(var(--text-muted));
-    font-size: 15px;
-    line-height: 1;
-    text-indent: 0;
-  }
-
   .main-content {
     padding: 28px;
   }
@@ -4974,8 +4947,7 @@ select option {
     backdrop-filter: blur(18px);
   }
 
-  .brand,
-.sidebar-sync-card {
+  .brand {
     display: none;
   }
 
@@ -5165,8 +5137,7 @@ select option {
 
 .subwindow-mode .sidebar .brand-title,
 .subwindow-mode .sidebar .brand > div:not(.logo-orb),
-.subwindow-mode .sidebar .nav-item span,
-.subwindow-mode .sidebar .sidebar-sync-card {
+.subwindow-mode .sidebar .nav-item span {
   display: none !important;
 }
 
@@ -5521,6 +5492,4 @@ select option {
   border-color: #cc292b;
   box-shadow: 0 1px 4px rgba(204, 41, 43, 0.15);
 }
-
-
 

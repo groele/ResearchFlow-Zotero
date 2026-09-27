@@ -101,7 +101,25 @@ assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({
   completedTimelineNodeCount: 2,
   reviewerCommentCount: 2,
   isOrphanSubmission: false,
+  hasLinkedProject: true,
   summaryLine: 'Interface Ferroelectricity in ReS2 sliding project: 1 record, 3 timeline events, 2 reviewer comments.'
+});
+
+assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({
+  submission: { id: 'sub_projectless', manuscriptId: 'man_1', timelineNodes: [] },
+  manuscript: { id: 'man_1', title: 'Projectless manuscript' },
+  project: null,
+  records: []
+}), {
+  projectTitle: 'No project assigned',
+  manuscriptTitle: 'Projectless manuscript',
+  recordCount: 0,
+  timelineNodeCount: 0,
+  completedTimelineNodeCount: 0,
+  reviewerCommentCount: 0,
+  isOrphanSubmission: false,
+  hasLinkedProject: false,
+  summaryLine: 'Projectless manuscript: 0 records, 0 timeline events, 0 reviewer comments.'
 });
 
 assert.deepEqual(RFUI.buildSubmissionRelationshipSummary({

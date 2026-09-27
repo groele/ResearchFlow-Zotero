@@ -4,11 +4,11 @@
 
 [简体中文](README.zh-CN.md) · **English**
 
-- Current version: **9.0.0**
+- Current version: **9.1.0**
 - Browser requirement: **Google Chrome 116 or later**
 - Runtime: **Manifest V3, vanilla JavaScript, no build step**
 
-**New in 9.0:** Share Studio adds a visual browser for 13 card styles, three brand sizes, and standard/high/ultra PNG export. Long images have bounded bitmap sizes and an explicit adjustment notice. Design reset preserves hidden fields, and failed previews can be retried. Existing data and preferences remain compatible. See the [release notes](RELEASE_NOTES_v9.0.0.md).
+**New in 9.1:** The Zotero plugin loads its settings inside Zotero Preferences, fixes JSON file actions, and shares one local database across dashboard, manuscript, and submission views. The workspace improves title legibility and provides direct links to submission details. See the [9.1 release notes](RELEASE_NOTES_v9.1.0.md).
 
 > ResearchFlow helps researchers keep the operational history of a manuscript in one place: drafting, journal submission, review rounds, revision deadlines, acceptance, publication, and the events between them.
 
@@ -658,6 +658,7 @@ Use **Restore Pre-Import Backup** immediately, then inspect the imported JSON. D
 
 The installed version is defined in `manifest.json`. Major release details are documented in:
 
+- [ResearchFlow Companion v9.1.0 release notes](RELEASE_NOTES_v9.1.0.md)
 - [ResearchFlow Companion v9.0.0 release notes](RELEASE_NOTES_v9.0.0.md)
 - [ResearchFlow Companion v6.1.0 release notes](RELEASE_NOTES_v6.1.0.md)
 - [Architecture overview](ARCHITECTURE.md)

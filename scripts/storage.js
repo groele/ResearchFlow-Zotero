@@ -186,15 +186,21 @@ class StorageEngine {
     const zotero = this.getZoteroInstance();
     if (zotero?.ResearchFlow?.saveDatabase) {
       const normalized = await this.ensureDbShape(data, { stamp: true });
-      await zotero.ResearchFlow.saveDatabase(normalized);
-      this.cache = this.adoptSavedSnapshot(data, normalized);
+      const saved = await zotero.ResearchFlow.saveDatabase(normalized);
+      this.cache = this.adoptSavedSnapshot(data, saved);
+      try {
+        if (await this.shouldRunCloudSync(this.cache)) this.scheduleBackgroundSync();
+      } catch (error) {
+        console.warn('Cloud sync scheduling unavailable:', error.message);
+      }
       return this.cache;
     }
 
     if (this.isZotero() && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.isZotero) {
       const normalized = await this.ensureDbShape(data, { stamp: true });
+      const response = await ZoteroBridge.request('RESEARCHFLOW_STORAGE_SET', { payload: normalized }, 15000);
+      if (!response?.success) throw new Error(response?.error || 'Zotero database save failed. Please retry.');
       this.cache = this.adoptSavedSnapshot(data, normalized);
-      ZoteroBridge.sendToHost({ type: 'RESEARCHFLOW_STORAGE_SET', payload: normalized });
       return this.cache;
     }
 
@@ -259,7 +265,7 @@ class StorageEngine {
     if (this.syncTimer) clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
       this.syncTimer = null;
-      this.triggerBackgroundSync().catch(console.error);
+      (this.isZotero() ? this.syncDatabaseNow() : this.triggerBackgroundSync()).catch(console.error);
     }, delayMs);
   }
 
@@ -758,7 +764,7 @@ class StorageEngine {
    * Syncs the JSON database with the configured metadata cloud provider
    */
   async syncDatabaseNow() {
-    if (typeof window !== 'undefined' && chrome.runtime?.sendMessage) {
+    if (!this.isZotero() && typeof window !== 'undefined' && chrome.runtime?.sendMessage) {
       return this.triggerBackgroundSync();
     }
     if (this.syncing) return { success: false, error: 'Sync already in progress' };

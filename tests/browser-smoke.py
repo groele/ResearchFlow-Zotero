@@ -141,7 +141,7 @@ with sync_playwright() as playwright:
         if view_id == "view-settings":
             assert page.locator("#settings-webdav-card").is_hidden()
             assert page.locator("#settings-github-card").is_hidden()
-            assert page.locator("#btn-manual-sync").is_disabled()
+            assert page.locator("#btn-sync-cloud-now").is_disabled()
             assert not page.locator("#btn-save-language").count()
             page.screenshot(path=str(artifact_dir / "03-settings-local.png"))
 

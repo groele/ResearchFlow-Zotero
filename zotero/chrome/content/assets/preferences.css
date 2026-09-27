@@ -50,6 +50,17 @@
   background: var(--material-background, rgba(0, 0, 0, 0.015));
 }
 
+.rf-cloud-settings-frame {
+  display: block;
+  width: 100%;
+  height: min(980px, 78vh);
+  min-height: 620px;
+  margin-top: 14px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: var(--material-background, #fff);
+}
+
 .rf-group-title {
   margin: 0 0 12px;
   color: inherit;

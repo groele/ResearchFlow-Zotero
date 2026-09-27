@@ -41,7 +41,7 @@ const requiredIds = {
     'view-dashboard', 'view-manuscripts', 'view-submissions', 'view-settings',
     'dashboard-gantt', 'cards-idea', 'cards-drafting', 'cards-submitted',
     'cards-accepted', 'submissions-list-container', 'submission-detail-panel',
-    'journal-portals-list', 'route-db', 'btn-export-db', 'btn-export-diagnostics', 'btn-manual-sync',
+    'journal-portals-list', 'route-db', 'btn-export-db', 'btn-export-diagnostics', 'btn-sync-cloud-now',
     'modal-container'
   ]
 };

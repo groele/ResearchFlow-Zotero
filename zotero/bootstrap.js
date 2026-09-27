@@ -116,12 +116,22 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
       ['locale', 'researchflow', 'zh-CN', rootURI + 'locale/zh-CN/'],
     ]);
 
+    const mainWindow = Zotero.getMainWindow?.();
     const ctx = {
       rootURI,
       addonId: id,
       version,
+      Zotero,
+      Services,
+      Components,
+      ChromeUtils,
+      IOUtils: typeof IOUtils !== 'undefined' ? IOUtils : mainWindow?.IOUtils,
+      PathUtils: typeof PathUtils !== 'undefined' ? PathUtils : mainWindow?.PathUtils,
+      fetch: typeof fetch !== 'undefined' ? fetch : mainWindow?.fetch?.bind(mainWindow),
+      setTimeout: typeof setTimeout !== 'undefined' ? setTimeout : mainWindow?.setTimeout?.bind(mainWindow),
+      clearTimeout: typeof clearTimeout !== 'undefined' ? clearTimeout : mainWindow?.clearTimeout?.bind(mainWindow),
     };
-    ctx._globalThis = ctx;
+    if (!ctx.IOUtils || !ctx.PathUtils) throw new Error('Zotero file APIs are unavailable');
 
     Services.scriptloader.loadSubScript(`${rootURI}chrome/content/scripts/index.js`, ctx);
   } catch (error) {

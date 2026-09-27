@@ -127,6 +127,7 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
 .sync-provider-card[hidden],
 .sync-provider-card:not(.active) {
   display: none !important;
@@ -210,3 +211,17 @@
 /* Settings is a vertical flex view inside the scrollable workspace. Keep its
    cards at their content height instead of squeezing text into the viewport. */
 #view-settings > * { flex-shrink: 0; }
+
+/* Zotero keeps configuration in its preference pane. The same working
+   controls are embedded there without the workspace navigation shell. */
+.zotero-env:not(.settings-only) .nav-item[data-view="view-settings"] { display: none; }
+.settings-only .sidebar { display: none; }
+.settings-only .dashboard-wrapper { display: block; min-height: 100vh; height: auto; }
+.settings-only .main-content { display: block; width: 100%; height: auto; min-height: 100vh; overflow: visible; padding: 16px; }
+.settings-only .content-view { display: none !important; }
+.settings-only #view-settings { display: flex !important; min-height: 0; animation: none; }
+.settings-only #view-settings .settings-workbench { grid-template-columns: minmax(0, 1fr); }
+.settings-only #view-settings .settings-secondary-column { grid-template-columns: minmax(0, 1fr); }
+.settings-only #zotero-native-settings-card,
+.settings-only #settings-backup-card { display: none !important; }
+.settings-only #view-settings .settings-security-copy p { white-space: normal; }

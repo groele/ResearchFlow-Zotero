@@ -21,6 +21,7 @@ let selectedSubmissionId = null;
 let currentDashboardFilter = 'all'; // 'all', 'accepted', 'active'
 let currentLanguage = 'en';
 let isPipelineExpanded = false;
+let showEmptyKanbanColumns = false;
 let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
 let pendingSubmissionSaves = 0;
@@ -30,7 +31,7 @@ let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '9.0.0';
+const RF_OPTIONS_RENDER_VERSION = '9.1.0';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -75,12 +76,11 @@ const I18N = {
     manuscriptsNav: 'Manuscripts Kanban',
     submissionsNav: 'Submissions & Review',
     settingsNav: 'Multi-Cloud Settings',
-    syncLocal: 'Saved on this device',
-    forceSync: '🔄 Force Sync',
+    forceSync: 'Sync cloud now',
     dashboardTitle: 'Dashboard Overview',
     dashboardSubtitle: "A bird's eye view of your scientific progress and pipelines.",
     acceptedPublished: '🎉 Accepted & Published',
-    activeReview: '🕒 Active In-Review',
+    activeReview: '🕒 Active Submissions',
     totalSubmissions: '📊 Total Submission Attempts',
     clickToFilter: 'Click to filter',
     timelineTitle: '📅 Manuscript Pipeline Timelines',
@@ -101,6 +101,7 @@ const I18N = {
     latestEvent: 'Latest Event',
     timelineEvents: 'Timeline Events',
     manageEvents: 'Manage Events',
+    openSubmissionDetails: 'Details',
     shareJourney: 'Share journey',
     shareJourneyTitle: 'Submission journey',
     shareJourneyHelp: 'Generated locally. Nothing is uploaded until you choose to share it.',
@@ -392,13 +393,16 @@ const I18N = {
     kanbanDrafting: 'Drafting & Figures',
     kanbanSubmitted: 'Submitted',
     kanbanAccepted: 'Accepted / Published',
+    kanbanShowEmpty: 'Show empty stages',
+    kanbanHideEmpty: 'Hide empty stages',
+    kanbanStageSummary: '{count} of {total} stages contain manuscripts',
     submissionsPageTitle: 'Submissions & Peer Review Matrix',
-    submissionsPageSubtitle: 'Draft rebuttal response matrices and checklist compliance reports.',
+    submissionsPageSubtitle: 'Follow each submission from journal entry through review, revision, and publication.',
     activeSubmissionsTitle: 'Active Submissions',
-    activeSubmissionsHelp: 'Select a row or its edit button; the right panel opens the editor under Workflow Context.',
+    activeSubmissionsHelp: 'Choose a submission to read its timeline, status, and review notes.',
     submissionEmptyDetail: 'Select a submission; the entry editor opens under Workflow Context.',
-    journalPortalsTitle: 'Journal Portals',
-    journalPortalsHelp: 'Open a saved portal or add another submission system.',
+    journalPortalsTitle: 'Quick Submission Portals',
+    journalPortalsHelp: 'Open, edit, or add your journal submission websites.',
     trackNewSubmissionButton: '+ Track New Submission',
     submissionDetailKicker: 'Journal Submission',
     currentStageLabel: 'Current Stage',
@@ -415,8 +419,6 @@ const I18N = {
     workflowManuscriptLabel: 'Manuscript',
     workflowTimelineLabel: 'Timeline',
     workflowReviewerCommentsLabel: 'Reviewer Comments',
-    relationshipSummaryLine: '{manuscript}: {timeline} timeline events, {comments} reviewer comments.',
-    editableSummary: 'Editable Summary',
     editFields: 'Edit fields',
     jumpToEditor: 'Jump to editor',
     submissionEntryEditorTitle: 'Submission Entry Editor',
@@ -570,12 +572,11 @@ const I18N = {
     manuscriptsNav: '手稿看板',
     submissionsNav: '投稿与审稿',
     settingsNav: '多云设置',
-    syncLocal: '已保存到本机',
-    forceSync: '🔄 强制同步',
+    forceSync: '立即同步云端',
     dashboardTitle: '仪表盘总览',
     dashboardSubtitle: '集中查看科研进展、投稿状态和关键时间线。',
     acceptedPublished: '🎉 已接收 / 已发表',
-    activeReview: '🕒 审稿中',
+    activeReview: '🕒 进行中的投稿',
     totalSubmissions: '📊 投稿尝试总数',
     clickToFilter: '点击筛选',
     timelineTitle: '📅 手稿流水线时间线',
@@ -596,6 +597,7 @@ const I18N = {
     latestEvent: '最新事件',
     timelineEvents: '时间线事件',
     manageEvents: '管理事件',
+    openSubmissionDetails: '详情',
     shareJourney: '分享历程',
     shareJourneyTitle: '投稿历程分享图',
     shareJourneyHelp: '图片仅在本地生成，只有在你主动分享时才会离开设备。',
@@ -887,13 +889,16 @@ const I18N = {
     kanbanDrafting: '写作与图件',
     kanbanSubmitted: '已投稿',
     kanbanAccepted: '已接收 / 已发表',
+    kanbanShowEmpty: '显示空阶段',
+    kanbanHideEmpty: '隐藏空阶段',
+    kanbanStageSummary: '4 个阶段中有 {count} 个包含手稿',
     submissionsPageTitle: '投稿与同行评审矩阵',
-    submissionsPageSubtitle: '集中管理审稿回复矩阵和投稿清单。',
+    submissionsPageSubtitle: '按期刊追踪投稿、审稿、返修与发表，并集中管理回复记录。',
     activeSubmissionsTitle: '进行中的投稿',
-    activeSubmissionsHelp: '选择条目或编辑按钮；右侧会在工作流上下文下方打开编辑区。',
+    activeSubmissionsHelp: '选择投稿，查看时间线、状态和审稿记录。',
     submissionEmptyDetail: '选择一个投稿；编辑区会在工作流上下文下方打开。',
-    journalPortalsTitle: '期刊入口',
-    journalPortalsHelp: '打开已保存入口，或添加新的投稿系统。',
+    journalPortalsTitle: '常用投稿入口',
+    journalPortalsHelp: '打开、编辑或添加期刊投稿网址。',
     trackNewSubmissionButton: '+ 跟踪新投稿',
     submissionDetailKicker: '期刊投稿',
     currentStageLabel: '当前阶段',
@@ -910,8 +915,6 @@ const I18N = {
     workflowManuscriptLabel: '手稿',
     workflowTimelineLabel: '时间线',
     workflowReviewerCommentsLabel: '审稿意见',
-    relationshipSummaryLine: '“{manuscript}”：{timeline} 个时间线事件，{comments} 条审稿意见。',
-    editableSummary: '可编辑摘要',
     editFields: '编辑字段',
     jumpToEditor: '前往编辑器',
     submissionEntryEditorTitle: '投稿记录编辑器',
@@ -1171,8 +1174,6 @@ function applyLanguage() {
   setNavText('.nav-item[data-view="view-manuscripts"]', t('manuscriptsNav'));
   setNavText('.nav-item[data-view="view-submissions"]', t('submissionsNav'));
   setNavText('.nav-item[data-view="view-settings"]', t('settingsNav'));
-  setText('#sync-status-text', t('syncLocal'));
-  setText('#btn-manual-sync', t('forceSync'));
 
   setText('#view-dashboard .view-header h1', t('dashboardTitle'));
   setText('#view-dashboard .view-header .text-muted', t('dashboardSubtitle'));
@@ -1199,6 +1200,7 @@ function applyLanguage() {
   setText('.kanban-col[data-status="drafting"] .col-header h3', `📝 ${t('kanbanDrafting')}`);
   setText('.kanban-col[data-status="submitted"] .col-header h3', `🚀 ${t('kanbanSubmitted')}`);
   setText('.kanban-col[data-status="accepted"] .col-header h3', `🎉 ${t('kanbanAccepted')}`);
+  updateKanbanEmptyColumns();
 
   setText('#view-submissions .view-header h1', t('submissionsPageTitle'));
   setText('#view-submissions .view-header .text-muted', t('submissionsPageSubtitle'));
@@ -1261,6 +1263,7 @@ function applyLanguage() {
   setOptionText('#route-db', 'webdav', t('optionWebDavDrive'));
   setOptionText('#route-db', 'github', t('optionGithubRepo'));
   setButtonText('#btn-save-settings', t('saveMappings'));
+  setButtonText('#btn-sync-cloud-now', t('forceSync'));
   setText('label[for="webdav-url"]', t('webdavUrlLabel'));
   setText('label[for="webdav-username"]', t('usernameEmailLabel'));
   setText('label[for="webdav-password"]', t('appPasswordLabel'));
@@ -1307,6 +1310,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     item.addEventListener('click', () => {
       if (!db || !canLeaveSubmissionEditor()) return;
       const targetView = item.getAttribute('data-view');
+      if (targetView === 'view-settings' && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.isZotero
+        && !document.documentElement.classList.contains('settings-only')) {
+        ZoteroBridge.sendToHost({ type: 'RESEARCHFLOW_OPEN_PREFS' });
+        return;
+      }
       if (targetView !== 'view-submissions') submissionAutoSaveCleanup?.();
 
       navItems.forEach(n => n.classList.remove('active'));
@@ -1448,8 +1456,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       clearUnacceptedPublicationLinks(db);
       syncManuscriptStatusesFromSubmissions(db);
 
-      updateSyncStatus('active', t('syncLocal'));
-
       // Reload active view
       const activeNav = document.querySelector('.nav-item.active');
       if (activeNav) {
@@ -1465,10 +1471,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyLanguage();
   renderDashboard();
   setupSettingsListeners();
-  setupSyncListeners();
+  setupSaveErrorListener();
   setupGlobalModalListeners();
   setupJournalPortalListeners();
   setupDashboardFilterListeners();
+  if (document.documentElement.classList.contains('settings-only')) {
+    views.forEach(view => view.classList.toggle('active', view.id === 'view-settings'));
+    await loadSettings();
+  }
   const requestedMode = new URL(window.location.href).searchParams.get('mode');
   if (requestedMode === 'academic-capture') {
     await consumePendingAcademicDraft();
@@ -1478,6 +1488,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Pipeline View Toggle and Drawer Event Listeners
   initializePipelineViewMode();
+  initializeKanbanEmptyColumnsMode();
   const btnToggle = document.getElementById('btn-pipeline-view-toggle');
   if (btnToggle) {
     btnToggle.addEventListener('click', () => {
@@ -1485,11 +1496,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  window._researchflowWorkspaceReady = true;
+  window.dispatchEvent(new Event('researchflow-workspace-ready'));
 });
 
 function initializePipelineViewMode() {
   chrome.storage.local.get(['researchflow_pipeline_expanded'], (result) => {
     setPipelineViewMode(Boolean(result.researchflow_pipeline_expanded), { persist: false });
+  });
+}
+
+function updateKanbanEmptyColumns() {
+  const board = document.querySelector('.kanban-board');
+  const button = document.getElementById('btn-toggle-empty-kanban');
+  board?.classList.toggle('show-empty-columns', showEmptyKanbanColumns);
+  if (button) {
+    button.setAttribute('aria-pressed', String(showEmptyKanbanColumns));
+    button.textContent = t(showEmptyKanbanColumns ? 'kanbanHideEmpty' : 'kanbanShowEmpty');
+  }
+}
+
+function initializeKanbanEmptyColumnsMode() {
+  const button = document.getElementById('btn-toggle-empty-kanban');
+  button?.addEventListener('click', () => {
+    showEmptyKanbanColumns = !showEmptyKanbanColumns;
+    updateKanbanEmptyColumns();
+    chrome.storage.local.set({ researchflow_kanban_show_empty: showEmptyKanbanColumns });
+  });
+  chrome.storage.local.get(['researchflow_kanban_show_empty'], result => {
+    showEmptyKanbanColumns = result?.researchflow_kanban_show_empty === true;
+    updateKanbanEmptyColumns();
   });
 }
 
@@ -1956,58 +1992,12 @@ function setupDashboardFilterListeners() {
 }
 
 
-// --- SYNCHRONIZATION INDICATORS ---
-function updateSyncStatus(state, text) {
-  const dot = document.getElementById('sync-dot');
-  const statusText = document.getElementById('sync-status-text');
-
-  dot.className = 'indicator-dot';
-  dot.classList.add(state); // 'active' (emerald), 'syncing' (amber), 'error' (rose)
-  statusText.textContent = text;
-}
-
-function setupSyncListeners() {
-  chrome.runtime.onMessage.addListener(message => {
-    if (message.action !== 'SYNC_STATE') return;
-    const zh = currentLanguage === 'zh';
-    if (message.syncing) updateSyncStatus('syncing', zh ? '正在同步云端…' : 'Syncing to cloud…');
-    else if (!message.success) updateSyncStatus('error', zh ? '同步失败，本机数据已保留' : 'Sync failed; local data retained');
-    else updateSyncStatus('active', message.localOnly ? t('syncLocal') : message.pending
-      ? (zh ? '本机有新修改，等待同步' : 'New local changes pending')
-      : (zh ? '云端同步完成' : 'Cloud sync complete'));
-  });
+// A failed local write still needs a visible error after removing the unused
+// sidebar sync card.
+function setupSaveErrorListener() {
   window.addEventListener('researchflow-save-state', event => {
     const { state, error } = event.detail;
-    const zh = currentLanguage === 'zh';
-    if (state === 'error') {
-      updateSyncStatus('error', zh ? '未保存，请重试' : 'Not saved — please retry');
-      showGlobalToast(error, 'error');
-    } else {
-      updateSyncStatus(state === 'saving' ? 'syncing' : 'active', state === 'saving'
-        ? (zh ? '正在保存…' : 'Saving…') : t('syncLocal'));
-    }
-  });
-  const syncBtn = document.getElementById('btn-manual-sync');
-  syncBtn.addEventListener('click', async () => {
-    syncBtn.disabled = true;
-    syncBtn.innerHTML = '🔄 Syncing...';
-    updateSyncStatus('syncing', 'Syncing...');
-
-    try {
-      const res = await window.storage.syncDatabaseNow();
-      if (res.success) {
-        showGlobalToast('Database synchronization complete!', 'success');
-        updateSyncStatus('active', res.localOnly ? t('syncLocal') : (res.pending ? (currentLanguage === 'zh' ? '本机有新修改，等待同步' : 'New local changes pending') : (currentLanguage === 'zh' ? '云端同步完成' : 'Cloud sync complete')));
-      } else {
-        showGlobalToast(`Sync failed: ${res.error}`, 'error');
-        updateSyncStatus('error', 'Sync Failed');
-      }
-    } catch (e) {
-      updateSyncStatus('error', 'Sync Failed');
-    } finally {
-      syncBtn.innerHTML = t('forceSync');
-      updateSyncProviderVisibility();
-    }
+    if (state === 'error') showGlobalToast(error || '保存失败，请重试', 'error');
   });
 }
 
@@ -3307,6 +3297,7 @@ function renderDashboard() {
           <div class="project-heading-row">
             <span class="submission-index">${displayIndex}</span>
             <div class="journal">${escapeHTML(journalName)}</div>
+            <span class="pipeline-compact-status" style="--state-color:${a.stateColor}">${escapeHTML(a.stateLabel)}</span>
           </div>
           <h3 class="project-title" title="${escapeHTML(manTitle)}">${escapeHTML(manTitle)}</h3>
           <div class="project-meta">
@@ -3331,6 +3322,7 @@ function renderDashboard() {
             ` : ''}
           </div>
           <div class="pipeline-actions" style="margin-top: 12px; display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary btn-sm btn-pipeline-open" data-sub-id="${escapeHTML(sub.id)}" aria-label="${escapeHTML(t('openSubmissionDetails'))}: ${escapeHTML(manTitle)}">${escapeHTML(t('openSubmissionDetails'))}</button>
             <button class="btn-secondary btn-sm btn-pipeline-add" data-sub-id="${escapeHTML(sub.id)}">${t('addEvent')}</button>
             <button class="btn-secondary btn-sm btn-pipeline-manage" data-sub-id="${escapeHTML(sub.id)}">${t('manageEvents')}</button>
             <button class="btn-secondary btn-sm btn-pipeline-share" data-sub-id="${escapeHTML(sub.id)}" title="${escapeHTML(t('shareJourney'))}" aria-label="${escapeHTML(t('shareJourney'))}: ${escapeHTML(manTitle)}">
@@ -3405,6 +3397,10 @@ function renderDashboard() {
         e.stopPropagation();
         toggleInlineStageEditor(btn.closest('.pipeline-card'), true);
       });
+    });
+
+    ganttBox.querySelectorAll('.btn-pipeline-open').forEach(btn => {
+      btn.addEventListener('click', () => navigateToSubmissionDetails(btn.getAttribute('data-sub-id')));
     });
 
     ganttBox.querySelectorAll('.btn-inline-stage-cancel').forEach(btn => {
@@ -3868,6 +3864,8 @@ function renderKanban() {
     else if (m.status === 'accepted' || m.status === 'published') col = 'accepted';
 
     mCount[col]++;
+    const linkedSubmission = sortDashboardSubmissions(db.submissions.filter(sub => sub.manuscriptId === m.id))[0];
+    const currentJournal = linkedSubmission?.targetJournal || linkedSubmission?.journalName || m.targetJournals?.[0] || (currentLanguage === 'zh' ? '待定' : 'TBD');
 
     const card = document.createElement('div');
     card.className = `glass-card kanban-card kanban-status-${normalizeKanbanStatusClass(m.status)}`;
@@ -3911,13 +3909,15 @@ function renderKanban() {
 
     card.innerHTML = `
       <div class="kanban-card-title-row">
-        <h4>${escapeHTML(m.title)}</h4>
-        <span class="kanban-status-pill">${escapeHTML(getManuscriptStatusLabel(m.status))}</span>
+        <h4 title="${escapeHTML(m.title)}">${escapeHTML(m.title)}</h4>
       </div>
-      <p>${targetJournalLabel}: <strong>${escapeHTML(m.targetJournals?.[0] || (currentLanguage === 'zh' ? '待定' : 'TBD'))}</strong></p>
+      <div class="kanban-card-meta-row">
+        <span class="kanban-status-pill">${escapeHTML(getManuscriptStatusLabel(m.status))}</span>
+        <p>${targetJournalLabel}: <strong>${escapeHTML(currentJournal)}</strong></p>
+      </div>
       ${zoteroRowHtml}
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px;">
-        <select class="kanban-card-select" id="sel-man-status-${m.id}" style="width: auto; padding: 2px 4px !important; font-size: 10px !important; height: 24px; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; color:hsl(var(--text-primary)); outline:none;">
+      <div class="kanban-card-controls">
+        <select class="kanban-card-select" id="sel-man-status-${m.id}" aria-label="${escapeHTML(t('status'))}: ${escapeHTML(m.title)}">
           <option value="idea" ${m.status === 'idea' ? 'selected' : ''}>${escapeHTML(t('statusIdea'))}</option>
           <option value="outline" ${m.status === 'outline' ? 'selected' : ''}>${escapeHTML(t('statusOutline'))}</option>
           <option value="figure_preparation" ${m.status === 'figure_preparation' ? 'selected' : ''}>${escapeHTML(t('statusFiguresPrep'))}</option>
@@ -3929,9 +3929,10 @@ function renderKanban() {
           <option value="accepted" ${m.status === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
           <option value="published" ${m.status === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
         </select>
-        <div style="display:flex; gap:6px; align-items:center;">
+        <div class="kanban-card-actions">
           ${pendingLinkBtnHtml}
-          <button class="btn-secondary" style="padding: 2px 6px; font-size:10px; height: 24px;" id="btn-edit-man-${m.id}">${editLabel}</button>
+          ${linkedSubmission ? `<button type="button" class="btn-secondary btn-open-linked-submission" data-sub-id="${escapeHTML(linkedSubmission.id)}" aria-label="${escapeHTML(t('openSubmissionDetails'))}: ${escapeHTML(m.title)}">${escapeHTML(t('openSubmissionDetails'))}</button>` : ''}
+          <button type="button" class="btn-secondary btn-edit-manuscript" id="btn-edit-man-${m.id}">${editLabel}</button>
         </div>
       </div>
     `;
@@ -3947,6 +3948,11 @@ function renderKanban() {
     });
 
     document.getElementById(`cards-${col}`).appendChild(card);
+
+    card.querySelector('.btn-open-linked-submission')?.addEventListener('click', event => {
+      event.stopPropagation();
+      navigateToSubmissionDetails(event.currentTarget.dataset.subId);
+    });
 
     // Bind status change dropdown
     document.getElementById(`sel-man-status-${m.id}`).addEventListener('change', async (e) => {
@@ -4050,6 +4056,7 @@ function renderKanban() {
 
   columns.forEach(col => {
     document.getElementById(`count-${col}`).textContent = mCount[col];
+    document.querySelector(`.kanban-col[data-status="${col}"]`)?.classList.toggle('is-empty', mCount[col] === 0);
 
     // HTML5 Column Drop Event Listeners
     const colCardsContainer = document.getElementById(`cards-${col}`);
@@ -4097,6 +4104,9 @@ function renderKanban() {
       });
     }
   });
+  document.querySelector('.kanban-board')?.classList.toggle('all-empty', visibleManuscripts.length === 0);
+  setText('#kanban-stage-summary', tf('kanbanStageSummary', { count: columns.filter(col => mCount[col] > 0).length, total: columns.length }));
+  updateKanbanEmptyColumns();
 }
 
 function normalizeKanbanStatusClass(status) {
@@ -5000,6 +5010,21 @@ function openSubmissionForEditing(sub, options = {}) {
   }
 }
 
+function navigateToSubmissionDetails(submissionId) {
+  const submission = db.submissions.find(item => item.id === submissionId);
+  if (!submission) {
+    showGlobalToast(t('submissionNotFound'), 'error');
+    return;
+  }
+  const submissionView = document.getElementById('view-submissions');
+  if (!submissionView.classList.contains('active')) {
+    document.querySelector('.nav-item[data-view="view-submissions"]')?.click();
+  }
+  if (!submissionView.classList.contains('active')) return;
+  openSubmissionForEditing(submission);
+  document.getElementById('submission-detail-panel')?.scrollTo({ top: 0 });
+}
+
 function getDefaultSubmissionChecklistKeys() {
   return [
     { key: 'cover_letter_ready', label: 'Cover Letter drafted' },
@@ -5623,11 +5648,9 @@ function renderJournalPortals() {
   }
 
   portals.forEach(portal => {
-    const card = document.createElement('a');
+    const card = document.createElement('div');
     card.className = 'portal-item-card';
-    card.href = window.RFUI.isSafeWebUrl(portal.url) ? portal.url : '#';
-    card.target = '_blank';
-    card.rel = 'noopener noreferrer';
+    const safeUrl = window.RFUI.isSafeWebUrl(portal.url) ? portal.url : '';
 
     let domain = '';
     try {
@@ -5641,6 +5664,7 @@ function renderJournalPortals() {
     card.title = `${portal.name} - ${domain}`;
 
     card.innerHTML = `
+      <a class="portal-open" href="${escapeHTML(safeUrl || '#')}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(portal.name)} · ${escapeHTML(domain)}">
       <div class="portal-info">
         <div class="portal-avatar" style="background-color: ${portalColor};">
           ${escapeHTML(initial)}
@@ -5650,12 +5674,19 @@ function renderJournalPortals() {
           <span class="portal-domain" title="${escapeHTML(portal.url)}">${escapeHTML(domain)}</span>
         </div>
       </div>
+      </a>
       <div class="portal-actions">
-        <button class="btn-delete-portal" title="${escapeHTML(t('portalDeleteTitle'))}" data-id="${portal.id}">
+        <button type="button" class="btn-edit-portal" title="${currentLanguage === 'zh' ? '编辑投稿入口' : 'Edit portal'}" aria-label="${currentLanguage === 'zh' ? '编辑' : 'Edit'} ${escapeHTML(portal.name)}">✎</button>
+        <button type="button" class="btn-delete-portal" title="${escapeHTML(t('portalDeleteTitle'))}" aria-label="${escapeHTML(t('portalDeleteTitle'))} ${escapeHTML(portal.name)}" data-id="${escapeHTML(portal.id)}">
           ✕
         </button>
       </div>
     `;
+
+    card.querySelector('.portal-open').addEventListener('click', event => {
+      if (!safeUrl) event.preventDefault();
+    });
+    card.querySelector('.btn-edit-portal').addEventListener('click', () => openJournalPortalEditor(portal));
 
     // Hook up delete listener
     const deleteBtn = card.querySelector('.btn-delete-portal');
@@ -5663,10 +5694,16 @@ function renderJournalPortals() {
       e.preventDefault();
       e.stopPropagation();
       if (confirm(tf('portalDeleteConfirm', { name: portal.name }))) {
-        db.settings.journalPortals = db.settings.journalPortals.filter(p => p.id !== portal.id);
-        await window.storage.saveAll(db);
-        renderJournalPortals();
-        showGlobalToast(tf('portalDeletedToast', { name: portal.name }), 'success');
+        const previous = db.settings.journalPortals;
+        try {
+          db.settings.journalPortals = previous.filter(p => p.id !== portal.id);
+          db = await window.storage.saveAll(db) || db;
+          renderJournalPortals();
+          showGlobalToast(tf('portalDeletedToast', { name: portal.name }), 'success');
+        } catch (error) {
+          db.settings.journalPortals = previous;
+          showGlobalToast(error.message || String(error), 'error');
+        }
       }
     });
 
@@ -5674,77 +5711,64 @@ function renderJournalPortals() {
   });
 }
 
+function openJournalPortalEditor(portal = null) {
+  const editing = Boolean(portal);
+  openModal(`
+    <div class="modal-header">
+      <h2>${editing ? (currentLanguage === 'zh' ? '编辑投稿入口' : 'Edit journal portal') : escapeHTML(t('addPortalTitle'))}</h2>
+      <button class="btn-secondary btn-icon" id="btn-close-modal" aria-label="${escapeHTML(t('cancel'))}">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="portal-name">${escapeHTML(t('portalNameLabel'))}</label>
+      <input type="text" id="portal-name" maxlength="60" value="${escapeHTML(portal?.name || '')}" placeholder="${escapeHTML(t('portalNamePlaceholder'))}">
+    </div>
+    <div class="form-group">
+      <label for="portal-url">${escapeHTML(t('portalUrlLabel'))}</label>
+      <input type="url" id="portal-url" value="${escapeHTML(portal?.url || '')}" placeholder="https://..." inputmode="url">
+    </div>
+    <div class="form-group">
+      <label for="portal-color">${escapeHTML(t('portalColorLabel'))}</label>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <input type="color" id="portal-color" value="${/^#[0-9a-f]{6}$/i.test(portal?.color || '') ? portal.color : '#8b5cf6'}" style="width: 48px; height: 36px; border: none; padding: 0; background: transparent;">
+        <span style="font-size: 12px; color: hsl(var(--text-muted));">${escapeHTML(t('portalColorHelp'))}</span>
+      </div>
+    </div>
+    <button type="button" class="btn-primary w-full" id="btn-save-portal" style="margin-top:12px;">${editing ? (currentLanguage === 'zh' ? '保存修改' : 'Save changes') : escapeHTML(t('addPortalButton'))}</button>
+  `);
+
+  document.getElementById('btn-save-portal')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    const name = document.getElementById('portal-name').value.trim();
+    const url = document.getElementById('portal-url').value.trim();
+    const color = document.getElementById('portal-color').value;
+    if (!name || !url) { showGlobalToast(t('fillAllFields'), 'error'); return; }
+    if (!window.RFUI.isSafeWebUrl(url)) { showGlobalToast(t('validUrlRequired'), 'error'); return; }
+
+    const previous = Array.isArray(db.settings?.journalPortals) ? db.settings.journalPortals : [];
+    const nextPortal = editing
+      ? { ...portal, name, url, color }
+      : { id: `portal_${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 11)}`, name, url, color, isDefault: false };
+    const next = editing
+      ? previous.map(item => item.id === portal.id ? nextPortal : item)
+      : [...previous, nextPortal];
+    button.disabled = true;
+    try {
+      db.settings.journalPortals = next;
+      db = await window.storage.saveAll(db) || db;
+      closeModal();
+      renderJournalPortals();
+      showGlobalToast(editing ? (currentLanguage === 'zh' ? '投稿入口已更新' : 'Portal updated') : tf('portalAddedToast', { name }), 'success');
+    } catch (error) {
+      db.settings.journalPortals = previous;
+      showGlobalToast(error.message || String(error), 'error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 function setupJournalPortalListeners() {
-  const addPortalBtn = document.getElementById('btn-add-portal');
-  if (addPortalBtn) {
-    addPortalBtn.addEventListener('click', () => {
-      openModal(`
-        <div class="modal-header">
-          <h2>${escapeHTML(t('addPortalTitle'))}</h2>
-          <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
-        </div>
-
-        <div class="form-group">
-          <label>${escapeHTML(t('portalNameLabel'))}</label>
-          <input type="text" id="portal-name" placeholder="${escapeHTML(t('portalNamePlaceholder'))}">
-        </div>
-
-        <div class="form-group">
-          <label>${escapeHTML(t('portalUrlLabel'))}</label>
-          <input type="url" id="portal-url" placeholder="https://...">
-        </div>
-
-        <div class="form-group">
-          <label>${escapeHTML(t('portalColorLabel'))}</label>
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="color" id="portal-color" value="#8b5cf6" style="width: 48px; height: 36px; border: none; border-radius: 6px; cursor: pointer; padding: 0; background: transparent;">
-            <span style="font-size: 12px; color: hsl(var(--text-muted));">${escapeHTML(t('portalColorHelp'))}</span>
-          </div>
-        </div>
-
-        <button class="btn-primary w-full" id="btn-save-portal" style="margin-top:12px;">${escapeHTML(t('addPortalButton'))}</button>
-      `);
-
-      const saveBtn = document.getElementById('btn-save-portal');
-      if (saveBtn) {
-        saveBtn.addEventListener('click', async () => {
-          const name = document.getElementById('portal-name').value.trim();
-          const url = document.getElementById('portal-url').value.trim();
-          const color = document.getElementById('portal-color').value;
-
-          if (!name || !url) {
-            alert(t('fillAllFields'));
-            return;
-          }
-
-          try {
-            if (!window.RFUI.isSafeWebUrl(url)) throw new Error('Invalid web URL');
-          } catch (err) {
-            alert(t('validUrlRequired'));
-            return;
-          }
-
-          const newPortal = {
-            id: 'portal_' + Math.random().toString(36).substring(2, 9),
-            name,
-            url,
-            color,
-            isDefault: false
-          };
-
-          if (!db.settings.journalPortals) {
-            db.settings.journalPortals = [];
-          }
-          db.settings.journalPortals.push(newPortal);
-          await window.storage.saveAll(db);
-
-          closeModal();
-          renderJournalPortals();
-          showGlobalToast(tf('portalAddedToast', { name }), 'success');
-        });
-      }
-    });
-  }
+  document.getElementById('btn-add-portal')?.addEventListener('click', () => openJournalPortalEditor());
 }
 
 function openLinkSubmissionModal(submission) {
@@ -5788,15 +5812,28 @@ function openLinkSubmissionModal(submission) {
     const manuscriptId = document.getElementById('submission-link-manuscript').value;
     const manuscript = db.manuscripts.find(item => item.id === manuscriptId);
     if (!manuscript) return;
-    submission.manuscriptId = manuscript.id;
-    submission.projectId = manuscript.projectId || submission.projectId || null;
-    submission.updatedAt = new Date().toISOString();
-    await window.storage.saveAll(db);
-    closeModal();
-    renderDashboard();
-    renderKanban();
-    renderSubmissions();
-    showGlobalToast(t('linkSubmissionSaved'), 'success');
+    const liveSubmission = db.submissions.find(item => item.id === submission.id);
+    if (!liveSubmission) return;
+    const previous = { manuscriptId: liveSubmission.manuscriptId, projectId: liveSubmission.projectId, updatedAt: liveSubmission.updatedAt };
+    const manuscriptStates = db.manuscripts.map(item => [item, item.status, item.updatedAt]);
+    try {
+      liveSubmission.manuscriptId = manuscript.id;
+      liveSubmission.projectId = manuscript.projectId || liveSubmission.projectId || null;
+      liveSubmission.updatedAt = new Date().toISOString();
+      syncManuscriptStatusesFromSubmissions(db);
+      db = await window.storage.saveAll(db) || db;
+      closeModal();
+      renderDashboard();
+      renderKanban();
+      renderSubmissions();
+      const linkedSubmission = db.submissions.find(item => item.id === submission.id);
+      if (linkedSubmission) renderSubmissionDetails(linkedSubmission);
+      showGlobalToast(t('linkSubmissionSaved'), 'success');
+    } catch (error) {
+      Object.assign(liveSubmission, previous);
+      manuscriptStates.forEach(([item, status, updatedAt]) => { item.status = status; item.updatedAt = updatedAt; });
+      showGlobalToast(error.message || String(error), 'error');
+    }
   });
 }
 
@@ -5827,11 +5864,6 @@ function renderSubmissionDetails(sub) {
   const timelineDecisionDate = normalizeDateString(sub.decisionDate || timelineAnalysis.acceptDate || timelineAnalysis.onlineDate);
   const statusText = getSubmissionStatusLabel(sub.status || 'submitted');
   const statusBadgeClass = window.RFUI.getSubmissionStatusBadgeClass(sub.status || 'submitted');
-  const relationshipSummaryLine = tf('relationshipSummaryLine', {
-    manuscript: relationship.manuscriptTitle,
-    timeline: relationship.timelineNodeCount,
-    comments: relationship.reviewerCommentCount
-  });
 
   // Cycle time duration calculations
   const cycle = getSubmissionCycleTime(sub);
@@ -5888,7 +5920,6 @@ function renderSubmissionDetails(sub) {
           </span>
           <div>
             <h3>${escapeHTML(t('workflowContextTitle'))}</h3>
-            <p>${escapeHTML(relationshipSummaryLine)}</p>
           </div>
         </div>
         <div class="workflow-context-actions">
@@ -5898,6 +5929,10 @@ function renderSubmissionDetails(sub) {
               ${escapeHTML(t('linkManuscript'))}
             </button>
           ` : `<span class="badge badge-success">${escapeHTML(t('workflowLinkedFlow'))}</span>`}
+          <button type="button" class="btn-secondary workflow-edit-summary-button" id="btn-focus-edit-center" aria-controls="submission-entry-editor-panel">
+            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span>${escapeHTML(t('jumpToEditor'))}</span>
+          </button>
         </div>
       </div>
       <div class="workflow-context-grid">
@@ -5912,19 +5947,6 @@ function renderSubmissionDetails(sub) {
         <div class="workflow-context-item">
           <span>${escapeHTML(t('workflowReviewerCommentsLabel'))}</span>
           <strong>${relationship.reviewerCommentCount}</strong>
-        </div>
-      </div>
-      <div class="workflow-edit-summary" data-editor-summary="true">
-        <div class="workflow-edit-summary-copy">
-          <span class="workflow-edit-summary-kicker">${escapeHTML(t('editableSummary'))}</span>
-          <strong>${escapeHTML(manuscriptTitle)}</strong>
-          <p data-submission-status-summary>${escapeHTML(journalName)} / ${escapeHTML(statusText)} / ${escapeHTML(t('milestoneSubmission'))} ${escapeHTML(timelineSubmissionDate || t('noDate'))}</p>
-        </div>
-        <div class="workflow-edit-summary-actions">
-          <button type="button" class="btn-secondary workflow-edit-summary-button" id="btn-focus-edit-center" aria-controls="submission-entry-editor-panel">
-            <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            <span>${escapeHTML(t('jumpToEditor'))}</span>
-          </button>
         </div>
       </div>
     </div>
@@ -6167,6 +6189,10 @@ function renderSubmissionDetails(sub) {
   detailPanel.dataset.rfEditorMounted = editorMounted ? 'true' : 'false';
   detailPanel.dataset.currentSubmissionId = sub.id;
   detailPanel.scrollTop = 0;
+
+  document.getElementById('btn-link-submission-manuscript')?.addEventListener('click', () => {
+    openLinkSubmissionModal(sub);
+  });
 
   const focusEditButton = document.getElementById('btn-focus-edit-center');
   if (focusEditButton) {
@@ -7064,11 +7090,14 @@ function updateSyncProviderVisibility() {
     summary.dataset.provider = provider;
   }
 
-  const syncButton = document.getElementById('btn-manual-sync');
   const localOnly = provider === 'local';
-  if (syncButton) {
-    syncButton.disabled = localOnly;
-    syncButton.title = localOnly ? t('localSyncSummary') : t('forceSync');
+  const syncNowButton = document.getElementById('btn-sync-cloud-now');
+  if (syncNowButton) {
+    const configuredProvider = db?.settings?.syncProviders?.metadata?.provider || 'local';
+    syncNowButton.disabled = localOnly || provider !== configuredProvider;
+    syncNowButton.title = provider !== configuredProvider
+      ? (currentLanguage === 'zh' ? '请先保存当前云端配置' : 'Save this cloud configuration first')
+      : '';
   }
 
   const autoSyncToggle = document.getElementById('auto-cloud-sync');
@@ -7137,10 +7166,6 @@ function setupSettingsListeners() {
     });
   }
 
-  const linkSubmissionButton = document.getElementById('btn-link-submission-manuscript');
-  if (linkSubmissionButton) {
-    linkSubmissionButton.addEventListener('click', () => openLinkSubmissionModal(sub));
-  }
   if (submissionCaptureToggle) {
     submissionCaptureToggle.addEventListener('change', async () => {
       const captureDetailsEnabled = submissionCaptureToggle.checked;
@@ -7245,7 +7270,6 @@ function setupSettingsListeners() {
     });
     if (configurationIssue) {
       showGlobalToast(configurationIssue, 'error');
-      updateSyncStatus('error', 'Configuration Required');
       return;
     }
 
@@ -7264,6 +7288,26 @@ function setupSettingsListeners() {
     await window.storage.saveAll(db);
     updateSyncProviderVisibility();
     showGlobalToast('Cloud database mapping saved!', 'success');
+  });
+
+  document.getElementById('btn-sync-cloud-now')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+      const result = await window.storage.syncDatabaseNow();
+      if (!result?.success) throw new Error(result?.error || 'Cloud sync failed');
+      db = await window.storage.loadAll();
+      await renderAllViews();
+      showGlobalToast(result.pending
+        ? (currentLanguage === 'zh' ? '已同步，新的本机修改等待下一次同步' : 'Synced; newer local edits remain pending')
+        : (currentLanguage === 'zh' ? '云端同步完成' : 'Cloud sync complete'), 'success');
+    } catch (error) {
+      showGlobalToast(error.message || String(error), 'error');
+    } finally {
+      button.removeAttribute('aria-busy');
+      updateSyncProviderVisibility();
+    }
   });
 
   // Test WebDAV Connection
@@ -8110,36 +8154,7 @@ function setupZoteroIntegrations() {
     }
   }
 
-  // 2. Sidebar Sync Status
-  const syncText = document.getElementById('sync-status-text');
-  const syncBtn = document.getElementById('btn-manual-sync');
-  if (syncText) {
-    syncText.textContent = currentLanguage === 'zh'
-      ? 'Zotero 原生数据库已连接 (IOUtils)'
-      : 'Saved in Zotero (IOUtils)';
-  }
-  if (syncBtn) {
-    syncBtn.textContent = currentLanguage === 'zh'
-      ? '🔄 同步 Zotero 云笔记'
-      : '🔄 Sync Zotero Notes';
-    if (!syncBtn.dataset.zoteroBound) {
-      syncBtn.dataset.zoteroBound = 'true';
-      syncBtn.addEventListener('click', async (e) => {
-        e.stopImmediatePropagation();
-        showGlobalToast(currentLanguage === 'zh' ? '正在同步论文稿件进展至 Zotero 云端笔记...' : 'Syncing manuscripts to Zotero child notes...', 'info');
-        let count = 0;
-        for (const m of db.manuscripts || []) {
-          if (m.zoteroItemKey && typeof ZoteroBridge !== 'undefined') {
-            const ok = await ZoteroBridge.syncNote(m.zoteroItemKey);
-            if (ok) count++;
-          }
-        }
-        showGlobalToast(currentLanguage === 'zh' ? `已同步 ${count} 篇文献的 Zotero 云端子笔记！` : `Synced ${count} notes to Zotero!`, 'success');
-      }, true);
-    }
-  }
-
-  // 3. Settings Card
+  // Zotero-specific settings controls are shown in the preference pane.
   const zSettingsCard = document.getElementById('zotero-native-settings-card');
   if (zSettingsCard) {
     zSettingsCard.style.display = 'block';

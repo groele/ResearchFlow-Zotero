@@ -14,9 +14,15 @@ const mockWindow = {
     documentElement: { classList: { add() {} } },
     body: { classList: { add() {} } },
     addEventListener() {},
+    querySelector(selector) {
+      if (selector === '.nav-item[data-view="view-manuscripts"]') return { click: () => { mockWindow._navigationClicks = (mockWindow._navigationClicks || 0) + 1; } };
+      return null;
+    },
     readyState: 'complete'
   },
-  addEventListener() {},
+  addEventListener(type, listener) {
+    if (type === 'researchflow-workspace-ready') this._readyListener = listener;
+  },
   postMessage() {},
   parent: null,
   opener: null,
@@ -135,6 +141,11 @@ assert.equal(typeof ZoteroBridge.importDatabase, 'function', 'importDatabase mus
 assert.equal(typeof ZoteroBridge.exportDiagnostics, 'function', 'exportDiagnostics must be a function');
 assert.equal(typeof ZoteroBridge.restoreBackup, 'function', 'restoreBackup must be a function');
 assert.equal(typeof ZoteroBridge.openExternal, 'function', 'openExternal must be a function');
+ZoteroBridge.handleHostNavigation({ view: 'view-manuscripts' });
+assert.equal(mockWindow._navigationClicks, undefined, 'navigation waits for workspace initialization');
+mockWindow._researchflowWorkspaceReady = true;
+mockWindow._readyListener();
+assert.equal(mockWindow._navigationClicks, 1, 'queued navigation runs once when workspace is ready');
 
 // Test getActiveItem directly with mock Zotero
 ZoteroBridge.getActiveItem().then((item) => {

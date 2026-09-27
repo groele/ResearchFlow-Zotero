@@ -466,6 +466,34 @@
       return PathUtils.join(Zotero.DataDirectory.dir, 'researchflow-pre-import-backup.json');
     },
 
+    getUiStateFilePath() {
+      return PathUtils.join(Zotero.DataDirectory.dir, 'researchflow-ui-state.json');
+    },
+
+    async loadUiState() {
+      if (this._uiState) return this._uiState;
+      const filePath = this.getUiStateFilePath();
+      if (!await IOUtils.exists(filePath)) return (this._uiState = {});
+      const parsed = JSON.parse(await IOUtils.readUTF8(filePath));
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid ResearchFlow UI state');
+      return (this._uiState = parsed);
+    },
+
+    async updateUiState(values = {}, removeKeys = []) {
+      const operation = async () => {
+        const current = await this.loadUiState();
+        const next = { ...current, ...values };
+        for (const key of removeKeys) delete next[key];
+        const filePath = this.getUiStateFilePath();
+        await IOUtils.writeUTF8(filePath, JSON.stringify(next), { tmpPath: `${filePath}.tmp` });
+        this._uiState = next;
+        return next;
+      };
+      const result = (this._uiStateQueue || Promise.resolve()).catch(() => {}).then(operation);
+      this._uiStateQueue = result;
+      return result;
+    },
+
     registerDataListener(callback) {
       if (typeof callback === 'function') {
         this._dataListeners.add(callback);
@@ -639,15 +667,15 @@
           this._menuManagerReader = Zotero.MenuManager.registerMenu({
             menuID: 'researchflow-reader-context',
             pluginID: ADDON_ID,
-            target: 'main/reader/context',
+            target: 'reader/menubar/edit',
             menus: [
               {
                 menuType: 'menuitem',
                 label: '📝 摘录至 ResearchFlow 稿件研究笔记',
                 icon: `${CHROME_ROOT}icons/researchflow.svg`,
-                onCommand: () => {
+                onCommand: (event) => {
                   try {
-                    this.createRecordFromReader();
+                    this.createRecordFromReader(event?.target?.ownerGlobal);
                   } catch (err) {
                     Zotero.logError?.('[ResearchFlow] Reader context error: ' + err);
                   }
@@ -711,34 +739,30 @@
     async loadDatabase() {
       if (this._cachedData) return this._cachedData;
       const filePath = this.getDataFilePath();
-      try {
-        const exists = await IOUtils.exists(filePath);
-        if (exists) {
+      const exists = await IOUtils.exists(filePath);
+      if (exists) {
+        try {
           const content = await IOUtils.readUTF8(filePath);
           this._cachedData = JSON.parse(content);
           return this._cachedData;
+        } catch (e) {
+          Zotero.logError?.('[ResearchFlow] Failed to read researchflow-data.json: ' + e);
+          throw e; // Preserve an unreadable or corrupt user file for recovery.
         }
-      } catch (e) {
-        Zotero.logError?.('[ResearchFlow] Failed to read researchflow-data.json: ' + e);
       }
 
       // Fallback: load bundled preloaded database if file does not exist
+      let preloaded = null;
       try {
-        const preloadedPath = PathUtils.join(
-          this.rootURI.replace(/^file:\/\/\/?/, '').replace(/\//g, PathUtils.sep || '\\'),
-          'data',
-          'preloaded_db.json'
-        );
-        if (await IOUtils.exists(preloadedPath)) {
-          const content = await IOUtils.readUTF8(preloadedPath);
-          this._cachedData = JSON.parse(content);
-          await this.saveDatabase(this._cachedData);
-          return this._cachedData;
-        }
-      } catch (_) {}
+        const response = await fetch(`${CHROME_ROOT}data/preloaded_db.json`);
+        if (response.ok) preloaded = await response.json();
+      } catch (error) {
+        Zotero.logError?.('[ResearchFlow] Bundled database unavailable: ' + error);
+      }
+      if (preloaded) return this.saveDatabase(preloaded);
 
       // Default fallback database
-      this._cachedData = {
+      const initial = {
         schemaVersion: 7,
         lastUpdated: Date.now(),
         updatedAt: new Date().toISOString(),
@@ -756,37 +780,44 @@
           profile: { displayName: '', chineseName: '', englishName: '', affiliation: '', orcid: '', language: 'zh', theme: 'system' }
         }
       };
-      await this.saveDatabase(this._cachedData);
-      return this._cachedData;
+      return this.saveDatabase(initial);
     },
 
     async saveDatabase(data) {
-      if (!data || typeof data !== 'object') return this._cachedData;
-      this._cachedData = { ...this._cachedData, ...data, lastUpdated: Date.now(), updatedAt: new Date().toISOString() };
-      const filePath = this.getDataFilePath();
-      try {
-        const jsonStr = JSON.stringify(this._cachedData, null, 2);
-        const tmpPath = `${filePath}.tmp-${Date.now()}`;
-        await IOUtils.writeUTF8(filePath, jsonStr, { tmpPath });
-        this.notifyDataChanged();
-      } catch (e) {
-        Zotero.logError?.('[ResearchFlow] Failed to write researchflow-data.json: ' + e);
-      }
-      return this._cachedData;
+      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid ResearchFlow database');
+      const operation = async () => {
+        const snapshot = { ...data, lastUpdated: Date.now(), updatedAt: new Date().toISOString() };
+        const filePath = this.getDataFilePath();
+        try {
+          await IOUtils.writeUTF8(filePath, JSON.stringify(snapshot, null, 2), { tmpPath: `${filePath}.tmp` });
+          this._cachedData = snapshot;
+          this.notifyDataChanged();
+          return snapshot;
+        } catch (error) {
+          Zotero.logError?.('[ResearchFlow] Failed to write researchflow-data.json: ' + error);
+          throw error;
+        }
+      };
+      const result = (this._saveQueue || Promise.resolve()).catch(() => {}).then(operation);
+      this._saveQueue = result;
+      return result;
     },
 
     async importDatabase(importedData, mode = 'merge') {
-      if (!importedData || typeof importedData !== 'object') throw new Error('无效的导入数据');
+      const collections = ['researchAreas', 'projects', 'researchRecords', 'manuscripts', 'submissions', 'tasks'];
+      if (!importedData || typeof importedData !== 'object' || Array.isArray(importedData)
+        || !collections.some((key) => Array.isArray(importedData[key]))
+        || collections.some((key) => key in importedData && !Array.isArray(importedData[key]))) {
+        throw new Error('所选文件不是 ResearchFlow 数据库备份');
+      }
+      if (mode !== 'merge' && mode !== 'overwrite') throw new Error('无效的导入方式');
       // Create pre-import snapshot
       const current = await this.loadDatabase();
-      this.initNotifier();
-      this.registerMenus();
-      try {
-        await IOUtils.writeUTF8(this.getBackupFilePath(), JSON.stringify(current, null, 2));
-      } catch (_) {}
+      await IOUtils.writeUTF8(this.getBackupFilePath(), JSON.stringify(current, null, 2));
 
+      let importedSnapshot;
       if (mode === 'overwrite') {
-        this._cachedData = { ...importedData, lastUpdated: Date.now(), updatedAt: new Date().toISOString() };
+        importedSnapshot = { ...importedData, lastUpdated: Date.now(), updatedAt: new Date().toISOString() };
       } else {
         // Smart merge collections
         const mergeCol = (oldArr = [], newArr = []) => {
@@ -795,7 +826,7 @@
           newArr.forEach((item) => { if (item?.id) map.set(item.id, { ...(map.get(item.id) || {}), ...item }); });
           return Array.from(map.values());
         };
-        this._cachedData = {
+        importedSnapshot = {
           ...current,
           ...importedData,
           projects: mergeCol(current.projects, importedData.projects),
@@ -807,7 +838,7 @@
           updatedAt: new Date().toISOString()
         };
       }
-      return this.saveDatabase(this._cachedData);
+      return this.saveDatabase(importedSnapshot);
     },
 
     async restoreBackupDatabase() {
@@ -821,18 +852,19 @@
 
     async exportDatabaseFile(window = null) {
       try {
-        if (!Cc || !Ci) throw new Error('Components.classes or interfaces not available');
-        const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-        const win = Zotero.getMainWindow?.() || (typeof Services !== 'undefined' && Services.wm?.getMostRecentWindow('navigator:browser')) || null;
-        fp.init(win, '导出 ResearchFlow 数据库', Ci.nsIFilePicker.modeSave);
+        const { FilePicker } = ChromeUtils.importESModule('chrome://zotero/content/modules/filePicker.mjs');
+        const fp = new FilePicker();
+        const win = Zotero.getMainWindow?.() || window || Services.wm?.getMostRecentWindow('navigator:browser');
+        if (!win?.browsingContext) throw new Error('Zotero 主窗口不可用');
+        fp.init(win, '导出 ResearchFlow 数据库', fp.modeSave);
         fp.defaultExtension = 'json';
         fp.appendFilter('JSON Files (*.json)', '*.json');
         const dateStr = new Date().toISOString().split('T')[0];
         fp.defaultString = `researchflow-export-${dateStr}.json`;
 
-        const res = await new Promise((resolve) => fp.open(resolve));
-        if (res === Ci.nsIFilePicker.returnOK || res === Ci.nsIFilePicker.returnReplace) {
-          const filePath = fp.file.path;
+        const res = await fp.show();
+        if (res === fp.returnOK || res === fp.returnReplace) {
+          const filePath = fp.file;
           const data = await this.loadDatabase();
           const jsonStr = JSON.stringify(data, null, 2);
           await IOUtils.writeUTF8(filePath, jsonStr);
@@ -849,16 +881,17 @@
 
     async importDatabaseFile(mode = 'merge', window = null) {
       try {
-        if (!Cc || !Ci) throw new Error('Components.classes or interfaces not available');
-        const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-        const win = Zotero.getMainWindow?.() || (typeof Services !== 'undefined' && Services.wm?.getMostRecentWindow('navigator:browser')) || null;
-        fp.init(win, '选择 ResearchFlow JSON 备份文件导入', Ci.nsIFilePicker.modeOpen);
+        const { FilePicker } = ChromeUtils.importESModule('chrome://zotero/content/modules/filePicker.mjs');
+        const fp = new FilePicker();
+        const win = Zotero.getMainWindow?.() || window || Services.wm?.getMostRecentWindow('navigator:browser');
+        if (!win?.browsingContext) throw new Error('Zotero 主窗口不可用');
+        fp.init(win, '选择 ResearchFlow JSON 备份文件导入', fp.modeOpen);
         fp.defaultExtension = 'json';
         fp.appendFilter('JSON Files (*.json)', '*.json');
 
-        const res = await new Promise((resolve) => fp.open(resolve));
-        if (res === Ci.nsIFilePicker.returnOK) {
-          const filePath = fp.file.path;
+        const res = await fp.show();
+        if (res === fp.returnOK) {
+          const filePath = fp.file;
           const rawText = await IOUtils.readUTF8(filePath);
           let importedJson;
           try {
@@ -867,7 +900,7 @@
             throw new Error('所选文件不是合法的 JSON 格式备份');
           }
           const saved = await this.importDatabase(importedJson, mode);
-          this.showToast('导入成功', `已成功从 ${fp.file.leafName} 导入并同步数据库！`, 'success');
+          this.showToast('导入成功', `已从 ${filePath} 导入数据库`, 'success');
           return { success: true, data: saved };
         }
       } catch (err) {
@@ -880,18 +913,19 @@
 
     async exportDiagnosticsFile(report = null, window = null) {
       try {
-        if (!Cc || !Ci) throw new Error('Components.classes or interfaces not available');
-        const fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
-        const win = Zotero.getMainWindow?.() || (typeof Services !== 'undefined' && Services.wm?.getMostRecentWindow('navigator:browser')) || null;
-        fp.init(win, '导出 ResearchFlow 诊断报告', Ci.nsIFilePicker.modeSave);
+        const { FilePicker } = ChromeUtils.importESModule('chrome://zotero/content/modules/filePicker.mjs');
+        const fp = new FilePicker();
+        const win = Zotero.getMainWindow?.() || window || Services.wm?.getMostRecentWindow('navigator:browser');
+        if (!win?.browsingContext) throw new Error('Zotero 主窗口不可用');
+        fp.init(win, '导出 ResearchFlow 诊断报告', fp.modeSave);
         fp.defaultExtension = 'json';
         fp.appendFilter('JSON Files (*.json)', '*.json');
         const dateStr = new Date().toISOString().slice(0, 10);
         fp.defaultString = `researchflow-diagnostics-${dateStr}.json`;
 
-        const res = await new Promise((resolve) => fp.open(resolve));
-        if (res === Ci.nsIFilePicker.returnOK || res === Ci.nsIFilePicker.returnReplace) {
-          const filePath = fp.file.path;
+        const res = await fp.show();
+        if (res === fp.returnOK || res === fp.returnReplace) {
+          const filePath = fp.file;
           const jsonStr = JSON.stringify(report || {}, null, 2);
           await IOUtils.writeUTF8(filePath, jsonStr);
           this.showToast('导出成功', `诊断信息已保存至：${filePath}`, 'success');
@@ -1046,6 +1080,8 @@
       Zotero.log('[ResearchFlow] Initializing host runtime...');
       await this.loadDatabase();
 
+      this.initNotifier();
+      this.registerMenus();
       this.initWindowListener();
 
       const windows = Services.wm.getEnumerator('navigator:browser');
@@ -1070,8 +1106,9 @@
             ? `${this.rootURI}chrome/content/icons/researchflow.svg`
             : `${CHROME_ROOT}icons/researchflow.svg`;
 
-          Zotero.PreferencePanes.register({
+          await Zotero.PreferencePanes.register({
             pluginID: ADDON_ID,
+            id: 'researchflow-preferences-pane',
             src: prefSrc,
             label: 'ResearchFlow',
             image: prefIcon,
@@ -1229,7 +1266,7 @@
             if (collection) {
               this.createManuscriptFromCollection(collection, window);
             } else {
-              alert('请先在左侧选择一个分类文件夹。');
+              this.showToast('未选择分类', '请先在左侧选择一个分类文件夹。', 'warning');
             }
           } catch (err) {
             Zotero.logError?.('[ResearchFlow] collection menu error: ' + err);
@@ -1361,6 +1398,8 @@
               if (data.requestId) {
                 replyResult({ requestId: data.requestId, success: true });
               }
+            }).catch((error) => {
+              if (data.requestId) replyResult({ requestId: data.requestId, success: false, error: String(error?.message || error) });
             });
             return;
           }
@@ -1722,7 +1761,7 @@
       return collections.map((col) => {
         let itemKeys = [];
         try {
-          const childIds = typeof col.getChildItems === 'function' ? col.getChildItems() : [];
+          const childIds = typeof col.getChildItems === 'function' ? col.getChildItems(true) : [];
           itemKeys = (childIds || []).map((id) => {
             const it = Zotero.Items.get(id);
             return it?.key || null;
@@ -1769,7 +1808,7 @@
     createManuscriptFromSelection(window) {
       const items = this.getSelectedRegularItems(window);
       if (!items || items.length === 0) {
-        alert('请在 Zotero 文献库中先选中一篇论文条目。');
+        this.showToast('未选择文献', '请在 Zotero 文献库中先选中一篇论文条目。', 'warning');
         return;
       }
       const serialized = serializeLiteratureItem(items[0]);
@@ -1782,7 +1821,7 @@
     linkSelectionToManuscript(window) {
       const items = this.getSelectedRegularItems(window);
       if (!items || items.length === 0) {
-        alert('请在 Zotero 文献库中先选中一篇论文条目。');
+        this.showToast('未选择文献', '请在 Zotero 文献库中先选中一篇论文条目。', 'warning');
         return;
       }
       const serialized = serializeLiteratureItem(items[0]);
@@ -1796,7 +1835,7 @@
       if (!collection) return;
       try {
         const win = window || (Zotero.getMainWindow ? Zotero.getMainWindow() : null);
-        const childItemIDs = collection.getChildItems ? collection.getChildItems() : [];
+        const childItemIDs = collection.getChildItems ? collection.getChildItems(true) : [];
         const childMetas = [];
         for (const id of childItemIDs.slice(0, 30)) {
           const item = Zotero.Items.get(id);
@@ -1819,7 +1858,7 @@
     async createRecordFromReader(window = null) {
       const win = window || (Zotero.getMainWindow ? Zotero.getMainWindow() : null);
       const tabs = win?.Zotero_Tabs || (typeof Zotero_Tabs !== 'undefined' ? Zotero_Tabs : null);
-      if (!tabs || !tabs.selectedTab || tabs.selectedTab.type !== 'reader') {
+      if (!win?.reader && (!tabs || !tabs.selectedTab || tabs.selectedTab.type !== 'reader')) {
         const selected = this.getSelectedRegularItems(win);
         if (selected.length > 0) {
           this.createManuscriptFromSelection(win);
@@ -1828,8 +1867,8 @@
       }
 
       try {
-        const reader = Zotero.Reader?.getByTabID?.(tabs.selectedTab.id);
-        const itemID = reader?.itemID || tabs.selectedTab.data?.itemID;
+        const reader = win?.reader || Zotero.Reader?.getByTabID?.(tabs.selectedTab.id);
+        const itemID = reader?.itemID || tabs?.selectedTab?.data?.itemID;
         if (!itemID) return;
 
         const attachmentItem = Zotero.Items.get(itemID);

@@ -4,10 +4,18 @@ const ZoteroBridge = {
   isZotero: false,
   _pendingRequestId: 0,
   _requestCallbacks: new Map(),
+  _pendingNavigation: null,
 
   init() {
     this.detectEnvironment();
     this.setupMessageListener();
+    window.addEventListener('researchflow-workspace-ready', () => {
+      if (this._pendingNavigation) {
+        const options = this._pendingNavigation;
+        this._pendingNavigation = null;
+        this.handleHostNavigation(options);
+      }
+    });
 
     if (this.isZotero) {
       document.documentElement.classList.add('zotero-env');
@@ -155,14 +163,14 @@ const ZoteroBridge = {
     } catch (_) {}
   },
 
-  request(type, payload = {}) {
+  request(type, payload = {}, timeoutMs = 6000) {
     if (!this.isZotero) return Promise.resolve(null);
     const requestId = `rf_req_${++this._pendingRequestId}_${Date.now()}`;
     return new Promise((resolve) => {
       const timeout = setTimeout(() => {
         this._requestCallbacks.delete(requestId);
         resolve(null);
-      }, 6000);
+      }, timeoutMs);
 
       this._requestCallbacks.set(requestId, (data) => {
         clearTimeout(timeout);
@@ -332,10 +340,9 @@ const ZoteroBridge = {
     try {
       const zotero = window.Zotero || window.parent?.Zotero;
       if (zotero?.ResearchFlow?.exportDatabaseFile) {
-        const res = await zotero.ResearchFlow.exportDatabaseFile();
-        if (res && (res.success || res.cancelled)) return res;
+        return await zotero.ResearchFlow.exportDatabaseFile();
       }
-    } catch (_) {}
+    } catch (error) { return { success: false, error: String(error?.message || error) }; }
     return await this.request('RESEARCHFLOW_EXPORT_DB');
   },
 
@@ -343,10 +350,9 @@ const ZoteroBridge = {
     try {
       const zotero = window.Zotero || window.parent?.Zotero;
       if (zotero?.ResearchFlow?.importDatabaseFile) {
-        const res = await zotero.ResearchFlow.importDatabaseFile(mode);
-        if (res && (res.success || res.cancelled)) return res;
+        return await zotero.ResearchFlow.importDatabaseFile(mode);
       }
-    } catch (_) {}
+    } catch (error) { return { success: false, error: String(error?.message || error) }; }
     return await this.request('RESEARCHFLOW_IMPORT_DB', { mode });
   },
 
@@ -354,10 +360,9 @@ const ZoteroBridge = {
     try {
       const zotero = window.Zotero || window.parent?.Zotero;
       if (zotero?.ResearchFlow?.exportDiagnosticsFile) {
-        const res = await zotero.ResearchFlow.exportDiagnosticsFile(report);
-        if (res && (res.success || res.cancelled)) return res;
+        return await zotero.ResearchFlow.exportDiagnosticsFile(report);
       }
-    } catch (_) {}
+    } catch (error) { return { success: false, error: String(error?.message || error) }; }
     return await this.request('RESEARCHFLOW_EXPORT_DIAGNOSTICS', { report });
   },
 
@@ -406,6 +411,10 @@ const ZoteroBridge = {
 
   handleHostNavigation(options) {
     if (!options || typeof options !== 'object') return;
+    if (!window._researchflowWorkspaceReady) {
+      this._pendingNavigation = options;
+      return;
+    }
 
     // View switching
     if (options.view) {

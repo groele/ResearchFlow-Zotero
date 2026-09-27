@@ -95,7 +95,8 @@
       return status === 'completed' || status === 'done';
     }).length;
     const manuscriptTitle = manuscript?.title || submission.title || 'Detached submission';
-    const projectTitle = project?.title || 'Unlinked project';
+    const projectTitle = project?.title || 'No project assigned';
+    const countSummary = `${pluralize(recordCount, 'record')}, ${pluralize(timelineNodes.length, 'timeline event')}, ${pluralize(reviewMatrix.length, 'reviewer comment')}.`;
 
     return {
       projectTitle,
@@ -104,8 +105,9 @@
       timelineNodeCount: timelineNodes.length,
       completedTimelineNodeCount,
       reviewerCommentCount: reviewMatrix.length,
-      isOrphanSubmission: !manuscript || !project,
-      summaryLine: `${manuscriptTitle} in ${projectTitle}: ${pluralize(recordCount, 'record')}, ${pluralize(timelineNodes.length, 'timeline event')}, ${pluralize(reviewMatrix.length, 'reviewer comment')}.`
+      isOrphanSubmission: !manuscript,
+      hasLinkedProject: Boolean(project),
+      summaryLine: project ? `${manuscriptTitle} in ${projectTitle}: ${countSummary}` : `${manuscriptTitle}: ${countSummary}`
     };
   }
 
