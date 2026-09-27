@@ -2063,34 +2063,34 @@
             if (count > 0) {
               manuscripts.forEach((m) => {
                 const card = document.createElement('div');
-                card.style.cssText = 'background:rgba(2,132,199,0.05); border:1px solid rgba(2,132,199,0.18); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:6px; box-sizing:border-box;';
+                card.style.cssText = 'background:var(--material-background, rgba(0,0,0,0.015)); border:1px solid var(--border-color, #e2e8f0); border-radius:6px; padding:8px 10px; display:flex; flex-direction:column; gap:6px; box-sizing:border-box;';
 
                 const header = document.createElement('div');
                 header.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:6px;';
 
                 const titleEl = document.createElement('div');
-                titleEl.style.cssText = 'font-weight:600; font-size:12px; color:#0369a1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;';
+                titleEl.style.cssText = 'font-weight:600; font-size:12px; color:#cc292b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;';
                 titleEl.textContent = m.title || '未命名稿件';
 
                 const statusStyles = {
-                  idea: { bg: 'rgba(100,116,139,0.15)', color: '#475569', label: '选题中', pct: 15 },
-                  drafting: { bg: 'rgba(2,132,199,0.15)', color: '#0284c7', label: '初稿撰写', pct: 40 },
-                  under_review: { bg: 'rgba(139,92,246,0.15)', color: '#7c3aed', label: '同行审稿', pct: 65 },
-                  revision: { bg: 'rgba(245,158,11,0.15)', color: '#d97706', label: '修回修订', pct: 80 },
-                  accepted: { bg: 'rgba(16,185,129,0.15)', color: '#059669', label: '已录用', pct: 95 },
-                  published: { bg: 'rgba(16,185,129,0.25)', color: '#047857', label: '已发表', pct: 100 }
+                  idea: { bg: 'rgba(100,116,139,0.12)', color: '#475569', label: '选题中', pct: 15 },
+                  drafting: { bg: 'rgba(204,41,43,0.12)', color: '#cc292b', label: '初稿撰写', pct: 40 },
+                  under_review: { bg: 'rgba(37,99,235,0.12)', color: '#2563eb', label: '同行审稿', pct: 65 },
+                  revision: { bg: 'rgba(217,119,6,0.12)', color: '#d97706', label: '修回修订', pct: 80 },
+                  accepted: { bg: 'rgba(5,150,105,0.12)', color: '#059669', label: '已录用', pct: 95 },
+                  published: { bg: 'rgba(5,150,105,0.22)', color: '#047857', label: '已发表', pct: 100 }
                 };
-                const st = statusStyles[m.status] || { bg: 'rgba(2,132,199,0.15)', color: '#0284c7', label: m.status || '撰写中', pct: 50 };
+                const st = statusStyles[m.status] || { bg: 'rgba(204,41,43,0.12)', color: '#cc292b', label: m.status || '撰写中', pct: 50 };
 
                 const badge = document.createElement('span');
-                badge.style.cssText = `font-size:10px; padding:2px 8px; border-radius:10px; background:${st.bg}; color:${st.color}; font-weight:600; white-space:nowrap;`;
+                badge.style.cssText = `font-size:10px; padding:2px 7px; border-radius:4px; background:${st.bg}; color:${st.color}; font-weight:600; white-space:nowrap;`;
                 badge.textContent = st.label;
 
                 header.append(titleEl, badge);
 
                 // Progress Bar
                 const progTrack = document.createElement('div');
-                progTrack.style.cssText = 'width:100%; height:4px; background:rgba(0,0,0,0.06); border-radius:2px; overflow:hidden;';
+                progTrack.style.cssText = 'width:100%; height:3px; background:rgba(0,0,0,0.06); border-radius:2px; overflow:hidden;';
                 const progFill = document.createElement('div');
                 progFill.style.cssText = `width:${st.pct}%; height:100%; background:${st.color}; border-radius:2px; transition:width 0.3s ease;`;
                 progTrack.appendChild(progFill);
@@ -2104,7 +2104,7 @@
                 actionRow.style.cssText = 'display:flex; gap:6px; justify-content:flex-end; margin-top:4px; flex-wrap:wrap;';
 
                 const btnView = document.createElement('button');
-                btnView.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #0284c7; background:#fff; color:#0284c7; cursor:pointer; font-weight:500;';
+                btnView.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #cc292b; background:#fff; color:#cc292b; cursor:pointer; font-weight:500;';
                 btnView.textContent = '🔍 查看';
                 btnView.title = '在 ResearchFlow 工作台中打开该稿件';
                 btnView.addEventListener('click', () => {
@@ -2116,7 +2116,7 @@
                 actionRow.appendChild(btnView);
 
                 const btnSyncNote = document.createElement('button');
-                btnSyncNote.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #64748b; background:#fff; color:#334155; cursor:pointer; font-weight:500;';
+                btnSyncNote.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer; font-weight:500;';
                 btnSyncNote.textContent = '📝 同步笔记';
                 btnSyncNote.title = '将稿件进展与审稿矩阵同步为文献子笔记 (支持 Zotero 云端全平台多端同步)';
                 btnSyncNote.addEventListener('click', async () => {
@@ -2134,7 +2134,7 @@
                 const metaData = serializeLiteratureItem(target);
                 if (metaData?.pdfUri) {
                   const btnPdf = document.createElement('button');
-                  btnPdf.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #10b981; background:#fff; color:#059669; cursor:pointer; font-weight:500;';
+                  btnPdf.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #059669; background:#fff; color:#059669; cursor:pointer; font-weight:500;';
                   btnPdf.textContent = '📖 PDF';
                   btnPdf.title = '在 Zotero PDF 阅读器中打开';
                   btnPdf.addEventListener('click', () => {
@@ -2144,12 +2144,11 @@
                 }
 
                 // Synergistic metadata row: CiteKey & Annotations count
-                const metaRow = serializeLiteratureItem(target);
                 const synergyBar = document.createElement('div');
                 synergyBar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#475569; background:rgba(0,0,0,0.03); padding:4px 6px; border-radius:4px; margin-top:2px;';
 
                 const citeChip = document.createElement('span');
-                citeChip.style.cssText = 'cursor:pointer; font-family:monospace; background:rgba(2,132,199,0.1); color:#0284c7; padding:1px 5px; border-radius:3px; font-weight:600;';
+                citeChip.style.cssText = 'cursor:pointer; font-family:monospace; background:rgba(37,99,235,0.08); color:#2563eb; padding:1px 5px; border-radius:3px; font-weight:600;';
                 citeChip.textContent = `[@${metaData.citekey}]`;
                 citeChip.title = '点击复制 Citation Key';
                 citeChip.addEventListener('click', () => {
@@ -2166,7 +2165,7 @@
                 annoInfo.textContent = metaData.annotationCount > 0 ? `📑 ${metaData.annotationCount} 条批注` : '暂无批注';
 
                 const notesInfo = document.createElement('span');
-                notesInfo.style.cssText = 'font-size:10px; color:#0284c7;';
+                notesInfo.style.cssText = 'font-size:10px; color:#2563eb;';
                 notesInfo.textContent = metaData.notesCount > 0 ? `📝 ${metaData.notesCount} 篇笔记` : '';
 
                 synergyBar.append(citeChip, annoInfo);
@@ -2174,7 +2173,7 @@
 
                 // Add APA copy button to action row
                 const btnApa = document.createElement('button');
-                btnApa.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #94a3b8; background:#fff; color:#475569; cursor:pointer; font-weight:500;';
+                btnApa.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #cbd5e1; background:#fff; color:#475569; cursor:pointer; font-weight:500;';
                 btnApa.textContent = '📋 引用';
                 btnApa.title = '复制标准引用 (APA)';
                 btnApa.addEventListener('click', () => {
@@ -2188,7 +2187,7 @@
 
                 // Add BibTeX copy button to action row
                 const btnBib = document.createElement('button');
-                btnBib.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #94a3b8; background:#fff; color:#475569; cursor:pointer; font-weight:500;';
+                btnBib.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:4px; border:1px solid #cbd5e1; background:#fff; color:#475569; cursor:pointer; font-weight:500;';
                 btnBib.textContent = '📋 BibTeX';
                 btnBib.title = '复制 BibTeX 引用条目';
                 btnBib.addEventListener('click', () => {
@@ -2207,7 +2206,7 @@
               });
             } else {
               const emptyCard = document.createElement('div');
-              emptyCard.style.cssText = 'background:rgba(0,0,0,0.02); border:1px dashed rgba(0,0,0,0.12); border-radius:8px; padding:14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;';
+              emptyCard.style.cssText = 'background:var(--material-background, rgba(0,0,0,0.015)); border:1px dashed var(--border-color, rgba(0,0,0,0.15)); border-radius:6px; padding:14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;';
 
               const emptyText = document.createElement('div');
               emptyText.style.cssText = 'font-size:11px; color:#64748b;';
@@ -2217,7 +2216,7 @@
               btnRow.style.cssText = 'display:flex; gap:8px;';
 
               const createBtn = document.createElement('button');
-              createBtn.style.cssText = 'font-size:11px; padding:4px 10px; border-radius:6px; background:#0284c7; color:#fff; border:none; cursor:pointer; font-weight:500;';
+              createBtn.style.cssText = 'font-size:11px; padding:5px 12px; border-radius:5px; background:#cc292b; color:#fff; border:1px solid #b71c1c; cursor:pointer; font-weight:500;';
               createBtn.textContent = '➕ 新建稿件管线';
               createBtn.addEventListener('click', () => {
                 const serialized = serializeLiteratureItem(target);
@@ -2228,7 +2227,7 @@
               });
 
               const linkBtn = document.createElement('button');
-              linkBtn.style.cssText = 'font-size:11px; padding:4px 10px; border-radius:6px; background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; cursor:pointer; font-weight:500;';
+              linkBtn.style.cssText = 'font-size:11px; padding:5px 12px; border-radius:5px; background:#f8fafc; color:#334155; border:1px solid #cbd5e1; cursor:pointer; font-weight:500;';
               linkBtn.textContent = '🔗 关联现有稿件';
               linkBtn.addEventListener('click', () => {
                 const serialized = serializeLiteratureItem(target);

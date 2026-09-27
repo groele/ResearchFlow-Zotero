@@ -1,55 +1,55 @@
 
 :root {
   /* ========================================== */
-  /* SYSTEM SELF-ADAPTIVE LIGHT MODE DEFAULT    */
+  /* ZOTERO 10 NATIVE DESIGN SYSTEM: LIGHT MODE */
   /* ========================================== */
-  --bg-color: 220 20% 97%;         /* Light clean slate background */
-  --sidebar-bg: rgba(255, 255, 255, 0.85); /* Frosted light sidebar background */
-  --card-bg: 0 0% 100%;            /* Pure white card */
-  --card-glow: 220 20% 94%;        /* Light hover highlights */
-  --card-border: 220 15% 90%;      /* Soft gray borders */
+  --bg-color: 210 20% 98%;                 /* #f6f8fa - Clean Zotero 10 desktop canvas */
+  --sidebar-bg: #ffffff;                   /* Crisp desktop sidebar background */
+  --card-bg: 0 0% 100%;                    /* Pure white cards and panels */
+  --card-glow: 210 20% 95%;                /* #f1f5f9 subtle hover surface */
+  --card-border: 215 16% 89%;              /* #e2e8f0 crisp 1px desktop borders */
   --card-fill: rgba(0, 0, 0, 0.02);
   --card-fill-hover: rgba(0, 0, 0, 0.04);
   
-  --text-primary: 224 25% 12%;     /* Dark slate typography */
-  --text-muted: 220 10% 45%;       /* Soft gray description text */
-  --text-placeholder: 220 8% 60%;  /* Placeholders */
+  --text-primary: 222 47% 11%;             /* #0f172a - Deep contrast typography */
+  --text-muted: 215 16% 47%;               /* #64748b - Refined academic slate */
+  --text-placeholder: 215 16% 65%;          /* #94a3b8 */
 
-  /* Glow Accents - Readability optimized for Light Mode */
-  --accent-purple: 262 83% 58%;
-  --accent-purple-glow: 262 83% 58% / 0.08;
-  --accent-cyan: 188 86% 40%;      /* Slightly darker cyan for contrast */
-  --accent-cyan-glow: 188 86% 40% / 0.08;
-  --accent-emerald: 160 84% 33%;   /* Slightly darker emerald for contrast */
-  --accent-emerald-glow: 160 84% 33% / 0.08;
-  --accent-rose: 343 81% 50%;
-  --accent-rose-glow: 343 81% 50% / 0.08;
-  --accent-amber: 38 92% 43%;
-  --accent-amber-glow: 38 92% 43% / 0.08;
+  /* Zotero 10 Iconic Accents */
+  --accent-purple: 358 75% 48%;            /* #cc292b - Zotero Brand Crimson */
+  --accent-purple-glow: 358 75% 48% / 0.12;
+  --accent-cyan: 221 83% 53%;              /* #2563eb - Zotero Academic Blue */
+  --accent-cyan-glow: 221 83% 53% / 0.10;
+  --accent-emerald: 160 84% 33%;           /* #059669 - Peer-reviewed accepted green */
+  --accent-emerald-glow: 160 84% 33% / 0.10;
+  --accent-rose: 350 80% 50%;              /* #e11d48 - Rejection / warning alert */
+  --accent-rose-glow: 350 80% 50% / 0.10;
+  --accent-amber: 38 92% 43%;              /* #d97706 - Revision / Due milestone */
+  --accent-amber-glow: 38 92% 43% / 0.10;
 
-  /* Glassmorphism Configuration */
-  --blur-radius: 16px;
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 0, 0, 0.06);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  /* Zotero 10 Clean Desktop Surfaces */
+  --blur-radius: 0px;
+  --glass-bg: #ffffff;
+  --glass-border: #e2e8f0;
+  --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
 
-  /* Inputs & Form Elements styling */
-  --input-bg: rgba(0, 0, 0, 0.015);
-  --input-border: rgba(0, 0, 0, 0.08);
-  --input-focus-glow: 262 83% 58% / 0.12;
+  /* Form Elements */
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-focus-glow: 358 75% 48% / 0.18;
 
-  /* Scrollbars and structural elements */
-  --scrollbar-thumb: rgba(0, 0, 0, 0.12);
-  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+  /* Scrollbars */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.18);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.32);
 
-  /* Fonts */
-  --font-display: 'Segoe UI Variable Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --font-body: 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* Native System Fonts */
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.20s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ========================================== */
@@ -57,43 +57,43 @@
 /* ========================================== */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-color: 224 25% 6%;         /* #090b11 deep background */
-    --sidebar-bg: rgba(11, 15, 25, 0.85); /* Dark frosted sidebar background */
-    --card-bg: 224 20% 10%;        /* #131722 dark cards */
-    --card-glow: 224 25% 15%;      /* #1c2234 hover glows */
-    --card-border: 224 20% 18%;    /* #252e46 dark borders */
-    --card-fill: rgba(255, 255, 255, 0.02);
-    --card-fill-hover: rgba(255, 255, 255, 0.04);
+    --bg-color: 220 14% 8%;                /* #121316 - Zotero 10 dark canvas */
+    --sidebar-bg: #18191e;                 /* Zotero 10 dark sidebar */
+    --card-bg: 220 13% 13%;                /* #1d1e24 - Dark panels */
+    --card-glow: 220 13% 18%;              /* #262830 */
+    --card-border: 220 13% 20%;            /* #2e3038 */
+    --card-fill: rgba(255, 255, 255, 0.025);
+    --card-fill-hover: rgba(255, 255, 255, 0.05);
     
-    --text-primary: 220 20% 97%;   /* Crisp white typography */
-    --text-muted: 218 12% 65%;     /* Soft silver description text */
-    --text-placeholder: 218 8% 40%;/* Placeholders */
+    --text-primary: 210 20% 98%;           /* #f8fafc */
+    --text-muted: 215 14% 65%;             /* #94a3b8 */
+    --text-placeholder: 215 14% 45%;       /* #64748b */
 
-    /* Glow Accents - Vibrant neon glowing colors for Dark Mode */
-    --accent-purple: 262 83% 58%;
-    --accent-purple-glow: 262 83% 58% / 0.15;
-    --accent-cyan: 188 86% 53%;
-    --accent-cyan-glow: 188 86% 53% / 0.15;
-    --accent-emerald: 160 84% 39%;
-    --accent-emerald-glow: 160 84% 39% / 0.15;
-    --accent-rose: 343 81% 55%;
-    --accent-rose-glow: 343 81% 55% / 0.15;
-    --accent-amber: 38 92% 50%;
-    --accent-amber-glow: 38 92% 50% / 0.15;
+    /* Zotero 10 Dark Accents */
+    --accent-purple: 358 72% 60%;          /* #f87171 - Accessible Zotero Red */
+    --accent-purple-glow: 358 72% 60% / 0.16;
+    --accent-cyan: 217 91% 60%;            /* #3b82f6 - Accessible Academic Blue */
+    --accent-cyan-glow: 217 91% 60% / 0.16;
+    --accent-emerald: 160 84% 39%;         /* #10b981 */
+    --accent-emerald-glow: 160 84% 39% / 0.16;
+    --accent-rose: 350 80% 60%;            /* #fb7185 */
+    --accent-rose-glow: 350 80% 60% / 0.16;
+    --accent-amber: 38 92% 50%;            /* #fbbf24 */
+    --accent-amber-glow: 38 92% 50% / 0.16;
 
-    /* Glassmorphism Configuration */
-    --glass-bg: rgba(19, 23, 34, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.07);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+    /* Dark Surfaces */
+    --glass-bg: #1d1e24;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 
-    /* Inputs & Form Elements styling */
-    --input-bg: rgba(255, 255, 255, 0.025);
-    --input-border: rgba(255, 255, 255, 0.08);
-    --input-focus-glow: 262 83% 58% / 0.18;
+    /* Inputs */
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-border: #3b3d47;
+    --input-focus-glow: 358 72% 60% / 0.22;
 
     /* Scrollbars */
-    --scrollbar-thumb: rgba(255, 255, 255, 0.12);
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
   }
 }
 
@@ -131,70 +131,67 @@ body {
   background: var(--scrollbar-thumb-hover);
 }
 
-/* Glassmorphism Panels */
+/* Glassmorphism Panels -> Native Desktop Panels */
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--blur-radius));
-  -webkit-backdrop-filter: blur(var(--blur-radius));
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow: var(--glass-shadow);
   transition: border-color var(--transition-normal), box-shadow var(--transition-normal), background var(--transition-normal);
 }
 
 .glass-panel:hover {
-  border-color: hsl(var(--accent-cyan) / 0.18);
+  border-color: hsl(var(--card-border));
 }
 
 .glass-card {
-  background: var(--card-fill);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: hsl(var(--card-bg));
   border: 1px solid hsl(var(--card-border));
-  border-radius: 12px;
-  padding: 16px;
-  transition: transform var(--transition-normal), background var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-normal);
+  border-radius: 6px;
+  padding: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform var(--transition-fast), background var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .glass-card:hover {
   background: var(--card-fill-hover);
-  border-color: hsl(var(--accent-purple) / 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  border-color: hsl(var(--accent-purple) / 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Premium Gradients */
+/* Gradients */
 .gradient-text-purple {
-  background: linear-gradient(135deg, hsl(var(--accent-purple)) 0%, hsl(var(--accent-cyan)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: none;
+  color: #cc292b;
+  -webkit-text-fill-color: currentColor;
 }
 
 .gradient-text-emerald {
-  background: linear-gradient(135deg, hsl(var(--accent-emerald)) 0%, hsl(var(--accent-cyan)) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: none;
+  color: #059669;
+  -webkit-text-fill-color: currentColor;
 }
 
 .gradient-bg-purple {
-  background: linear-gradient(135deg, hsl(var(--accent-purple)) 0%, hsl(var(--accent-cyan)) 100%);
+  background: #cc292b;
 }
 
 .gradient-bg-emerald {
-  background: linear-gradient(135deg, hsl(var(--accent-emerald)) 0%, hsl(var(--accent-cyan)) 100%);
+  background: #059669;
 }
 
 /* Typography & Titles */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
 }
 
 .logo-orb {
   background: url('../assets/icons/icon-32.png') center / contain no-repeat;
-  border-radius: 10px;
-  box-shadow: 0 6px 14px hsl(var(--accent-cyan) / 0.28);
+  border-radius: 7px;
+  box-shadow: 0 2px 8px rgba(204, 41, 43, 0.28);
 }
 
 /* Interactive Components */
@@ -202,16 +199,17 @@ button, .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 18px;
+  padding: 6px 14px;
   font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: var(--transition-normal);
+  transition: var(--transition-fast);
   color: white;
-  gap: 8px;
+  gap: 6px;
+  min-height: 32px;
 }
 
 button:focus-visible, .btn:focus-visible {
@@ -220,45 +218,51 @@ button:focus-visible, .btn:focus-visible {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, hsl(var(--accent-purple)) 0%, hsl(var(--accent-purple) / 0.84) 100%);
-  box-shadow: 0 4px 14px 0 hsl(var(--accent-purple) / 0.2);
+  background: #cc292b;
+  border-color: #b71c1c;
+  color: white;
+  box-shadow: 0 1px 2px rgba(204, 41, 43, 0.2);
 }
 .btn-primary:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 6px 20px 0 hsl(var(--accent-purple) / 0.35);
-  transform: translateY(-1px);
+  background: #b91c1c;
+  border-color: #991b1b;
+  box-shadow: 0 2px 6px rgba(204, 41, 43, 0.3);
+  transform: none;
 }
 .btn-primary:active {
-  transform: translateY(0);
+  background: #991b1b;
+  transform: none;
 }
 
 .btn-secondary {
-  background: var(--card-fill);
+  background: hsl(var(--card-bg));
   border: 1px solid hsl(var(--card-border));
   color: hsl(var(--text-primary));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 .btn-secondary:hover {
-  background: var(--card-fill-hover);
-  border-color: hsl(var(--accent-purple) / 0.25);
+  background: hsl(var(--card-glow));
+  border-color: hsl(var(--card-border));
   color: hsl(var(--text-primary));
 }
 
 .btn-danger {
-  background: hsl(var(--accent-rose) / 0.12);
-  border: 1px solid hsl(var(--accent-rose) / 0.25);
-  color: hsl(var(--accent-rose));
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
 }
 .btn-danger:hover {
-  background: hsl(var(--accent-rose));
+  background: #dc2626;
+  border-color: #b91c1c;
   color: white;
-  box-shadow: 0 4px 12px hsl(var(--accent-rose) / 0.25);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
 }
 
 .btn-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 6px;
 }
 
 /* Inputs & Form Elements */
@@ -271,15 +275,15 @@ input[type="number"],
 textarea,
 select {
   width: 100%;
-  padding: 10px 14px;
+  padding: 7px 11px;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 10px;
+  border-radius: 6px;
   color: hsl(var(--text-primary));
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
-  transition: border-color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 select option {
@@ -288,9 +292,9 @@ select option {
 }
 
 input:focus, textarea:focus, select:focus {
-  border-color: hsl(var(--accent-purple));
+  border-color: #cc292b;
   background: hsl(var(--card-bg));
-  box-shadow: 0 0 0 3px hsl(var(--input-focus-glow));
+  box-shadow: 0 0 0 2px hsl(var(--input-focus-glow));
 }
 
 textarea {
@@ -476,42 +480,42 @@ label {
    existing system palettes so manual selection never feels like a new theme. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg-color: 220 20% 97%;
-  --sidebar-bg: rgba(255, 255, 255, 0.85);
+  --bg-color: 210 20% 98%;
+  --sidebar-bg: #ffffff;
   --card-bg: 0 0% 100%;
-  --card-glow: 220 20% 94%;
-  --card-border: 220 15% 90%;
+  --card-glow: 210 20% 95%;
+  --card-border: 215 16% 89%;
   --card-fill: rgba(0, 0, 0, 0.02);
   --card-fill-hover: rgba(0, 0, 0, 0.04);
-  --text-primary: 224 25% 12%;
-  --text-muted: 220 10% 45%;
-  --text-placeholder: 220 8% 60%;
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 0, 0, 0.06);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
-  --input-bg: rgba(0, 0, 0, 0.015);
-  --input-border: rgba(0, 0, 0, 0.08);
-  --scrollbar-thumb: rgba(0, 0, 0, 0.12);
-  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+  --text-primary: 222 47% 11%;
+  --text-muted: 215 16% 47%;
+  --text-placeholder: 215 16% 65%;
+  --glass-bg: #ffffff;
+  --glass-border: #e2e8f0;
+  --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.18);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.32);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg-color: 224 25% 6%;
-  --sidebar-bg: rgba(11, 15, 25, 0.85);
-  --card-bg: 224 20% 10%;
-  --card-glow: 224 25% 15%;
-  --card-border: 224 20% 18%;
-  --card-fill: rgba(255, 255, 255, 0.02);
-  --card-fill-hover: rgba(255, 255, 255, 0.04);
-  --text-primary: 220 20% 97%;
-  --text-muted: 218 12% 65%;
-  --text-placeholder: 218 8% 40%;
-  --glass-bg: rgba(19, 23, 34, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
-  --input-bg: rgba(255, 255, 255, 0.025);
-  --input-border: rgba(255, 255, 255, 0.08);
-  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+  --bg-color: 220 14% 8%;
+  --sidebar-bg: #18191e;
+  --card-bg: 220 13% 13%;
+  --card-glow: 220 13% 18%;
+  --card-border: 220 13% 20%;
+  --card-fill: rgba(255, 255, 255, 0.025);
+  --card-fill-hover: rgba(255, 255, 255, 0.05);
+  --text-primary: 210 20% 98%;
+  --text-muted: 215 14% 65%;
+  --text-placeholder: 215 14% 45%;
+  --glass-bg: #1d1e24;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --input-border: #3b3d47;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.32);
 }
