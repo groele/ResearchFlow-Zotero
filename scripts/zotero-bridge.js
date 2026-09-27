@@ -97,15 +97,19 @@ const ZoteroBridge = {
 
       // Handle data updated notification from host
       if (data.type === 'RESEARCHFLOW_DATA_UPDATED' && data.data) {
-        if (typeof window.storage !== 'undefined') {
-          window.storage.cache = data.data;
-        }
-        if (typeof window.renderDashboard === 'function' && document.getElementById('view-dashboard')?.classList.contains('active')) {
-          window.renderDashboard();
-        } else if (typeof window.renderKanban === 'function' && document.getElementById('view-manuscripts')?.classList.contains('active')) {
-          window.renderKanban();
-        } else if (typeof window.renderSubmissions === 'function' && document.getElementById('view-submissions')?.classList.contains('active')) {
-          window.renderSubmissions();
+        if (typeof window.applyDatabaseUpdate === 'function') {
+          window.applyDatabaseUpdate(data.data);
+        } else {
+          if (typeof window.storage !== 'undefined') {
+            window.storage.cache = data.data;
+          }
+          if (typeof window.renderDashboard === 'function' && document.getElementById('view-dashboard')?.classList.contains('active')) {
+            window.renderDashboard();
+          } else if (typeof window.renderKanban === 'function' && document.getElementById('view-manuscripts')?.classList.contains('active')) {
+            window.renderKanban();
+          } else if (typeof window.renderSubmissions === 'function' && document.getElementById('view-submissions')?.classList.contains('active')) {
+            window.renderSubmissions();
+          }
         }
       }
 
@@ -118,10 +122,20 @@ const ZoteroBridge = {
 
       // Handle item updated notification from host
       if (data.type === 'RESEARCHFLOW_ITEM_UPDATED') {
-        if (typeof window.renderDashboard === 'function' && document.getElementById('view-dashboard')?.classList.contains('active')) {
-          window.renderDashboard();
-        } else if (typeof window.renderKanban === 'function' && document.getElementById('view-manuscripts')?.classList.contains('active')) {
-          window.renderKanban();
+        if (typeof window.storage !== 'undefined' && typeof window.storage.getAll === 'function') {
+          window.storage.getAll().then((freshDb) => {
+            if (freshDb && typeof window.applyDatabaseUpdate === 'function') {
+              window.applyDatabaseUpdate(freshDb);
+            }
+          }).catch(console.error);
+        } else {
+          if (typeof window.renderDashboard === 'function' && document.getElementById('view-dashboard')?.classList.contains('active')) {
+            window.renderDashboard();
+          } else if (typeof window.renderKanban === 'function' && document.getElementById('view-manuscripts')?.classList.contains('active')) {
+            window.renderKanban();
+          } else if (typeof window.renderSubmissions === 'function' && document.getElementById('view-submissions')?.classList.contains('active')) {
+            window.renderSubmissions();
+          }
         }
       }
     });

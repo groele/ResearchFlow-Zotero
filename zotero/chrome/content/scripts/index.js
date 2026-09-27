@@ -478,12 +478,17 @@
     
     broadcastToIframes(msg) {
       try {
-        const windows = Services.wm.getEnumerator('navigator:browser');
+        const windows = Services.wm.getEnumerator(null);
         while (windows.hasMoreElements()) {
           const win = windows.getNext();
           const iframe = win.document?.getElementById('researchflow-tab-iframe');
           if (iframe?.contentWindow?.postMessage) {
-            iframe.contentWindow.postMessage(msg, '*');
+            try { iframe.contentWindow.postMessage(msg, '*'); } catch (_) {}
+          }
+          if (win.name === 'ResearchFlow_Window' || win.name === 'ResearchFlow_SubWindow' || win.document?.title?.includes('ResearchFlow')) {
+            if (typeof win.postMessage === 'function') {
+              try { win.postMessage(msg, '*'); } catch (_) {}
+            }
           }
         }
       } catch (_) {}
@@ -699,17 +704,7 @@
       for (const listener of this._dataListeners) {
         try { listener(); } catch (_) {}
       }
-      // Broadcast to any open windows / tabs
-      try {
-        const windows = Services.wm.getEnumerator('navigator:browser');
-        while (windows.hasMoreElements()) {
-          const win = windows.getNext();
-          const iframe = win.document?.getElementById('researchflow-tab-iframe');
-          if (iframe?.contentWindow?.postMessage) {
-            iframe.contentWindow.postMessage({ type: 'RESEARCHFLOW_DATA_UPDATED', data: this._cachedData }, '*');
-          }
-        }
-      } catch (_) {}
+      this.broadcastToIframes({ type: 'RESEARCHFLOW_DATA_UPDATED', data: this._cachedData });
     },
 
     async loadDatabase() {

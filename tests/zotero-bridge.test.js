@@ -134,6 +134,7 @@ assert.equal(typeof ZoteroBridge.exportDatabase, 'function', 'exportDatabase mus
 assert.equal(typeof ZoteroBridge.importDatabase, 'function', 'importDatabase must be a function');
 assert.equal(typeof ZoteroBridge.exportDiagnostics, 'function', 'exportDiagnostics must be a function');
 assert.equal(typeof ZoteroBridge.restoreBackup, 'function', 'restoreBackup must be a function');
+assert.equal(typeof ZoteroBridge.openExternal, 'function', 'openExternal must be a function');
 
 // Test getActiveItem directly with mock Zotero
 ZoteroBridge.getActiveItem().then((item) => {

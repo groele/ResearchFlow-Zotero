@@ -4,6 +4,18 @@
  */
 
 let db = null;
+
+function applyDatabaseUpdate(newData) {
+  if (!newData) return;
+  db = newData;
+  if (typeof window.storage !== 'undefined') {
+    window.storage.cache = newData;
+  }
+  const activeView = document.querySelector('.content-view.active')?.id;
+  if (activeView === 'view-dashboard') renderDashboard();
+  else if (activeView === 'view-manuscripts') renderKanban();
+  else if (activeView === 'view-submissions') renderSubmissions();
+}
 let selectedProjectId = null;
 let selectedSubmissionId = null;
 let currentDashboardFilter = 'all'; // 'all', 'accepted', 'active'
@@ -3301,12 +3313,12 @@ function renderDashboard() {
           <div class="pipeline-link-row">
             ${doiHtml}
             ${man?.zoteroItemKey ? `
-              <span class="zotero-card-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="在 Zotero 文献库中选中此条目" style="margin-left: 6px;">
+              <span class="zotero-card-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 文献库中选中此条目' : 'Select in Zotero library')}" style="margin-left: 6px;">
                 <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H6.4l5.6 6v2H2v-2h7.6L4 5V3z"/></svg>
                 Zotero
               </span>
-              ${man.citekey ? `<span class="zotero-citekey-badge" data-citekey="${escapeHTML(man.citekey)}" title="点击复制 Citation Key">[@${escapeHTML(man.citekey)}]</span>` : ''}
-              ${man.pdfUri ? `<span class="zotero-pdf-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="在 Zotero 阅读器中打开 PDF">📖 PDF</span>` : ''}
+              ${man.citekey ? `<span class="zotero-citekey-badge" data-citekey="${escapeHTML(man.citekey)}" title="${escapeHTML(currentLanguage === 'zh' ? '点击复制 Citation Key' : 'Click to copy Citation Key')}">[@${escapeHTML(man.citekey)}]</span>` : ''}
+              ${man.pdfUri ? `<span class="zotero-pdf-badge" data-item-key="${escapeHTML(man.zoteroItemKey)}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 阅读器中打开 PDF' : 'Open PDF in Zotero reader')}">📖 PDF</span>` : ''}
             ` : ''}
           </div>
           <div class="pipeline-actions" style="margin-top: 12px; display: flex; gap: 8px;">
@@ -6173,6 +6185,17 @@ function renderSubmissionDetails(sub) {
       showGlobalToast(t('noReviewerCommentsExport'), 'warning');
       return;
     }
+
+    // Generate Markdown table
+    let mdCode = `# Rebuttal Matrix: ${manuscriptTitle}\n\n`;
+    mdCode += `| # | Reviewer Comment | Author Response |\n`;
+    mdCode += `|---|---|---|\n`;
+    savedReviewRows.forEach((r, idx) => {
+      const cmt = (r.comment || '').replace(/\|/g, '\\|').replace(/\n/g, '<br/>');
+      const resp = (r.response || '').replace(/\|/g, '\\|').replace(/\n/g, '<br/>');
+      mdCode += `| ${idx + 1} | ${cmt} | ${resp} |\n`;
+    });
+
     // Generate LaTeX Code
     let latexCode = `\\documentclass{article}\n` +
                     `\\usepackage{booktabs} % For formal lines\n` +
@@ -6207,17 +6230,91 @@ function renderSubmissionDetails(sub) {
     latexCode += `\\end{longtable}\n\n` +
                  `\\end{document}`;
 
-    // Trigger download
-    const blob = new Blob([latexCode], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rebuttal_matrix_${sub.id}.tex`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showGlobalToast(t('latexDownloaded'), 'success');
+    openModal(`
+      <div class="modal-header">
+        <h2>📋 ${escapeHTML(currentLanguage === 'zh' ? '导出审稿修回矩阵' : 'Export Rebuttal Matrix')}</h2>
+        <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+        ${escapeHTML(currentLanguage === 'zh' ? `共检测到 ${savedReviewRows.length} 条审稿意见与回复，可直接复制或下载对应格式文件。` : `Detected ${savedReviewRows.length} comments and responses. Copy or download below.`)}
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button type="button" class="btn-secondary" id="modal-tab-md" style="font-size:12px; font-weight:600; padding:4px 12px; border-color:#cc292b; color:#cc292b;">Markdown 表格</button>
+        <button type="button" class="btn-secondary" id="modal-tab-latex" style="font-size:12px; font-weight:600; padding:4px 12px;">LaTeX 表格</button>
+      </div>
+      <div class="form-group">
+        <textarea id="rebuttal-export-preview" rows="11" readonly style="font-family:monospace; font-size:11px; line-height:1.5; width:100%; box-sizing:border-box; background:var(--input-bg); color:hsl(var(--text-primary)); border:1px solid var(--input-border); border-radius:6px; resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px;">
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-primary" id="btn-copy-rebuttal-content" style="font-size:12px;">
+            <span>📋 ${escapeHTML(currentLanguage === 'zh' ? '复制到剪贴板' : 'Copy to Clipboard')}</span>
+          </button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-secondary" id="btn-download-tex" style="font-size:12px;">
+            <span>💾 ${escapeHTML(currentLanguage === 'zh' ? '下载 .tex 文件' : 'Download .tex')}</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-download-md" style="font-size:12px;">
+            <span>💾 ${escapeHTML(currentLanguage === 'zh' ? '下载 .md 文件' : 'Download .md')}</span>
+          </button>
+        </div>
+      </div>
+    `);
+
+    let currentFormat = 'md';
+    const previewArea = document.getElementById('rebuttal-export-preview');
+    const tabMd = document.getElementById('modal-tab-md');
+    const tabLatex = document.getElementById('modal-tab-latex');
+
+    const updatePreview = () => {
+      if (!previewArea) return;
+      if (currentFormat === 'md') {
+        previewArea.value = mdCode;
+        if (tabMd) { tabMd.style.borderColor = '#cc292b'; tabMd.style.color = '#cc292b'; }
+        if (tabLatex) { tabLatex.style.borderColor = 'var(--input-border)'; tabLatex.style.color = 'hsl(var(--text-primary))'; }
+      } else {
+        previewArea.value = latexCode;
+        if (tabLatex) { tabLatex.style.borderColor = '#cc292b'; tabLatex.style.color = '#cc292b'; }
+        if (tabMd) { tabMd.style.borderColor = 'var(--input-border)'; tabMd.style.color = 'hsl(var(--text-primary))'; }
+      }
+    };
+    updatePreview();
+
+    tabMd?.addEventListener('click', () => { currentFormat = 'md'; updatePreview(); });
+    tabLatex?.addEventListener('click', () => { currentFormat = 'latex'; updatePreview(); });
+
+    document.getElementById('btn-copy-rebuttal-content')?.addEventListener('click', () => {
+      const textToCopy = currentFormat === 'md' ? mdCode : latexCode;
+      if (typeof ZoteroBridge !== 'undefined') {
+        ZoteroBridge.copyText(textToCopy, currentLanguage === 'zh' ? `已复制 ${currentFormat === 'md' ? 'Markdown' : 'LaTeX'} 内容！` : `Copied ${currentFormat.toUpperCase()} to clipboard!`);
+      } else {
+        navigator.clipboard?.writeText(textToCopy);
+        showGlobalToast(currentLanguage === 'zh' ? `已复制 ${currentFormat === 'md' ? 'Markdown' : 'LaTeX'} 内容！` : `Copied ${currentFormat.toUpperCase()} to clipboard!`, 'success');
+      }
+    });
+
+    const triggerDownload = (content, filename, mimeType) => {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('btn-download-tex')?.addEventListener('click', () => {
+      triggerDownload(latexCode, `rebuttal_matrix_${sub.id}.tex`, 'text/plain;charset=utf-8');
+      showGlobalToast(t('latexDownloaded'), 'success');
+    });
+
+    document.getElementById('btn-download-md')?.addEventListener('click', () => {
+      triggerDownload(mdCode, `rebuttal_matrix_${sub.id}.md`, 'text/markdown;charset=utf-8');
+      showGlobalToast(currentLanguage === 'zh' ? '已下载 Markdown 修回表格' : 'Downloaded Markdown table', 'success');
+    });
   });
 }
 
@@ -7926,4 +8023,7 @@ function setupZoteroIntegrations() {
 if (typeof window !== 'undefined') {
   window.openManuscriptModal = openManuscriptModal;
   window.renderKanban = renderKanban;
+  window.renderDashboard = renderDashboard;
+  window.renderSubmissions = renderSubmissions;
+  window.applyDatabaseUpdate = applyDatabaseUpdate;
 }
