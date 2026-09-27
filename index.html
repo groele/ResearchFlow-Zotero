@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // Zotero / Gecko Runtime Bridge Polyfills
+    window.process = window.process || { env: { NODE_ENV: 'production' } };
+    window.global = window.global || window;
+    try {
+      if (window.arguments && window.arguments[0]) {
+        if (window.arguments[0].Zotero) {
+          window.Zotero = window.arguments[0].Zotero;
+        }
+        if (window.arguments[0].options) {
+          window._researchflowPending = window.arguments[0].options;
+        }
+      }
+    } catch (_) {}
+  </script>
+  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResearchFlow OS - Master Workspace</title>
+  <link rel="icon" href="assets/icons/icon-32.png">
+  <link rel="stylesheet" href="styles/theme.css">
+  <link rel="stylesheet" href="styles/options.css">
+  <link rel="stylesheet" href="styles/workspace.css">
+  <link rel="stylesheet" href="styles/settings.css">
+  <link rel="stylesheet" href="styles/share-studio.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar glass-panel">
+      <div class="brand">
+        <div class="logo-orb" aria-hidden="true"></div>
+        <div>
+          <h2>ResearchFlow OS</h2>
+          <span class="version">v9.0.0 Companion</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="view-dashboard">
+          <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          Dashboard Overview
+        </button>
+        <button class="nav-item" data-view="view-manuscripts">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Manuscripts Kanban
+        </button>
+        <button class="nav-item" data-view="view-submissions">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Submissions & Review
+        </button>
+        <button class="nav-item" data-view="view-settings">
+          <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Multi-Cloud Settings
+        </button>
+      </nav>
+
+      <!-- Sync Status Indicator Card -->
+      <div class="sidebar-sync-card glass-card">
+        <div class="sync-indicator">
+          <span class="indicator-dot active" id="sync-dot"></span>
+          <span id="sync-status-text" role="status" aria-live="polite">Saved on this device</span>
+        </div>
+        <button id="btn-manual-sync" class="btn-secondary w-full" style="padding: 6px 10px; font-size: 11px; margin-top: 8px;">
+          🔄 Force Sync
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <main class="main-content">
+
+      <!-- VIEW 1: DASHBOARD OVERVIEW -->
+      <section id="view-dashboard" class="content-view active">
+        <header class="view-header">
+          <h1>Dashboard Overview</h1>
+          <p class="text-muted">A bird's eye view of your scientific progress and pipelines.</p>
+        </header>
+
+        <!-- Stats row -->
+        <div class="grid-cols-3">
+          <button type="button" class="glass-card stat-box interactive-stat-card filter-accepted" id="card-filter-accepted" aria-pressed="false">
+            <h4 style="display:flex; align-items:center; gap:6px;">🎉 Accepted & Published <span class="filter-tip">Click to filter</span></h4>
+            <div class="stat-number gradient-text-emerald" id="stat-accepted-submissions">0</div>
+          </button>
+          <button type="button" class="glass-card stat-box interactive-stat-card filter-active" id="card-filter-active" aria-pressed="false">
+            <h4 style="display:flex; align-items:center; gap:6px;">🕒 Active In-Review <span class="filter-tip">Click to filter</span></h4>
+            <div class="stat-number gradient-text-purple" id="stat-active-submissions">0</div>
+          </button>
+          <button type="button" class="glass-card stat-box interactive-stat-card filter-all active" id="card-filter-all" aria-pressed="true">
+            <h4 style="display:flex; align-items:center; gap:6px;">📊 Total Submissions <span class="filter-tip">Click to filter</span></h4>
+            <div class="stat-number gradient-text-purple" id="stat-total-submissions">0</div>
+          </button>
+        </div>
+
+        <!-- Pipeline Timeline Module -->
+        <div class="glass-panel pipeline-module">
+          <div class="pipeline-module-header">
+            <div>
+              <h3>📅 Manuscript Pipeline Timelines</h3>
+              <p class="text-muted" style="font-size:12px; margin-top:2px;">Track experiments, writing, submission, revision, acceptance, and publication through visual manuscript pipelines.</p>
+            </div>
+            <div class="pipeline-toolbar">
+              <span class="pipeline-filter-label" id="dashboard-filter-label">All pipelines</span>
+              <button class="btn-secondary btn-sm" id="btn-pipeline-view-toggle" title="Toggle Compact / Expanded view">
+                <span id="pipeline-view-icon">▤</span> <span id="pipeline-view-label">Compact</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Key Event Duration Summary Header -->
+          <div class="timeline-summary-header" style="margin-bottom: 20px;">
+            <div class="summary-card"><div class="label">平均 实验 → 投稿</div><div class="value" id="mExpSubmit">—</div></div>
+            <div class="summary-card"><div class="label">未接收：投稿 → 今天</div><div class="value" id="mSubmitNow">—</div></div>
+            <div class="summary-card"><div class="label">未接收：R1 → 今天</div><div class="value" id="mR1Now">—</div></div>
+            <div class="summary-card"><div class="label">已接收：投稿 → 接收</div><div class="value" id="mSubmitAccept">—</div></div>
+          </div>
+
+          <div class="pipeline-cards-container" id="dashboard-gantt">
+            <!-- Rendered dynamically by renderDashboard() -->
+            <p class="empty-state">No manuscript submission pipelines in progress.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-attention">
+          <!-- Timeline alerts -->
+          <div class="glass-card recent-box">
+            <h3>🔔 Timeline Alerts</h3>
+            <div class="recent-list" id="dashboard-pending-milestones">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: MANUSCRIPTS KANBAN -->
+      <section id="view-manuscripts" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Manuscripts Kanban</h1>
+            <p class="text-muted">Track your writing process from outline/drafting to final peer-review.</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div id="zotero-collection-filter-container" style="display:none; align-items:center; gap:6px;">
+              <label for="sel-zotero-collection-filter" style="font-size:12px; color:hsl(var(--text-secondary)); font-weight:500;">📁 分类:</label>
+              <select id="sel-zotero-collection-filter" style="font-size:12px; padding:4px 8px; border-radius:6px; background:var(--input-bg); color:hsl(var(--text-primary)); border:1px solid var(--input-border); outline:none;">
+                <option value="">全部文献分类</option>
+              </select>
+            </div>
+            <button id="btn-zotero-quick-import" class="btn-secondary" style="display:none; align-items:center; gap:4px; font-size:12px; padding:6px 12px; border-color:#0284c7; color:#0284c7;" title="直接从当前选中的 Zotero 文献导入为新稿件">
+              <span>📥 从 Zotero 选中导入</span>
+            </button>
+            <button id="btn-add-manuscript" class="btn-primary">+ Add Manuscript</button>
+          </div>
+        </header>
+
+        <!-- Kanban Columns -->
+        <div class="kanban-board">
+
+          <div class="kanban-col glass-panel" data-status="idea">
+            <div class="col-header">
+              <h3>💡 Idea & Outline</h3>
+              <span class="count" id="count-idea">0</span>
+            </div>
+            <div class="col-cards" id="cards-idea"></div>
+          </div>
+
+          <div class="kanban-col glass-panel" data-status="drafting">
+            <div class="col-header">
+              <h3>📝 Drafting & Figures</h3>
+              <span class="count" id="count-drafting">0</span>
+            </div>
+            <div class="col-cards" id="cards-drafting"></div>
+          </div>
+
+          <div class="kanban-col glass-panel" data-status="submitted">
+            <div class="col-header">
+              <h3>🚀 Submitted</h3>
+              <span class="count" id="count-submitted">0</span>
+            </div>
+            <div class="col-cards" id="cards-submitted"></div>
+          </div>
+
+          <div class="kanban-col glass-panel" data-status="accepted">
+            <div class="col-header">
+              <h3>🎉 Accepted / Published</h3>
+              <span class="count" id="count-accepted">0</span>
+            </div>
+            <div class="col-cards" id="cards-accepted"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW 5: SUBMISSIONS & REVIEW -->
+      <section id="view-submissions" class="content-view">
+        <header class="view-header flex-space">
+          <div>
+            <h1>Submissions & Peer Review Matrix</h1>
+            <p class="text-muted">Draft rebuttal response matrices and checklist compliance reports.</p>
+          </div>
+          <button id="btn-add-submission" class="btn-primary submission-primary-action">+ Track New Submission</button>
+        </header>
+
+        <div class="submission-tools-row" aria-label="Journal submission shortcuts">
+          <div class="submission-tools-copy">
+            <span class="portal-dock-title">Journal Portals</span>
+            <small id="portal-dock-help">Open a saved portal or add another submission system.</small>
+          </div>
+          <div class="journal-portals-dock" aria-label="Journal portals">
+            <div class="portal-grid-list portal-dock-list" id="journal-portals-list">
+              <!-- JS Populated -->
+            </div>
+            <button class="btn-secondary btn-portal-add" id="btn-add-portal" title="Add journal portal">+</button>
+          </div>
+        </div>
+
+        <div class="submission-split-layout">
+          <!-- Submissions grid pane -->
+          <div class="glass-panel submission-list-card">
+            <div class="submission-list-head">
+              <div>
+                <h3>Active Submissions</h3>
+                <p class="text-muted">Select a row or its edit button; the right panel opens the editor under Workflow Context.</p>
+              </div>
+            </div>
+            <div class="submission-search-tools" role="search" aria-labelledby="submission-search-label">
+              <label class="submission-search-label" for="submission-search" id="submission-search-label">Search submissions</label>
+              <div class="submission-search-field">
+                <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+                <input type="search" id="submission-search" placeholder="Title, journal, author or ID" autocomplete="off" maxlength="240" aria-controls="submissions-list-container" aria-keyshortcuts="/">
+                <button type="button" id="submission-search-clear" aria-label="Clear search" hidden>×</button>
+              </div>
+              <div class="submission-search-filter-row">
+                <select id="submission-search-status" aria-label="Filter by status">
+                  <option value="all">All statuses</option><option value="active">In progress</option><option value="revision">Revision</option><option value="accepted">Accepted / Published</option><option value="rejected">Rejected</option>
+                </select>
+                <span id="submission-search-count" role="status" aria-live="polite" aria-atomic="true"></span>
+              </div>
+            </div>
+            <div class="submission-search-empty" id="submission-search-empty" hidden>
+              <svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+              <strong id="submission-search-empty-title">No matching submissions</strong>
+              <p id="submission-search-empty-help">Try a shorter keyword or another status.</p>
+              <button type="button" class="btn-secondary" id="submission-search-reset">Clear filters</button>
+            </div>
+            <div class="submission-cards-list" id="submissions-list-container">
+              <!-- JS Populated -->
+            </div>
+          </div>
+
+          <!-- Submission detail/rebuttal pane -->
+          <div class="glass-panel submission-detail-card" id="submission-detail-panel">
+            <div class="empty-state">
+              <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <h3>Select a submission; the entry editor opens under Workflow Context.</h3>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: MULTI-CLOUD SETTINGS -->
+ <section class="content-view" id="view-settings">
+<header class="view-header">
+
+
+
+<h1>Multi-Cloud Settings</h1>
+<p class="text-muted">Control exactly how and where your private data is distributed.</p>
+
+</header>
+<section aria-labelledby="settings-security-title" class="settings-security-assurance">
+<div aria-hidden="true" class="settings-security-mark">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+<path d="m9 12 2 2 4-4"></path>
+</svg>
+</div>
+<div class="settings-security-copy">
+
+<h2 id="settings-security-title">Your research data stays on this device by default.</h2>
+<p id="settings-security-help">Cloud sync only starts after you choose and configure a provider. Passwords and tokens are excluded from database files, exports, and cloud payloads.</p>
+</div>
+
+</section>
+<div class="settings-workbench">
+<div class="settings-primary-column">
+<!-- Cloud Mappings Card -->
+<div class="glass-panel settings-card settings-route-card" id="settings-cloud-card">
+<div class="settings-panel-head">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-purple">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+<path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path>
+<path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"></path>
+</svg>
+</div>
+<div>
+
+<h3>Distributed Cloud Storage Routing</h3>
+<p class="text-muted">Choose where the ResearchFlow metadata database is synchronized.</p>
+</div>
+</div>
+<div class="settings-route-flow">
+<div class="settings-route-step">
+
+<div class="form-group">
+<label for="route-db">Database JSON Sync Destination</label>
+<select id="route-db">
+<option value="local">None (Local Cache Only)</option>
+<option value="webdav">WebDAV Drive (Jianguoyun, Nextcloud)</option>
+<option value="github">GitHub Private Repository</option>
+</select>
+</div>
+</div>
+<div class="sync-route-summary" id="sync-route-summary" role="status"></div>
+<div class="settings-sync-control" id="settings-auto-sync-control">
+<div class="settings-assist-control-copy">
+<strong id="auto-cloud-sync-label">Automatic cloud sync</strong>
+<small id="auto-cloud-sync-help">Sync valid cloud routes shortly after local changes are saved.</small>
+</div>
+<label class="settings-switch" for="auto-cloud-sync">
+<input checked="" id="auto-cloud-sync" type="checkbox"/>
+<span aria-hidden="true" class="settings-switch-track">
+<span class="settings-switch-thumb"></span>
+</span>
+</label>
+</div>
+
+</div>
+<div class="settings-provider-stage">
+<!-- Local-only route -->
+<div class="glass-panel settings-card sync-provider-card settings-local-card" data-sync-provider="local" id="settings-local-card">
+<div class="settings-panel-head">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-emerald">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<ellipse cx="12" cy="5" rx="7" ry="3"></ellipse>
+<path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"></path>
+<path d="M5 12v7"></path>
+<path d="M19 12v7"></path>
+<path d="m8 18 2 2 5-5"></path>
+</svg>
+</div>
+<div>
+
+<h3 id="settings-local-title">Local cache only</h3>
+<p class="text-muted" id="settings-local-help">Research data remains inside this Chrome profile until you export or select a cloud route.</p>
+</div>
+</div>
+<div class="settings-local-points">
+<div>
+<span aria-hidden="true" class="settings-local-check">✓</span>
+<strong id="settings-local-point-account">No account required</strong>
+</div>
+<div>
+<span aria-hidden="true" class="settings-local-check">✓</span>
+<strong id="settings-local-point-sync">Manual cloud sync is off</strong>
+</div>
+<div>
+<span aria-hidden="true" class="settings-local-check">✓</span>
+<strong id="settings-local-point-backup">JSON backup remains available</strong>
+</div>
+</div>
+</div>
+<!-- WebDAV config -->
+<div class="glass-panel settings-card sync-provider-card settings-credential-card" data-sync-provider="webdav" id="settings-webdav-card">
+<div class="settings-panel-head">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-cyan">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<path d="M3 12h18"></path>
+<path d="M12 3a14 14 0 0 1 0 18"></path>
+<path d="M12 3a14 14 0 0 0 0 18"></path>
+</svg>
+</div>
+<div>
+
+<h3>WebDAV Credentials</h3>
+<p class="text-muted" id="settings-webdav-help">Connect a private WebDAV folder for the database JSON.</p>
+</div>
+</div>
+<div class="settings-credential-grid settings-credential-grid-webdav">
+<div class="form-group settings-field-wide">
+<label for="webdav-url">WebDAV Server Base URL</label>
+<input id="webdav-url" placeholder="https://dav.jianguoyun.com/dav" type="text"/>
+</div>
+<div class="form-group">
+<label for="webdav-username">Username / Email</label>
+<input id="webdav-username" placeholder="your@email.com" type="text"/>
+</div>
+<div class="form-group">
+<label for="webdav-password">App-Specific Password</label>
+<input id="webdav-password" placeholder="••••••••••••••••" type="password"/>
+</div>
+</div>
+<div class="settings-provider-footer">
+<span class="settings-provider-note" id="settings-credential-note">Credentials never enter exported or synchronized JSON.</span>
+<button class="btn-secondary" id="btn-test-webdav">
+<svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
+<path d="M20 6 9 17l-5-5"></path>
+</svg>
+<span>Test WebDAV Connection</span>
+</button>
+</div>
+</div>
+<!-- GitHub config -->
+<div class="glass-panel settings-card sync-provider-card settings-credential-card" data-sync-provider="github" id="settings-github-card">
+<div class="settings-panel-head">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-slate">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<path d="M9 19c-4.3 1.4-4.3-2.5-6-3"></path>
+<path d="M15 22v-3.9c0-1.1-.1-1.6-.6-2.2 2-.2 4.1-1 4.1-4.5A3.5 3.5 0 0 0 17.6 9a3.3 3.3 0 0 0-.1-2.4s-.7-.2-2.5.9a8.4 8.4 0 0 0-4.5 0C8.7 6.4 8 6.6 8 6.6A3.3 3.3 0 0 0 7.9 9a3.5 3.5 0 0 0-.9 2.4c0 3.5 2.1 4.3 4.1 4.5-.4.5-.6 1.1-.6 2.2V22"></path>
+</svg>
+</div>
+<div>
+
+<h3>GitHub Private Repository Sync</h3>
+<p class="text-muted" id="settings-github-help">Store the database JSON in a private repository branch.</p>
+</div>
+</div>
+<div class="settings-credential-grid settings-credential-grid-github">
+<div class="form-group settings-field-wide">
+<label for="github-token">GitHub Personal Access Token (PAT)</label>
+<input id="github-token" placeholder="ghp_••••••••••••••••" type="password"/>
+</div>
+<div class="form-group">
+<label for="github-repo">Repository Name (owner/repo)</label>
+<input id="github-repo" placeholder="username/my-research-flow" type="text"/>
+</div>
+<div class="form-group">
+<label for="github-branch">Branch Name</label>
+<input id="github-branch" type="text" value="main"/>
+</div>
+</div>
+<div class="settings-provider-footer">
+<span class="settings-provider-note" id="settings-github-credential-note">Use a repository-scoped token with Contents access.</span>
+<button class="btn-secondary" id="btn-test-github">
+<svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
+<path d="M20 6 9 17l-5-5"></path>
+</svg>
+<span>Test GitHub Repository</span>
+</button>
+</div>
+</div>
+</div>
+<div class="settings-route-savebar">
+<div class="settings-route-privacy">
+<svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+<path d="m9 12 2 2 4-4"></path>
+</svg>
+<span id="settings-route-privacy-note">Secrets are stored only on this device.</span>
+</div>
+<button class="btn-primary" id="btn-save-settings">
+<svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
+<path d="M20 6 9 17l-5-5"></path>
+</svg>
+<span>Save Storage Mapping</span>
+</button>
+</div></div>
+</div>
+<aside class="settings-secondary-column">
+<!-- Language Card -->
+<div class="glass-panel settings-card settings-language-card" id="settings-language-card">
+<div class="settings-panel-head settings-panel-head-compact">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-amber">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<path d="M3 12h18"></path>
+<path d="M12 3a14 14 0 0 1 0 18"></path>
+<path d="M12 3a14 14 0 0 0 0 18"></path>
+</svg>
+</div>
+<div>
+
+<h3>Language &amp; Interface</h3>
+<p class="text-muted" id="language-help">Switch the dashboard interface between English and Chinese.</p>
+</div>
+</div>
+<div class="settings-preference-grid">
+<div class="form-group settings-language-field">
+<label for="ui-language">Display Language</label>
+<select id="ui-language">
+<option value="en">English</option>
+<option value="zh">中文</option>
+</select>
+</div>
+<div class="form-group settings-language-field">
+<label for="ui-theme">Appearance</label>
+<select id="ui-theme">
+<option value="system">Follow system</option>
+<option value="light">Light</option>
+<option value="dark">Dark</option>
+</select>
+</div>
+</div>
+<p class="settings-inline-status" id="language-auto-save-status" role="status">Interface preferences are saved automatically.</p>
+</div>
+<!-- Submission portal recognition -->
+<div class="glass-panel settings-card settings-assist-card" id="settings-submission-assist-card">
+<div class="settings-assist-heading">
+<div aria-hidden="true" class="settings-assist-mark">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="3"></circle>
+<path d="M3 12a9 9 0 0 1 9-9"></path>
+<path d="M12 21a9 9 0 0 1-9-9"></path>
+<path d="M21 12a9 9 0 0 1-9 9"></path>
+<path d="M12 3a9 9 0 0 1 9 9"></path>
+</svg>
+</div>
+<div class="settings-assist-title-copy">
+
+<div class="settings-assist-title-line">
+<h3>Submission Portal Recognition</h3>
+<span class="settings-assist-status" id="submission-assist-state-label">Enabled</span>
+</div>
+<p class="text-muted" id="submission-assist-help">Show a quick-entry card when a supported journal submission system is detected.</p>
+</div>
+</div>
+<div class="settings-assist-control">
+<div class="settings-assist-control-copy">
+<strong id="submission-assist-toggle-label">Automatic detection</strong>
+<small id="submission-assist-toggle-help">Recognize supported portals without opening a popup or side panel.</small>
+</div>
+<label class="settings-switch" for="submission-assist-enabled">
+<input checked="" id="submission-assist-enabled" type="checkbox"/>
+<span aria-hidden="true" class="settings-switch-track">
+<span class="settings-switch-thumb"></span>
+</span>
+</label>
+</div>
+<div class="settings-assist-control settings-assist-capture-control">
+<div class="settings-assist-control-copy">
+<strong id="submission-assist-capture-label">Automatic information capture</strong>
+<small id="submission-assist-capture-help">Collect manuscript and workflow fields for human review.</small>
+</div>
+<label class="settings-switch" for="submission-assist-capture-enabled">
+<input checked="" id="submission-assist-capture-enabled" type="checkbox"/>
+<span aria-hidden="true" class="settings-switch-track">
+<span class="settings-switch-thumb"></span>
+</span>
+</label>
+</div>
+<div class="settings-assist-footer">
+<div class="settings-assist-scope">
+<svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+<path d="m9 12 2 2 4-4"></path>
+</svg>
+<div>
+<span id="submission-assist-ignored-count">No websites ignored.</span>
+<small id="submission-assist-scope-help">Recognition runs only on supported submission domains.</small>
+</div>
+</div>
+<button class="btn-secondary" id="btn-reset-submission-assist">Reset ignored websites</button>
+</div>
+</div>
+</aside>
+</div>
+<!-- Zotero Native Settings Card -->
+<div class="glass-panel settings-card" id="zotero-native-settings-card" style="display:none; margin-bottom:16px;">
+<div class="settings-panel-head settings-panel-head-compact">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-purple">
+<svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+</div>
+<div>
+<h3>Zotero 10 原生深度协同</h3>
+<p class="text-muted">管理 Zotero 原生数据库存储与全平台云端笔记双向同步</p>
+</div>
+</div>
+<div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+<div style="font-size:12px; color:var(--text-secondary); line-height:1.6;">
+当前工作台直接运行于 Zotero 10 核心进程，数据直接持久化至 Zotero 数据目录中的 <code>researchflow-data.json</code>。
+</div>
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<button class="btn-primary" id="btn-zotero-sync-all-notes" style="font-size:12px; padding:6px 12px;">
+<span>📝 批量同步所有稿件进展至 Zotero 云笔记</span>
+</button>
+<button class="btn-secondary" id="btn-zotero-open-prefs" style="font-size:12px; padding:6px 12px;">
+<span>⚙️ 打开 Zotero 插件偏好设置</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Data Backup & Import Card -->
+<div class="glass-panel settings-card settings-backup-card" id="settings-backup-card">
+<div class="settings-panel-head settings-panel-head-compact">
+<div aria-hidden="true" class="settings-panel-mark settings-panel-mark-emerald">
+<svg class="svg-icon" viewbox="0 0 24 24">
+<path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path>
+<path d="M8 3v6h8V4"></path>
+<path d="M8 21v-7h8v7"></path>
+</svg>
+</div>
+<div>
+
+<h3>Database Backup &amp; Import</h3>
+</div>
+</div>
+<p class="text-muted">Export your research database to JSON, or import/migrate existing ResearchFlow JSON backups.</p>
+<div class="settings-backup-actions">
+<button class="btn-secondary" id="btn-export-db"><svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg><span>Export Database</span></button>
+<button class="btn-primary" id="btn-trigger-import"><svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24"><path d="M12 21V9"></path><path d="m7 14 5-5 5 5"></path><path d="M5 3h14"></path></svg><span>Import JSON</span></button>
+<button class="btn-secondary" id="btn-export-diagnostics"><svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24"><path d="M4 4h16v16H4z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path><path d="M8 17h3"></path></svg><span>Export Diagnostics</span></button>
+<button class="btn-secondary settings-restore-button" id="btn-restore-import-backup"><svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l3 2"></path></svg><span>Restore Pre-Import Backup</span></button>
+<input accept=".json" id="import-db-file" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; opacity: 0; pointer-events: none;" type="file"/>
+</div>
+<div class="settings-backup-note"><svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg><span id="settings-backup-note">A recoverable snapshot is kept before every valid import.</span></div>
+</div>
+</section>
+
+    </main>
+  </div>
+
+  <!-- Dynamic Form Dialog Modals -->
+  <div class="modal-backdrop" id="modal-container" aria-hidden="true" inert>
+    <div class="modal-card glass-panel" id="modal-card-content" role="dialog" aria-modal="true" tabindex="-1">
+      <!-- Injected via JS -->
+    </div>
+  </div>
+
+  <script src="scripts/zotero-bridge.js"></script>
+  <script src="scripts/storage.js"></script>
+  <script src="scripts/ui-utils.js"></script>
+  <script src="scripts/core/research-core.js"></script>
+  <script src="scripts/share-card.js"></script>
+  <script src="scripts/options.js"></script>
+</body>
+</html>

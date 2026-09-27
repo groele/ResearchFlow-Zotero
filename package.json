@@ -1,0 +1,22 @@
+{
+  "name": "researchflow-zotero",
+  "version": "9.0.0",
+  "description": "ResearchFlow for Zotero: 专为学术科研、论文写作、期刊投稿与同行评审打造的全流程工作台 (完美支持 Zotero 7+ & Zotero 10)",
+  "scripts": {
+    "build:zotero": "node scripts/build-zotero.mjs",
+    "package": "node scripts/build-zotero.mjs",
+    "test": "pwsh -NoProfile -File tests/verify.ps1"
+  },
+  "keywords": [
+    "zotero",
+    "zotero-plugin",
+    "researchflow",
+    "manuscript",
+    "peer-review",
+    "submission",
+    "academic",
+    "research"
+  ],
+  "author": "groele",
+  "license": "MIT"
+}

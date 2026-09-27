@@ -1,0 +1,6 @@
+# ResearchFlow Companion v7.4.6
+
+- Narrowed the logical share-card canvas to 800px for a more phone-native portrait ratio.
+- Preserved 2× export density for a crisp approximately 1600px-wide PNG.
+- Updated responsive size labels and regression coverage for the narrower canvas.
+

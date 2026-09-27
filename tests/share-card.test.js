@@ -1,0 +1,20 @@
+const assert = require('node:assert/strict');
+const { wrapText, buildLayout } = require('../scripts/share-card.js');
+const ctx = { font: '', measureText(value) { return { width: Array.from(value).length * 10 }; } };
+assert(wrapText(ctx, 'a'.repeat(80), 100).every(line => ctx.measureText(line).width <= 100));
+assert(wrapText(ctx, '长标题中文测试'.repeat(10), 100).every(line => ctx.measureText(line).width <= 100));
+const clipped = wrapText(ctx, 'A long sentence with many words '.repeat(10), 100, 2);
+assert.equal(clipped.length, 2);
+assert(clipped[1].endsWith('…'));
+const model = { title: 'PRIVATE TITLE', journal: 'PRIVATE JOURNAL', author: 'PRIVATE AUTHOR', status: 'PRIVATE STATUS', duration: 42,
+  events: Array.from({ length: 100 }, (_, i) => ({ name: `Event ${i}`, dateLabel: 'Sep 19', yearLabel: '2026' })) };
+const layout = buildLayout(ctx, model, { size: 'auto' });
+assert.equal(layout.eventCount, 64);
+assert.equal(layout.omitted, 36);
+assert(layout.blocks.some(b => b.text === 'Event 0'));
+assert(layout.blocks.some(b => b.text === 'Event 99'));
+const hidden = buildLayout(ctx, model, { title: false, journal: false, author: false, status: false, duration: false, dates: false, footer: false });
+assert(!hidden.blocks.some(b => /PRIVATE|Sep 19|2026|RESEARCHFLOW/.test(b.text || '')));
+assert(buildLayout(ctx, { events: [] }, { size: 'story' }).height >= 1280);
+assert(buildLayout(ctx, { events: [] }, { size: 'auto' }).height < 900);
+console.log('share card layout and privacy tests passed');

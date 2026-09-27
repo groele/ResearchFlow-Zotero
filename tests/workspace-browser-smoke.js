@@ -1,0 +1,115 @@
+const { chromium } = require('playwright');
+const path = require('node:path');
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const root = path.resolve(__dirname, '..');
+const out = path.join(root, 'output/playwright');
+fs.mkdirSync(out, { recursive: true });
+(async () => {
+  const executablePath = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe'].find(fs.existsSync);
+  const browser = await chromium.launch({ headless: true, executablePath });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+    const screenshot = async options => {
+      await page.waitForTimeout(700); // Let navigation and existing stagger delays settle.
+      await page.screenshot(options);
+    };
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript({ path: path.join(__dirname, 'fixtures/chrome-mock.js') });
+    await page.goto('http://127.0.0.1:8765/pages/options.html');
+    await page.locator('.btn-pipeline-share').first().waitFor();
+    await screenshot({ path: path.join(out, 'dashboard-light.png'), fullPage: true });
+    await page.locator('.btn-pipeline-share').first().click();
+    await page.waitForFunction(() => document.querySelector('.share-preview-frame')?.dataset.renderState === 'ready');
+    assert(await page.locator('.share-preview-frame img').evaluate(image => image.complete && image.naturalWidth > 0));
+    await page.locator('#btn-close-modal').click();
+    await page.locator('[data-view="view-submissions"]').click();
+    await page.locator('#submission-search').waitFor();
+    assert.equal(await page.locator('#submission-search').evaluate(node => getComputedStyle(node).borderTopWidth), '0px', 'search input should use the integrated field treatment');
+    await page.locator('#submission-search').fill('zzzz-no-match');
+    await page.locator('#submission-search-empty').waitFor();
+    assert(await page.locator('#submission-search-empty').isVisible(), 'search should expose a helpful empty state');
+    await page.locator('#submission-search-reset').click();
+    assert.equal(await page.locator('#submission-search-empty').isHidden(), true, 'reset should restore the submission list');
+    await page.locator('#submission-search').fill('Nature');
+    assert((await page.locator('#submission-search-count').textContent()).includes('1'), 'search should update the result count');
+    await screenshot({ path: path.join(out, 'submissions-light.png'), fullPage: true });
+    await page.locator('.btn-edit-submission').first().click();
+    await page.locator('#sub-edit-title').waitFor();
+    const originalTitle = await page.locator('#sub-edit-title').inputValue();
+    await page.locator('#sub-edit-title').fill(originalTitle + ' QA');
+    await page.locator('#sub-edit-title').blur();
+    await page.waitForFunction(title => {
+      const saved = globalThis.__chromeMockValues?.researchflow_db;
+      return [...(saved?.submissions || []), ...(saved?.manuscripts || [])].some(s => s.title === title);
+    }, originalTitle + ' QA');
+    await page.locator('.submission-author-details summary').click();
+    assert(await page.locator('#sub-edit-first-author').isVisible());
+    await screenshot({ path: path.join(out, 'submission-editor.png'), fullPage: true });
+    await page.locator('[data-view="view-settings"]').click();
+    await page.locator('#ui-language').selectOption('zh');
+    await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
+    await screenshot({ path: path.join(out, 'settings-light.png'), fullPage: true });
+    await page.locator('#route-db').selectOption('github');
+    assert(await page.locator('#github-token').isVisible());
+    assert(await page.locator('#settings-webdav-card').isHidden());
+    const providerBounds = await page.locator('#settings-github-card').boundingBox();
+    const saveBounds = await page.locator('#btn-save-settings').boundingBox();
+    assert(saveBounds.y >= providerBounds.y + providerBounds.height, 'save should follow credential configuration');
+    await screenshot({ path: path.join(out, 'settings-github.png'), fullPage: true });
+    await page.locator('#route-db').selectOption('webdav');
+    assert(await page.locator('#webdav-url').isVisible());
+    assert(await page.locator('#settings-github-card').isHidden());
+    await page.locator('#route-db').selectOption('local');
+    await page.locator('#submission-assist-enabled').uncheck();
+    assert(await page.locator('#submission-assist-capture-enabled').isDisabled());
+    await page.locator('#submission-assist-enabled').check();
+    const downloadEvent = page.waitForEvent('download');
+    await page.locator('#btn-export-db').click();
+    assert((await downloadEvent).suggestedFilename().endsWith('.json'));
+    await page.locator('#ui-theme').selectOption('dark');
+    await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+    await page.waitForTimeout(400);
+    await screenshot({ path: path.join(out, 'settings-dark.png'), fullPage: true });
+    await page.locator('[data-view="view-dashboard"]').click();
+    await screenshot({ path: path.join(out, 'dashboard-dark.png'), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await screenshot({ path: path.join(out, 'dashboard-mobile.png'), fullPage: true });
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'mobile viewport should not overflow horizontally');
+    await page.locator('[data-view="view-settings"]').click();
+    await screenshot({ path: path.join(out, 'settings-mobile.png'), fullPage: true });
+    const privacyCard = await page.locator('.settings-security-assurance').boundingBox();
+    const privacyText = await page.locator('#settings-security-help').boundingBox();
+    assert(privacyText.y + privacyText.height <= privacyCard.y + privacyCard.height, 'mobile privacy copy must not be clipped by flex shrinking');
+    await page.locator('#btn-restore-import-backup').scrollIntoViewIfNeeded();
+    const restoreBounds = await page.locator('#btn-restore-import-backup').boundingBox();
+    const navBounds = await page.locator('.sidebar').boundingBox();
+    assert(restoreBounds.y >= 0 && restoreBounds.y + restoreBounds.height <= navBounds.y, 'backup controls must be reachable above the fixed mobile navigation');
+    await screenshot({ path: path.join(out, 'settings-mobile-backup.png'), fullPage: true });
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await page.locator('#ui-theme').selectOption('system');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.waitForTimeout(400);
+    assert(await page.locator('#view-settings').evaluate(node => getComputedStyle(node).color === 'rgb(245, 247, 249)') ||
+      await page.locator('#view-settings').evaluate(node => {
+        const rgb = getComputedStyle(node).color.match(/\d+/g).map(Number);
+        return rgb[0] > 200;
+      }), 'system dark mode should use readable light foreground');
+    const failurePage = await browser.newPage();
+    await failurePage.addInitScript({ path: path.join(__dirname, 'fixtures/chrome-mock.js') });
+    await failurePage.addInitScript(() => {
+      const original = chrome.runtime.sendMessage;
+      chrome.runtime.sendMessage = (message, callback) => {
+        if (message.action === 'LOAD_DATABASE') callback({ success: false, error: 'Storage unavailable QA' });
+        else return original(message, callback);
+      };
+    });
+    await failurePage.goto('http://127.0.0.1:8765/pages/options.html');
+    await failurePage.getByRole('alert').filter({ hasText: 'Storage unavailable QA' }).waitFor();
+    assert(await failurePage.getByRole('button', { name: '重新加载 / Retry' }).isVisible());
+    await failurePage.close();
+    assert.deepEqual(errors, []);
+    console.log('Workspace browser smoke passed (Chrome APIs mocked).');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

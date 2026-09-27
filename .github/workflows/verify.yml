@@ -1,0 +1,49 @@
+name: Verify extension
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node regression and syntax checks
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run regression suites
+        shell: pwsh
+        run: |
+          $tests = Get-ChildItem tests -Filter *.test.js | Sort-Object Name
+          if (-not $tests) { throw 'No regression tests were found.' }
+          foreach ($test in $tests) {
+            node $test.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Validate production JavaScript syntax
+        shell: pwsh
+        run: |
+          $scripts = Get-ChildItem scripts -Recurse -Filter *.js | Sort-Object FullName
+          if (-not $scripts) { throw 'No production scripts were found.' }
+          foreach ($script in $scripts) {
+            node --check $script.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }

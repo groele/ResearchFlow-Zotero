@@ -1,0 +1,69 @@
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      xmlns:html="http://www.w3.org/1999/xhtml"
+      id="researchflow-preferences-pane" class="rf-prefs-container"
+      onload="ResearchFlow_Preferences.init(window)">
+  <html:header class="rf-pref-header">
+    <html:div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <html:h1 style="margin: 0; font-size: 16px; font-weight: 700;">ResearchFlow OS 论文管线与投稿管理首选项</html:h1>
+      <html:div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <html:button id="rf-btn-open-workspace" class="rf-pref-btn" type="button" title="在 Zotero 内部选项卡中打开工作台">📑 内部选项卡</html:button>
+        <html:button id="rf-btn-open-subwindow" class="rf-pref-btn" type="button" title="打开 480×780 紧凑伴读子窗口，适合边看文献边跟踪稿件">🗗 伴读子窗口</html:button>
+        <html:button id="rf-btn-open-window" class="rf-pref-btn" type="button" title="打开 1240×820 独立桌面全功能大窗口">⬚ 独立大窗口</html:button>
+      </html:div>
+    </html:div>
+  </html:header>
+  <html:p id="rf-pref-status" class="rf-pref-status" role="status" aria-live="polite">正在加载设置项…</html:p>
+  
+  <groupbox id="rf-group-window" class="rf-pref-group">
+    <html:h2 class="rf-group-title">1. 工作台窗口模式与多窗协同</html:h2>
+    <html:div id="rf-pref-window" class="rf-pref-content" />
+  </groupbox>
+
+  <groupbox id="rf-group-view" class="rf-pref-group">
+    <html:h2 class="rf-group-title">2. 界面显示与默认工作区视图</html:h2>
+    <html:div id="rf-pref-view" class="rf-pref-content" />
+  </groupbox>
+
+  <groupbox id="rf-group-literature" class="rf-pref-group">
+    <html:h2 class="rf-group-title">3. 文献侧边详情栏 (ItemPane) 与双向联动</html:h2>
+    <html:div id="rf-pref-literature" class="rf-pref-content" />
+  </groupbox>
+
+  <groupbox id="rf-group-sync" class="rf-pref-group">
+    <html:h2 class="rf-group-title">4. 本地持久化与多云同步概况</html:h2>
+    <html:div id="rf-pref-sync" class="rf-pref-content">
+      <html:p class="rf-pref-desc">ResearchFlow 遵循本地优先原则，所有科研数据均安全保存于 Zotero 专属数据目录，可随时配合 WebDAV 或 GitHub 进行私有云同步：</html:p>
+      <html:div style="display: flex; gap: 8px; align-items: center; margin-top: 6px;">
+        <html:span style="font-size: 12px; font-weight: 600; color: #0284c7;">📁 数据存储位置：</html:span>
+        <html:code id="rf-data-path-label" style="font-size: 11px; background: rgba(0,0,0,0.05); padding: 3px 6px; border-radius: 4px; font-family: monospace;">Zotero/researchflow-data.json</html:code>
+      </html:div>
+    </html:div>
+  </groupbox>
+
+  <groupbox id="rf-group-export" class="rf-pref-group">
+    <html:h2 class="rf-group-title">5. 数据库全量备份与跨格式导出</html:h2>
+    <html:div class="rf-pref-content">
+      <html:p class="rf-pref-desc">支持一键将全部论文管线、审稿意见矩阵、日程任务与期刊记录导出为 JSON 标准数据包：</html:p>
+      <html:div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+        <html:button id="rf-btn-export-db" type="button" class="rf-pref-btn rf-pref-btn-primary">📑 导出 JSON 全量备份</html:button>
+        <html:button id="rf-btn-export-diag" type="button" class="rf-pref-btn">🔍 导出运行诊断报告</html:button>
+      </html:div>
+    </html:div>
+  </groupbox>
+
+  <groupbox id="rf-group-import" class="rf-pref-group">
+    <html:h2 class="rf-group-title">6. 数据导入与灾备恢复</html:h2>
+    <html:div class="rf-pref-content">
+      <html:p class="rf-pref-desc">从 ResearchFlow JSON 备份中恢复科研管线数据（导入前会自动生成安全快照）：</html:p>
+      <html:div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+        <html:select id="rf-import-mode" class="rf-control" style="max-width: 240px;">
+          <html:option value="merge">智能合并 (保留现有并补充导入)</html:option>
+          <html:option value="overwrite">完全替换 (清空当前库并以备份为准)</html:option>
+        </html:select>
+        <html:button id="rf-btn-import-file" type="button" class="rf-pref-btn rf-pref-btn-primary">📂 选择 JSON 文件导入</html:button>
+        <html:button id="rf-btn-restore-backup" type="button" class="rf-pref-btn">⏮️ 恢复上次导入前备份</html:button>
+      </html:div>
+      <html:p id="rf-import-status" class="rf-pref-desc" style="margin-top: 6px; font-size: 12px; color: #0284c7; font-weight: 500;"></html:p>
+    </html:div>
+  </groupbox>
+</vbox>
