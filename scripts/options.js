@@ -4248,45 +4248,63 @@ function openManuscriptModal(man = null, prefill = null) {
   );
 
   const zoteroActionBarHtml = isZoteroEnv ? `
-    <div class="zotero-modal-action-bar" style="background:var(--material-background, rgba(0,0,0,0.02)); border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">
+    <div class="zotero-modal-action-bar" id="zotero-modal-hub" style="background:var(--material-background, rgba(0,0,0,0.02)); border:1px solid var(--border-color); border-radius:8px; padding:10px 14px; margin-bottom:14px; display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-        <div id="zotero-bind-status" style="font-size:12px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+        <div id="zotero-bind-status" style="font-size:12px; display:flex; align-items:center; gap:8px; cursor:pointer;" title="点击检索或关联 Zotero 文献库">
           ${currentZoteroItemKey
-            ? `<span style="color:#059669; font-weight:600;">✅ 已关联 Zotero 文献条目</span>`
-            : `<span style="color:#64748b;">未绑定 Zotero 文献条目</span>`}
+            ? `<span style="color:#059669; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                已关联 Zotero 文献条目
+              </span>`
+            : `<span style="color:#64748b; font-weight:500; display:inline-flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                ${escapeHTML(currentLanguage === 'zh' ? '未绑定 Zotero 文献条目 (点击可搜索关联)' : 'No Zotero item linked (Click to search)')}
+              </span>`}
           <span id="zotero-modal-citekey" class="zotero-citekey-badge" style="${currentCiteKey ? '' : 'display:none;'}" title="点击复制 Citation Key">[@${escapeHTML(currentCiteKey)}]</span>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-          <button type="button" class="btn-secondary" id="btn-zotero-fetch-active" style="padding:3px 8px; font-size:11px; white-space:nowrap;" title="读取 Zotero 当前选中的文献条目并自动填充各字段">
-            📥 从选中导入
+          <button type="button" class="btn-secondary" id="btn-zotero-fetch-active" style="padding:4px 9px; font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;" title="读取 Zotero 当前选中的文献条目并自动填充各字段">
+            📥 从当前选中导入
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-copy-bib" style="padding:3px 8px; font-size:11px; color:#475569; ${currentBibtex ? '' : 'display:none;'}" title="复制 BibTeX 引用条目">
+          <button type="button" class="btn-secondary" id="btn-zotero-toggle-search" style="padding:4px 9px; font-size:11px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;" title="在 Zotero 文献库中按关键词检索文献">
+            🔍 检索文献库
+          </button>
+          <button type="button" class="btn-secondary" id="btn-zotero-copy-bib" style="padding:4px 8px; font-size:11px; color:#475569; ${currentBibtex ? '' : 'display:none;'}" title="复制 BibTeX 引用条目">
             📋 BibTeX
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-copy-apa" style="padding:3px 8px; font-size:11px; color:#475569; ${currentCitationApa ? '' : 'display:none;'}" title="复制标准引用 (APA)">
+          <button type="button" class="btn-secondary" id="btn-zotero-copy-apa" style="padding:4px 8px; font-size:11px; color:#475569; ${currentCitationApa ? '' : 'display:none;'}" title="复制标准引用 (APA)">
             📋 引用
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-toggle-annos" style="padding:3px 8px; font-size:11px; color:#d97706; ${currentZoteroItemKey ? '' : 'display:none;'}" title="查看并引用 Zotero 研读资产库：PDF划线批注、独立文献笔记、知识库分类与标签">
-            📑 研读资产库
+          <button type="button" class="btn-secondary" id="btn-zotero-toggle-annos" style="padding:4px 8px; font-size:11px; color:#d97706; ${currentZoteroItemKey ? '' : 'display:none;'}" title="查看并引用 Zotero 研读资产库：PDF划线批注、独立文献笔记、知识库分类与标签">
+            📑 研读资产
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-open-pdf" style="padding:3px 8px; font-size:11px; color:#059669; ${currentZoteroItemKey ? '' : 'display:none;'}" title="在 Zotero 阅读器中打开 PDF">
-            📖 PDF
+          <button type="button" class="btn-secondary" id="btn-zotero-open-pdf" style="padding:4px 8px; font-size:11px; color:#059669; ${currentZoteroItemKey ? '' : 'display:none;'}" title="在 Zotero 阅读器中打开 PDF">
+            📖 原文 PDF
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-sync-note" style="padding:3px 8px; font-size:11px; color:#cc292b; border-color:rgba(204,41,43,0.3); font-weight:500; ${currentZoteroItemKey ? '' : 'display:none;'}" title="同步稿件进展至 Zotero 云笔记">
+          <button type="button" class="btn-secondary" id="btn-zotero-sync-note" style="padding:4px 8px; font-size:11px; color:#cc292b; border-color:rgba(204,41,43,0.3); font-weight:500; ${currentZoteroItemKey ? '' : 'display:none;'}" title="同步稿件进展至 Zotero 云笔记">
             📝 同步笔记
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-locate" style="padding:3px 8px; font-size:11px; ${currentZoteroItemKey ? '' : 'display:none;'}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 文献库中定位该条目' : 'Locate item in Zotero library')}">
+          <button type="button" class="btn-secondary" id="btn-zotero-locate" style="padding:4px 8px; font-size:11px; ${currentZoteroItemKey ? '' : 'display:none;'}" title="${escapeHTML(currentLanguage === 'zh' ? '在 Zotero 文献库中定位该条目' : 'Locate item in Zotero library')}">
             🔗 ${escapeHTML(currentLanguage === 'zh' ? '定位' : 'Locate')}
           </button>
-          <button type="button" class="btn-secondary" id="btn-zotero-unlink" style="padding:3px 8px; font-size:11px; color:#ef4444; ${currentZoteroItemKey ? '' : 'display:none;'}" title="${escapeHTML(currentLanguage === 'zh' ? '解除与 Zotero 文献的绑定' : 'Unlink from Zotero item')}">
+          <button type="button" class="btn-secondary" id="btn-zotero-unlink" style="padding:4px 8px; font-size:11px; color:#ef4444; ${currentZoteroItemKey ? '' : 'display:none;'}" title="${escapeHTML(currentLanguage === 'zh' ? '解除与 Zotero 文献的绑定' : 'Unlink from Zotero item')}">
             ✕ ${escapeHTML(currentLanguage === 'zh' ? '解绑' : 'Unlink')}
           </button>
         </div>
       </div>
-      <div style="position:relative; width:100%;">
-        <input type="text" id="ipt-zotero-live-search" placeholder="${escapeHTML(currentLanguage === 'zh' ? '🔍 检索 Zotero 10 文献库 (输入标题/作者/DOI/年份) 快速关联...' : '🔍 Search Zotero 10 library (title/author/DOI/year) to link...')}" style="font-size:11px; padding:5px 8px; width:100%; box-sizing:border-box; background:var(--input-bg); color:hsl(var(--text-primary)); border:1px solid var(--input-border); border-radius:6px; outline:none;">
+
+      <!-- Quick Active Item Prompt Banner -->
+      <div id="zotero-active-item-banner" style="display:none; background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.25); border-radius:6px; padding:7px 10px; font-size:11.5px; color:#1d4ed8; justify-content:space-between; align-items:center;">
+        <span id="zotero-active-item-text" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:78%;"></span>
+        <button type="button" class="btn-primary" id="btn-zotero-quick-bind-active" style="padding:3px 9px; font-size:11px; cursor:pointer; flex-shrink:0;">⚡ 一键关联填入</button>
+      </div>
+
+      <!-- Live Search Box with Dropdown -->
+      <div id="zotero-search-container" style="position:relative; width:100%; display:${currentZoteroItemKey ? 'none' : 'block'};">
+        <input type="text" id="ipt-zotero-live-search" placeholder="${escapeHTML(currentLanguage === 'zh' ? '🔍 检索 Zotero 10 文献库 (输入标题/作者/DOI/年份) 快速关联并填充...' : '🔍 Search Zotero 10 library (title/author/DOI/year) to link...')}" style="font-size:12px; padding:7px 10px; width:100%; box-sizing:border-box; background:var(--input-bg); color:hsl(var(--text-primary)); border:1px solid var(--input-border); border-radius:6px; outline:none;">
         <div id="zotero-search-results-dropdown" class="zotero-search-dropdown" style="display:none;"></div>
       </div>
+
       <div id="man-zotero-annotations-panel" class="zotero-annotations-panel" style="display:none;"></div>
       <div id="man-zotero-related-panel" style="display:none; font-size:11px; color:hsl(var(--text-secondary));">
         <strong>🔗 Zotero 关联文献网络：</strong>
@@ -4298,7 +4316,7 @@ function openManuscriptModal(man = null, prefill = null) {
   openModal(`
     <div class="modal-header">
       <h2>${escapeHTML(isEdit ? t('editManuscriptMetadata') : t('addNewManuscriptTitle'))}</h2>
-      <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
+      <button class="btn-secondary btn-icon" id="btn-close-modal" title="关闭">✕</button>
     </div>
 
     ${buildAcademicCaptureSummary(prefill)}
@@ -4352,10 +4370,32 @@ function openManuscriptModal(man = null, prefill = null) {
       <textarea id="man-abstract" placeholder="${escapeHTML(t('abstractPlaceholder'))}">${escapeHTML(initialAbstract || '')}</textarea>
     </div>
 
-    <button class="btn-primary w-full" id="btn-submit-man">${escapeHTML(isEdit ? t('saveChanges') : t('createManuscript'))}</button>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" id="btn-cancel-man">${escapeHTML(t('cancel') || '取消')}</button>
+      <button type="button" class="btn-primary" id="btn-submit-man" style="min-width:120px;">${escapeHTML(isEdit ? t('saveChanges') : t('createManuscript'))}</button>
+    </div>
   `);
 
+  document.getElementById('btn-cancel-man')?.addEventListener('click', closeModal);
+
   if (isZoteroEnv) {
+    const applyItemToForm = (item) => {
+      if (!item) return;
+      if (item.title) document.getElementById('man-title').value = item.title;
+      if (item.publication) document.getElementById('man-journal').value = item.publication;
+      if (item.authors) document.getElementById('man-authors').value = item.authors;
+      if (item.doi) document.getElementById('man-doi').value = item.doi;
+      if (item.url) document.getElementById('man-article-url').value = item.url;
+      if (item.abstract) document.getElementById('man-abstract').value = item.abstract;
+      updateZoteroBindUI(item);
+      const searchContainer = document.getElementById('zotero-search-container');
+      if (searchContainer) searchContainer.style.display = 'none';
+      showGlobalToast(`已关联并填充文献《${(item.title || '').slice(0, 18)}…》元数据`, 'success');
+      if (typeof ZoteroBridge !== 'undefined') {
+        ZoteroBridge.showNativeToast('文献已关联', item.title, 'success');
+      }
+    };
+
     const updateZoteroBindUI = (item) => {
       const statusEl = document.getElementById('zotero-bind-status');
       const pdfBtn = document.getElementById('btn-zotero-open-pdf');
@@ -4365,7 +4405,7 @@ function openManuscriptModal(man = null, prefill = null) {
       const bibBtn = document.getElementById('btn-zotero-copy-bib');
       const apaBtn = document.getElementById('btn-zotero-copy-apa');
       const annoBtn = document.getElementById('btn-zotero-toggle-annos');
-      const citeBadge = document.getElementById('zotero-modal-citekey');
+      const searchContainer = document.getElementById('zotero-search-container');
 
       if (item && item.key) {
         currentZoteroItemKey = item.key;
@@ -4377,13 +4417,14 @@ function openManuscriptModal(man = null, prefill = null) {
         currentRelatedItems = item.relatedItems || [];
 
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:#059669; font-weight:600;">✅ 已关联: ${escapeHTML((item.title || '').slice(0, 20))}…</span>`;
+          statusEl.innerHTML = `<span style="color:#059669; font-weight:600; display:inline-flex; align-items:center; gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>已关联: ${escapeHTML((item.title || '').slice(0, 22))}…</span>`;
           if (currentCiteKey) {
             const citeEl = document.createElement('span');
             citeEl.className = 'zotero-citekey-badge';
             citeEl.textContent = `[@${currentCiteKey}]`;
             citeEl.title = '点击复制 Citation Key';
-            citeEl.addEventListener('click', () => {
+            citeEl.addEventListener('click', (e) => {
+              e.stopPropagation();
               if (typeof ZoteroBridge !== 'undefined') {
                 ZoteroBridge.copyText(`[@${currentCiteKey}]`, `已复制 Citation Key: [@${currentCiteKey}]`);
               }
@@ -4398,6 +4439,7 @@ function openManuscriptModal(man = null, prefill = null) {
         if (bibBtn) bibBtn.style.display = currentBibtex ? '' : 'none';
         if (apaBtn) apaBtn.style.display = currentCitationApa ? '' : 'none';
         if (annoBtn) annoBtn.style.display = '';
+        if (searchContainer) searchContainer.style.display = 'none';
 
         // Render related items if present
         const relPanel = document.getElementById('man-zotero-related-panel');
@@ -4429,7 +4471,7 @@ function openManuscriptModal(man = null, prefill = null) {
         currentCitationApa = '';
         currentRelatedItems = [];
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:#64748b;">${escapeHTML(currentLanguage === 'zh' ? '未绑定 Zotero 文献条目' : 'No Zotero item linked')}</span>`;
+          statusEl.innerHTML = `<span style="color:#64748b; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${escapeHTML(currentLanguage === 'zh' ? '未绑定 Zotero 文献条目 (点击可搜索关联)' : 'No Zotero item linked (Click to search)')}</span>`;
         }
         if (pdfBtn) pdfBtn.style.display = 'none';
         if (syncBtn) syncBtn.style.display = 'none';
@@ -4438,6 +4480,7 @@ function openManuscriptModal(man = null, prefill = null) {
         if (bibBtn) bibBtn.style.display = 'none';
         if (apaBtn) apaBtn.style.display = 'none';
         if (annoBtn) annoBtn.style.display = 'none';
+        if (searchContainer) searchContainer.style.display = 'block';
         const relPanel = document.getElementById('man-zotero-related-panel');
         if (relPanel) relPanel.style.display = 'none';
         const annoPanel = document.getElementById('man-zotero-annotations-panel');
@@ -4445,8 +4488,48 @@ function openManuscriptModal(man = null, prefill = null) {
       }
     };
 
+    // Auto-detect currently active item in Zotero asynchronously
+    setTimeout(async () => {
+      try {
+        if (typeof ZoteroBridge !== 'undefined' && !currentZoteroItemKey) {
+          const activeItem = await ZoteroBridge.getActiveItem();
+          const banner = document.getElementById('zotero-active-item-banner');
+          const textEl = document.getElementById('zotero-active-item-text');
+          const quickBindBtn = document.getElementById('btn-zotero-quick-bind-active');
+          if (activeItem && activeItem.title && banner && textEl) {
+            textEl.innerHTML = `📌 <strong>检测到 Zotero 选中文献：</strong>《${escapeHTML(activeItem.title)}》`;
+            banner.style.display = 'flex';
+            quickBindBtn?.addEventListener('click', () => {
+              applyItemToForm(activeItem);
+              banner.style.display = 'none';
+            });
+          }
+        }
+      } catch (_) {}
+    }, 60);
+
+    // Clicking bind status card focuses / opens search
+    document.getElementById('zotero-bind-status')?.addEventListener('click', () => {
+      const searchContainer = document.getElementById('zotero-search-container');
+      const searchInput = document.getElementById('ipt-zotero-live-search');
+      if (searchContainer) {
+        searchContainer.style.display = 'block';
+        searchInput?.focus();
+      }
+    });
+
+    document.getElementById('btn-zotero-toggle-search')?.addEventListener('click', () => {
+      const searchContainer = document.getElementById('zotero-search-container');
+      const searchInput = document.getElementById('ipt-zotero-live-search');
+      if (searchContainer) {
+        searchContainer.style.display = searchContainer.style.display === 'none' ? 'block' : 'none';
+        if (searchContainer.style.display === 'block') searchInput?.focus();
+      }
+    });
+
     // Citekey, BibTeX, and APA buttons
-    document.getElementById('zotero-modal-citekey')?.addEventListener('click', () => {
+    document.getElementById('zotero-modal-citekey')?.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (currentCiteKey && typeof ZoteroBridge !== 'undefined') {
         ZoteroBridge.copyText(`[@${currentCiteKey}]`, `已复制 Citation Key: [@${currentCiteKey}]`);
       }
@@ -4699,19 +4782,9 @@ function openManuscriptModal(man = null, prefill = null) {
               <div class="zotero-search-result-meta">${escapeHTML(res.authors || '')} ${res.year ? `· ${escapeHTML(res.year)}` : ''} ${res.publication ? `· ${escapeHTML(res.publication)}` : ''}</div>
             `;
             itemEl.addEventListener('click', () => {
-              if (res.title) document.getElementById('man-title').value = res.title;
-              if (res.publication) document.getElementById('man-journal').value = res.publication;
-              if (res.authors) document.getElementById('man-authors').value = res.authors;
-              if (res.doi) document.getElementById('man-doi').value = res.doi;
-              if (res.url) document.getElementById('man-article-url').value = res.url;
-              if (res.abstract) document.getElementById('man-abstract').value = res.abstract;
-              updateZoteroBindUI(res);
+              applyItemToForm(res);
               dropdown.style.display = 'none';
               searchInput.value = '';
-              showGlobalToast(`已关联文献《${(res.title || '').slice(0, 18)}…》`, 'success');
-              if (typeof ZoteroBridge !== 'undefined') {
-                ZoteroBridge.showNativeToast('文献已关联', res.title, 'success');
-              }
             });
             dropdown.appendChild(itemEl);
           });
@@ -4730,17 +4803,7 @@ function openManuscriptModal(man = null, prefill = null) {
         ? await ZoteroBridge.getActiveItem()
         : null;
       if (activeItem) {
-        if (activeItem.title) document.getElementById('man-title').value = activeItem.title;
-        if (activeItem.publication) document.getElementById('man-journal').value = activeItem.publication;
-        if (activeItem.authors) document.getElementById('man-authors').value = activeItem.authors;
-        if (activeItem.doi) document.getElementById('man-doi').value = activeItem.doi;
-        if (activeItem.url) document.getElementById('man-article-url').value = activeItem.url;
-        if (activeItem.abstract) document.getElementById('man-abstract').value = activeItem.abstract;
-        updateZoteroBindUI(activeItem);
-        showGlobalToast(`已导入文献《${activeItem.title.slice(0, 18)}…》元数据`, 'success');
-        if (typeof ZoteroBridge !== 'undefined') {
-          ZoteroBridge.showNativeToast('元数据已导入', activeItem.title, 'success');
-        }
+        applyItemToForm(activeItem);
       } else {
         showGlobalToast('未在 Zotero 中检测到选中条目，请在文献库中单击选中目标论文。', 'warning');
       }
@@ -4771,6 +4834,8 @@ function openManuscriptModal(man = null, prefill = null) {
 
     document.getElementById('btn-zotero-unlink')?.addEventListener('click', () => {
       updateZoteroBindUI(null);
+      const searchContainer = document.getElementById('zotero-search-container');
+      if (searchContainer) searchContainer.style.display = 'block';
       showGlobalToast('已解除 Zotero 文献绑定', 'info');
     });
   }
