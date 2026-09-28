@@ -28,6 +28,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Build Zotero package
+        # Packaging checks require the generated, ignored dist-zotero tree.
+        # Build it in clean checkouts instead of relying on a local artifact.
+        shell: pwsh
+        run: |
+          node scripts/build-zotero.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Run regression suites
         shell: pwsh
         run: |
