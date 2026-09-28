@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
 .refactor-backups/
-.playwright-cli/
 output/
 
 # OS files
