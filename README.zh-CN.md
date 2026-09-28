@@ -2,7 +2,7 @@
 
 [English](README.md) · [下载最新 XPI](https://github.com/groele/ResearchFlow-Zotero/releases/latest)
 
-本仓库仅维护 **Zotero 桌面版插件**。已移除 Chrome Companion 的扩展入口、后台服务、网页识别脚本、ZIP 安装包及相关说明。
+本仓库仅维护 **Zotero 桌面版插件**。Chrome Companion 扩展入口、后台服务、网页识别脚本、浏览器安装包以及浏览器专用测试环境均不属于当前项目范围。
 
 ## 安装 9.1.5
 
@@ -20,7 +20,7 @@
 - **常用投稿网址**：用户可添加、修改、删除自己的 HTTP/HTTPS 投稿入口。
 - **Zotero 设置**：语言、外观、WebDAV/GitHub 多云同步、JSON 导入导出和导入前备份恢复。
 
-三个模块共享同一份关联数据。标题、期刊、作者、状态和时间节点同步更新；手稿跟随当前投稿轮次，历史投稿保留原期刊及状态。接收日期和上线日期分别保存。多云配置集中在 Zotero 设置中，Chrome 专属的网页自动识别开关已移除。
+三个模块共享同一份关联数据。标题、期刊、作者、状态和时间节点同步更新；手稿跟随当前投稿轮次，历史投稿保留原期刊及状态。接收日期和上线日期分别保存。多云配置集中在 Zotero 设置中，浏览器专属的网页自动识别功能已移除。
 
 ## 数据与备份
 
@@ -39,13 +39,9 @@
 ```powershell
 npm run build:zotero
 npm test
-# 可选：使用测试浏览器与模拟 Zotero 接口检查界面
-npm install --no-save --no-package-lock playwright
-npx playwright install chromium
-pwsh -NoProfile -File tests/verify.ps1 -Browser
 ```
 
-安装包输出到 dist-zip，临时打包目录为 dist-zotero。构建只复制明确列出的 Zotero 运行时脚本。界面测试不加载 Chrome 扩展，也不能代替真实 Zotero 桌面和真实云账户测试。
+安装包输出到 dist-zip，临时打包目录为 dist-zotero。构建只复制明确列出的 Zotero 运行时脚本。回归测试覆盖 Zotero 运行时契约、宿主适配、存储、首选项、XPI 内容和共享工作流逻辑，不再维护独立浏览器测试链。
 
 源码中的 zotero/chrome、chrome.manifest、chrome:// 与 ChromeUtils 属于 Zotero 使用的 Gecko 机制，是桌面插件必需部分。
 
