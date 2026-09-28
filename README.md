@@ -2,7 +2,7 @@
 
 [中文说明](README.zh-CN.md) · [Download XPI](https://github.com/groele/ResearchFlow-Zotero/releases/latest)
 
-ResearchFlow is a Zotero Desktop plugin for manuscript planning, submission tracking, and review timelines. This repository distributes only the Zotero plugin. The former Chrome Companion entrypoint, webpage detectors, service worker, browser ZIP packages, and installation instructions have been removed.
+ResearchFlow is a Zotero Desktop plugin for manuscript planning, submission tracking, and review timelines. This repository distributes only the Zotero plugin. Browser-extension entrypoints, webpage detectors, service workers, browser packages, and browser-only test harnesses are intentionally excluded.
 
 ## Install 9.1.5
 
@@ -36,18 +36,14 @@ Existing JSON exports remain importable. Credentials are excluded from workflow 
 
 ## Development
 
-Node.js 22+ and PowerShell 7 are required for packaging.
+Node.js 22+ and PowerShell 7 are required for packaging and regression checks.
 
 ```powershell
 npm run build:zotero
 npm test
-# Optional UI automation in a test browser with mocked Zotero APIs:
-npm install --no-save --no-package-lock playwright
-npx playwright install chromium
-pwsh -NoProfile -File tests/verify.ps1 -Browser
 ```
 
-The XPI is generated in dist-zip; unpacked staging is in dist-zotero. Packaging uses an explicit Zotero runtime allowlist. Browser automation checks the HTML interface without installing a Chrome extension. It does not replace native Zotero or real cloud-account verification.
+The XPI is generated in dist-zip; unpacked staging is in dist-zotero. Packaging uses an explicit Zotero runtime allowlist. Regression tests cover the Zotero runtime contract, host adapters, storage, preferences, package contents, and shared workflow logic.
 
 The zotero/chrome directory, chrome.manifest, chrome:// resource URLs, and ChromeUtils are Gecko/Zotero mechanisms. They are required by Zotero and do not constitute a Google Chrome version.
 
