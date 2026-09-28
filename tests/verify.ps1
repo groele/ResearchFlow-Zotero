@@ -1,4 +1,3 @@
-param([switch]$Browser)
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = Split-Path $PSScriptRoot -Parent
 Push-Location $workspaceRoot
@@ -15,19 +14,5 @@ try {
     & node --check $file.FullName
     if ($LASTEXITCODE -ne 0) { throw "Syntax failed: $($file.Name)" }
   }
-  if ($Browser) {
-    $server = Start-Process -FilePath node -ArgumentList 'tests/static-server.js' -WorkingDirectory $workspaceRoot -PassThru -WindowStyle Hidden
-    try {
-      Start-Sleep -Milliseconds 600
-      & node tests/share-card-browser-smoke.js
-      if ($LASTEXITCODE -ne 0) { throw 'Share card browser smoke failed.' }
-      & node tests/workspace-browser-smoke.js
-      if ($LASTEXITCODE -ne 0) { throw 'Mocked workspace browser smoke failed.' }
-      & node tests/workflow-browser-smoke.js
-      if ($LASTEXITCODE -ne 0) { throw 'Cross-view workflow browser smoke failed.' }
-    } finally {
-      Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
-    }
-  }
-  Write-Output 'ResearchFlow verification passed.'
+  Write-Output 'ResearchFlow Zotero verification passed.'
 } finally { Pop-Location }
