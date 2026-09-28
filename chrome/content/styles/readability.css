@@ -1,0 +1,374 @@
+/* Reading rhythm and editorial surfaces for the Zotero workspace. */
+:root { --journal-ink: 216 70% 37%; }
+:root[data-theme="dark"] { --journal-ink: 212 88% 78%; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --journal-ink: 212 88% 78%; }
+}
+#view-dashboard .stat-box {
+  min-height: 96px;
+  padding: 16px 18px;
+  gap: 5px;
+}
+
+#view-dashboard .stat-box h4 {
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+#view-dashboard .stat-number { font-size: 32px; }
+
+.timeline-summary-header {
+  gap: 10px;
+  margin-bottom: 14px !important;
+}
+
+.timeline-summary-header .summary-card {
+  padding: 11px 13px;
+  border-radius: 9px;
+}
+
+.timeline-summary-header .summary-card .label {
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.timeline-summary-header .summary-card .value { font-size: 22px; }
+
+.project-title,
+.pipeline-cards-container:not(.expanded) .project-title {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.pipeline-cards-container:not(.expanded) .pipeline-card {
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.pipeline-compact-status { display: none; }
+.pipeline-cards-container:not(.expanded) .pipeline-compact-status {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--state-color) 35%, transparent);
+  border-radius: 999px;
+  color: var(--state-color);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.pipeline-cards-container:not(.expanded) .state-box { display: none; }
+.pipeline-cards-container:not(.expanded) .pipeline-first-author.is-empty { display: none; }
+.pipeline-cards-container:not(.expanded) .project-title { font-size: 15px; line-height: 1.6; }
+.pipeline-cards-container:not(.expanded) .project-meta { font-size: 12px; line-height: 1.6; }
+.pipeline-cards-container:not(.expanded) .core-label { font-size: 12px; }
+.pipeline-cards-container:not(.expanded) .core-value strong { font-size: 26px; }
+
+.pipeline-cards-container:not(.expanded) .milestone-name { font-size: 11.5px; }
+.pipeline-cards-container:not(.expanded) .state-note { font-size: 11px; line-height: 1.4; }
+.pipeline-cards-container:not(.expanded) .state-pill { font-size: 11px; }
+
+.btn-pipeline-open {
+  border-color: hsl(var(--workspace-accent) / 0.28);
+  color: hsl(var(--workspace-accent));
+  font-weight: 500;
+}
+
+.btn-pipeline-open:hover,
+.btn-pipeline-open:focus-visible { border-color: hsl(var(--workspace-accent)); }
+
+.pipeline-card .project-info .pipeline-actions { gap: 6px !important; }
+.pipeline-card .project-info .pipeline-actions button { min-width: 0; min-height: 32px; font-size: 12px; }
+.pipeline-cards-container:not(.expanded) .project-info .pipeline-actions { flex-wrap: nowrap; }
+
+.kanban-card-title-row { display: block; margin-bottom: 8px; }
+.kanban-view-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: hsl(var(--text-muted));
+  font-size: 12.5px;
+}
+.kanban-view-options button { min-height: 32px; font-size: 12px; }
+.kanban-board { display: flex; gap: 12px; }
+.kanban-col { flex: 1 0 250px; min-width: 250px; }
+.kanban-board:not(.show-empty-columns):not(.all-empty) .kanban-col.is-empty { display: none; }
+.kanban-card h4 { font-size: 14px; font-weight: 500; line-height: 1.65; -webkit-line-clamp: 4; }
+.kanban-card-meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+.kanban-card-meta-row .kanban-status-pill { width: fit-content; max-width: 100%; font-size: 11.5px; }
+.kanban-card-meta-row p { margin: 0; font-size: 12.5px; }
+.kanban-card-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.kanban-card-select {
+  width: auto;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 4px 6px;
+  font-size: 12.5px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: hsl(var(--text-primary));
+}
+.kanban-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.kanban-card-actions .btn-secondary { min-height: 34px; padding: 5px 9px; font-size: 12.5px; }
+
+.submission-tools-row { gap: 12px; margin-bottom: 12px; padding: 8px 12px; }
+.submission-tools-copy { flex-basis: 165px; }
+.submission-tools-copy small { font-size: 11.5px; line-height: 1.4; }
+.portal-dock-title { font-size: 11.5px; }
+.journal-portals-dock .portal-item-card { width: 86px; min-width: 86px; max-width: 86px; height: 64px; }
+.journal-portals-dock .portal-open { padding: 5px; }
+.journal-portals-dock .portal-info { gap: 3px; }
+.journal-portals-dock .portal-avatar { width: 27px; height: 27px; font-size: 12px; }
+.journal-portals-dock .portal-name { max-width: 76px; font-size: 11.5px; }
+
+.submission-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.submission-list-head .text-muted { font-size: 12px; line-height: 1.5; }
+.workflow-context-head p { font-size: 12px; line-height: 1.55; }
+.workflow-context-grid { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); }
+.workflow-context-item span { font-size: 11.5px; }
+.workflow-context-item strong {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13.5px;
+  line-height: 1.38;
+}
+
+@media (max-width: 900px) {
+  .sidebar .nav-item {
+    font-size: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .sidebar .nav-item .svg-icon { flex: 0 0 19px; }
+  .pipeline-cards-container:not(.expanded) .pipeline-card { grid-template-columns: minmax(0, 1fr); }
+  .pipeline-cards-container:not(.expanded) .state-box { display: none; }
+}
+
+@media (max-width: 820px) {
+  .kanban-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); height: auto; overflow: visible; }
+  .kanban-col { min-width: 0; min-height: 250px; max-height: 600px; }
+  .kanban-board:not(.show-empty-columns):not(.all-empty) .kanban-col.is-empty { display: none; }
+  .kanban-board.all-empty .kanban-col.is-empty { display: flex; }
+  .submission-tools-copy { flex-basis: auto; }
+}
+
+@media (max-width: 620px) {
+  #view-dashboard .grid-cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  #view-dashboard .stat-box { min-height: 112px; padding: 10px 7px; text-align: center; align-items: center; justify-content: space-between; }
+  #view-dashboard .stat-box h4 { display: block !important; font-size: 11.5px; line-height: 1.3; }
+  #view-dashboard .stat-box .filter-tip { display: none; }
+  #view-dashboard .stat-number { font-size: 27px; }
+  .pipeline-module-header { display: block; }
+  .pipeline-toolbar { margin-top: 14px; flex-wrap: wrap; }
+  .kanban-board { grid-template-columns: minmax(0, 1fr); }
+  .kanban-col { height: auto; max-height: none; overflow-y: visible; }
+  .pipeline-cards-container:not(.expanded) .project-info .pipeline-actions { flex-wrap: wrap; }
+  .workflow-context-grid { grid-template-columns: minmax(0, 1fr); }
+  .kanban-card-actions { width: 100%; }
+  .submission-tools-row .journal-portals-dock { display: flex; align-items: center; min-width: 0; padding-left: 0; }
+  .journal-portals-dock .portal-dock-list {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 2px 3px;
+    scroll-snap-type: x proximity;
+  }
+  .journal-portals-dock .portal-item-card { scroll-snap-align: start; }
+  .journal-portals-dock .portal-actions { top: 1px; right: 1px; }
+  .journal-portals-dock .btn-portal-add { flex: 0 0 34px; }
+}
+
+/* Consistent hierarchy without condensed faces, tracking or heavy display numerals. */
+.brand h2 { font-size: 14px; font-weight: 600; }
+.brand { padding: 18px 12px; border-radius: 12px; background: linear-gradient(130deg, #233c59, #172b42); border: 1px solid #314e6e; box-shadow: 0 5px 16px hsl(214 44% 20% / 0.12); }
+.brand h2 { color: #f3f7fc; }
+.brand .version { color: #c7d8ea; background: #ffffff12; font-weight: 400; padding: 2px 6px; }
+.logo-orb { box-shadow: 0 2px 7px #00000020; }
+.sidebar { background: linear-gradient(180deg, hsl(var(--ui-navy) / 0.035), transparent 360px), hsl(var(--card-bg)); }
+.nav-item { font-weight: 400; gap: 10px; min-height: 42px; border-radius: 8px; }
+.nav-item > .svg-icon { color: hsl(var(--ui-navy) / 0.7); }
+.nav-item.active { font-weight: 500; color: hsl(var(--ui-navy)); background: hsl(var(--ui-navy) / 0.11); border-color: hsl(var(--ui-navy) / 0.14); border-left-color: hsl(var(--ui-rose)); box-shadow: 0 2px 5px hsl(var(--ui-navy) / 0.04); }
+.nav-item.active > .svg-icon { color: hsl(var(--ui-rose)); }
+.view-header h1 { font-size: 21px; line-height: 1.45; font-weight: 600; }
+.view-header > p, .view-header > div > p { margin-top: 4px; font-size: 13px; color: hsl(var(--text-muted)); line-height: 1.65; }
+.pipeline-module-header h3, .submission-list-head h3, .workflow-context-head h3 { font-size: 15px; font-weight: 500; line-height: 1.5; }
+.pipeline-module-header .text-muted { line-height: 1.65; }
+.stat-number, .summary-card .value, .core-value strong { font-family: var(--font-ui); font-weight: 500; letter-spacing: normal; }
+#view-dashboard .stat-box { --stat-accent: var(--ui-navy); position: relative; isolation: isolate; overflow: hidden; align-items: flex-start; text-align: left; border-radius: 12px; border-color: hsl(var(--stat-accent) / 0.2); box-shadow: var(--ui-shadow); gap: 10px; min-height: 112px; background: linear-gradient(110deg, hsl(var(--stat-accent) / 0.075), hsl(var(--card-bg)) 80%); transition: border-color 160ms, box-shadow 160ms; }
+#view-dashboard .filter-accepted { --stat-accent: var(--ui-teal); }
+#view-dashboard .filter-active { --stat-accent: var(--ui-amber); }
+#view-dashboard .stat-box::after { content: ''; position: absolute; right: 20px; bottom: -25px; width: 98px; height: 98px; border: 15px solid hsl(var(--stat-accent) / 0.055); border-radius: 50%; z-index: -1; pointer-events: none; }
+#view-dashboard .stat-box h4 { font-weight: 400; }
+#view-dashboard .interactive-stat-card.active { background: linear-gradient(110deg, hsl(var(--stat-accent) / 0.12), hsl(var(--card-bg)) 90%) !important; border-color: hsl(var(--stat-accent) / 0.48) !important; box-shadow: inset 0 3px 0 hsl(var(--stat-accent)), var(--ui-shadow) !important; }
+#view-dashboard .stat-box:hover { border-color: hsl(var(--stat-accent) / 0.5); box-shadow: 0 5px 16px hsl(var(--stat-accent) / 0.09); }
+#view-dashboard .stat-number { color: hsl(var(--stat-accent)); -webkit-text-fill-color: currentColor; font-size: 30px; }
+.pipeline-module { border-radius: 14px; box-shadow: var(--ui-shadow); }
+.pipeline-module-header { padding-bottom: 16px; border-bottom: 1px solid hsl(var(--card-border)); margin-bottom: 16px; }
+.timeline-summary-header .summary-card { border-radius: 9px; border-color: hsl(var(--ui-navy) / 0.1); box-shadow: none; background: hsl(var(--ui-navy) / 0.04); }
+.timeline-summary-header .summary-card .label { font-weight: 400; }
+.timeline-summary-header .summary-card .value { font-size: 22px; font-weight: 500; color: hsl(var(--ui-navy)); }
+.pipeline-card { border-radius: 11px; box-shadow: 0 2px 5px hsl(var(--ui-navy) / 0.025); border-left: 3px solid var(--panel-color, hsl(var(--ui-teal))); }
+.pipeline-card:hover { transform: none; border-color: hsl(var(--ui-navy) / 0.24); box-shadow: 0 5px 14px hsl(var(--ui-navy) / 0.06); }
+.pipeline-card .project-meta { gap: 8px; }
+.pipeline-card .project-meta strong, .workflow-context-item strong { font-weight: 500; }
+.pipeline-card .project-title { margin-top: 7px; margin-bottom: 6px; letter-spacing: normal; }
+.project-heading-row { gap: 8px; }
+.submission-index {
+  width: auto;
+  min-width: 34px;
+  height: 32px;
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border-radius: 11px;
+  border: 1px solid #2361cf;
+  background: linear-gradient(135deg, #2869df, #1850b8);
+  color: #f6faff;
+  box-shadow: 0 3px 7px hsl(218 76% 45% / 0.18);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.project-info .journal {
+  min-width: 0;
+  min-height: 32px;
+  margin-bottom: 0;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border-color: hsl(216 76% 55% / 0.22);
+  color: hsl(var(--journal-ink));
+  background: linear-gradient(110deg, hsl(214 90% 56% / 0.11), hsl(206 90% 65% / 0.045));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.project-info .journal::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  margin-bottom: 1px;
+  border-radius: 50%;
+  background: #ef8078;
+  box-shadow: 0 0 0 3px #ef807814;
+}
+.pipeline-cards-container:not(.expanded) .project-info .journal { margin-bottom: 0; padding: 5px 13px; }
+.doi-link, .doi-missing { font-size: 12px; font-weight: 400; border-radius: 5px; }
+.pipeline-compact-status { font-weight: 400; }
+.core-panel { background: linear-gradient(115deg, color-mix(in srgb, var(--panel-color) 5%, hsl(var(--card-bg))), hsl(var(--card-bg))); border-color: color-mix(in srgb, var(--panel-color) 20%, hsl(var(--card-border))); border-radius: 9px; box-shadow: none; }
+.core-label { font-weight: 400; letter-spacing: normal; text-transform: none; }
+.core-value strong { font-weight: 500; }
+.rail-track { height: 3px; top: 24px; }
+.rail-track::before { opacity: 0.68; }
+.rail-track.pending::before { animation: none; background: var(--panel-color); opacity: 0.5; }
+.dot, .dot.emphasis, .dot.today { box-shadow: 0 0 0 2px hsl(var(--card-bg)), 0 0 0 3px color-mix(in srgb, var(--dot-color) 25%, transparent); }
+.dot.today::after { animation: none; }
+.event-rail.is-tracking .rail-track.pending::before {
+  opacity: 0.72;
+  background: repeating-linear-gradient(90deg, var(--panel-color) 0 12px, color-mix(in srgb, var(--panel-color) 28%, hsl(var(--card-bg))) 12px 28px);
+  background-size: 28px 100%;
+  animation: rfTimelineFlow 4s linear infinite;
+}
+.event-rail.is-tracking .dot.today::after { animation: rfTimelineBreath 3.8s ease-out infinite; }
+@keyframes rfTimelineFlow { from { background-position-x: 0; } to { background-position-x: 28px; } }
+@keyframes rfTimelineBreath { from { transform: scale(0.85); opacity: 0.32; } to { transform: scale(1.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .event-rail.is-tracking .rail-track.pending::before,
+  .event-rail.is-tracking .dot.today::after { animation: none !important; }
+}
+.milestone-name { font-weight: 400; line-height: 1.5; }
+.kanban-col { background: linear-gradient(180deg, var(--kanban-soft), transparent 180px), hsl(var(--card-glow) / 0.55); border-radius: 11px; border-top-width: 3px; }
+.col-header h3 { font-weight: 500; }
+.col-header .count { font-weight: 500; min-width: 26px; text-align: center; }
+.kanban-card { background: hsl(var(--card-bg)); border-color: hsl(var(--card-border)); box-shadow: var(--ui-shadow); border-radius: 9px; }
+.kanban-card:hover { transform: none; box-shadow: 0 5px 12px hsl(var(--ui-navy) / 0.08); border-color: var(--kanban-border); }
+.kanban-card-meta-row p strong { font-weight: 400; color: hsl(var(--text-primary)); }
+.kanban-card-select { font-family: var(--font-ui); font-weight: 400; border-radius: 5px; }
+.badge, .kanban-status-pill, .pipeline-filter-label { font-weight: 400; letter-spacing: normal; text-transform: none; }
+.submission-tools-row { border-radius: 12px; background: linear-gradient(105deg, hsl(var(--ui-rose) / 0.045), hsl(var(--card-bg)) 50%); box-shadow: var(--ui-shadow); border-color: hsl(var(--ui-rose) / 0.16); }
+.portal-dock-title { color: hsl(var(--ui-rose)); }
+.journal-portals-dock .portal-avatar { box-shadow: 0 2px 5px #00000012; font-weight: 500; }
+.journal-portals-dock .portal-item-card { border-color: hsl(var(--card-border)); background: hsl(var(--card-bg)); border-radius: 9px; }
+.journal-portals-dock .portal-item-card:hover { border-color: hsl(var(--ui-rose) / 0.4); background: hsl(var(--ui-rose) / 0.04); }
+.journal-portals-dock .portal-name { font-weight: 400; }
+.submission-list-card, .submission-detail-card { border-radius: 12px; box-shadow: var(--ui-shadow); }
+.submission-list-head { padding-bottom: 12px; border-bottom: 1px solid hsl(var(--card-border)); }
+.submission-card-item { box-shadow: none; border-radius: 9px; }
+.submission-card-item.selected { border-color: hsl(var(--ui-navy) / 0.3); background: hsl(var(--ui-navy) / 0.055); box-shadow: inset 3px 0 0 hsl(var(--ui-navy)); }
+.submission-card-heading h4 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: hsl(var(--journal-ink));
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.submission-detail-card h2 { font-size: 20px; font-weight: 500; letter-spacing: normal; }
+.submission-edit-center, .submission-edit-center-error { background: hsl(var(--card-bg)); box-shadow: var(--ui-shadow); border-color: hsl(var(--ui-teal) / 0.2); border-radius: 11px; }
+.submission-edit-center-error { border-color: hsl(var(--accent-rose) / 0.4); }
+.submission-entry-editor-card { outline: none; }
+.submission-entry-editor-card::before { content: none; }
+.submission-entry-editor-card.submission-edit-center-focused { outline: none; animation: none; transform: none; border-color: hsl(var(--ui-teal) / 0.5); box-shadow: 0 0 0 2px hsl(var(--ui-teal) / 0.08); }
+.submission-entry-editor-card.submission-edit-center-focused::after { display: none; }
+.submission-edit-center-head, .submission-entry-editor-card.submission-edit-center-focused .submission-edit-center-head { background: hsl(var(--ui-teal) / 0.055); border-bottom-color: hsl(var(--ui-teal) / 0.15); }
+.submission-edit-title-row h3 { font-size: 16px; font-weight: 500; line-height: 1.5; }
+.submission-edit-emblem { box-shadow: none; background: hsl(var(--card-bg)); border-color: hsl(var(--ui-teal) / 0.22); color: hsl(var(--ui-teal)); }
+.submission-edit-section { background: hsl(var(--card-bg)); border-radius: 7px; padding: 16px; }
+.submission-edit-section-head { font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: normal; }
+.submission-edit-center label, .form-group label { font-size: 12px; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 1.6; }
+.submission-edit-title-field input { font-weight: 400; }
+.submission-edit-center input, .submission-edit-center select { background: var(--input-bg); }
+.workflow-context-card { background: linear-gradient(110deg, hsl(var(--ui-navy) / 0.04), hsl(var(--card-bg)) 70%); box-shadow: none; border-color: hsl(var(--ui-navy) / 0.16); }
+.submission-first-author-module { background: hsl(var(--card-bg)); box-shadow: none; border-color: hsl(var(--card-border)); }
+.submission-edit-section-icon { background: hsl(var(--ui-teal) / 0.07); border-color: hsl(var(--ui-teal) / 0.14); color: hsl(var(--ui-teal)); box-shadow: none; }
+.workflow-context-head .submission-work-icon { background: hsl(var(--ui-navy) / 0.07); border-color: hsl(var(--ui-navy) / 0.14); color: hsl(var(--ui-navy)); box-shadow: none; }
+#view-settings h3 { font-weight: 500; }
+#view-settings .settings-card::before, #view-settings .settings-security-assurance::before { display: none; }
+#view-settings .settings-security-assurance { border-color: hsl(var(--card-border)); }
+#view-settings .settings-security-copy h2 { font-size: 15px; font-weight: 500; letter-spacing: normal; }
+.modal-header h2, .share-preview-header h2, .share-visibility-heading strong { font-family: var(--font-ui); font-weight: 500; letter-spacing: normal; }
+.share-preview-kicker, .share-timeline-start-control, .share-size-control { font-weight: 400; letter-spacing: normal; text-transform: none; }
+:root[data-theme="dark"] .pipeline-compact-status { color: color-mix(in srgb, var(--state-color) 65%, white); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pipeline-compact-status { color: color-mix(in srgb, var(--state-color) 65%, white); }
+}
+@media (max-width: 620px) {
+  .nav-item { min-height: 36px; }
+  .view-header h1 { font-size: 19px; }
+  #view-dashboard .stat-box { align-items: flex-start; text-align: left; min-height: 105px; gap: 8px; }
+  #view-dashboard .stat-number { font-size: 27px; }
+  .pipeline-card .project-title { font-size: 14px; }
+}
