@@ -1,4 +1,9 @@
 /* Reading rhythm and editorial surfaces for the Zotero workspace. */
+:root { --journal-ink: 216 70% 37%; }
+:root[data-theme="dark"] { --journal-ink: 212 88% 78%; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --journal-ink: 212 88% 78%; }
+}
 #view-dashboard .stat-box {
   min-height: 96px;
   padding: 16px 18px;
@@ -238,8 +243,46 @@
 .pipeline-card .project-meta strong, .workflow-context-item strong { font-weight: 500; }
 .pipeline-card .project-title { margin-top: 7px; margin-bottom: 6px; letter-spacing: normal; }
 .project-heading-row { gap: 8px; }
-.submission-index { color: hsl(var(--ui-navy)); background: hsl(var(--ui-navy) / 0.07); border-color: hsl(var(--ui-navy) / 0.12); font-weight: 500; }
-.project-info .journal { color: hsl(var(--ui-navy)); background: hsl(var(--ui-navy) / 0.055); border-color: hsl(var(--ui-navy) / 0.12); font-weight: 400; }
+.submission-index {
+  width: auto;
+  min-width: 34px;
+  height: 32px;
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border-radius: 11px;
+  border: 1px solid #2361cf;
+  background: linear-gradient(135deg, #2869df, #1850b8);
+  color: #f6faff;
+  box-shadow: 0 3px 7px hsl(218 76% 45% / 0.18);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.project-info .journal {
+  min-width: 0;
+  min-height: 32px;
+  margin-bottom: 0;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border-color: hsl(216 76% 55% / 0.22);
+  color: hsl(var(--journal-ink));
+  background: linear-gradient(110deg, hsl(214 90% 56% / 0.11), hsl(206 90% 65% / 0.045));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.project-info .journal::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  margin-bottom: 1px;
+  border-radius: 50%;
+  background: #ef8078;
+  box-shadow: 0 0 0 3px #ef807814;
+}
+.pipeline-cards-container:not(.expanded) .project-info .journal { margin-bottom: 0; padding: 5px 13px; }
 .doi-link, .doi-missing { font-size: 12px; font-weight: 400; border-radius: 5px; }
 .pipeline-compact-status { font-weight: 400; }
 .core-panel { background: linear-gradient(115deg, color-mix(in srgb, var(--panel-color) 5%, hsl(var(--card-bg))), hsl(var(--card-bg))); border-color: color-mix(in srgb, var(--panel-color) 20%, hsl(var(--card-border))); border-radius: 9px; box-shadow: none; }
@@ -282,7 +325,17 @@
 .submission-list-head { padding-bottom: 12px; border-bottom: 1px solid hsl(var(--card-border)); }
 .submission-card-item { box-shadow: none; border-radius: 9px; }
 .submission-card-item.selected { border-color: hsl(var(--ui-navy) / 0.3); background: hsl(var(--ui-navy) / 0.055); box-shadow: inset 3px 0 0 hsl(var(--ui-navy)); }
-.submission-card-heading h4 { font-weight: 500; }
+.submission-card-heading h4 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: hsl(var(--journal-ink));
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
 .submission-detail-card h2 { font-size: 20px; font-weight: 500; letter-spacing: normal; }
 .submission-edit-center, .submission-edit-center-error { background: hsl(var(--card-bg)); box-shadow: var(--ui-shadow); border-color: hsl(var(--ui-teal) / 0.2); border-radius: 11px; }
 .submission-edit-center-error { border-color: hsl(var(--accent-rose) / 0.4); }

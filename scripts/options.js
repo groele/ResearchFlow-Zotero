@@ -38,7 +38,7 @@ let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '9.1.4';
+const RF_OPTIONS_RENDER_VERSION = '9.1.5';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
 const SHARE_PREFS_STORAGE_KEY = 'researchflow_share_visibility';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
@@ -3301,7 +3301,7 @@ function renderDashboard() {
         <div class="project-info">
           <div class="project-heading-row">
             <span class="submission-index">${displayIndex}</span>
-            <div class="journal">${escapeHTML(journalName)}</div>
+            <div class="journal" title="${escapeHTML(journalName)}">${escapeHTML(journalName)}</div>
             <span class="pipeline-compact-status" style="--state-color:${a.stateColor}">${escapeHTML(a.stateLabel)}</span>
           </div>
           <h3 class="project-title" title="${escapeHTML(manTitle)}">${escapeHTML(manTitle)}</h3>
@@ -5587,7 +5587,7 @@ function renderSubmissions({ refreshDetails = true } = {}) {
           <div class="submission-card-title-group">
             <span class="submission-index">${displayIndex}</span>
             <div class="submission-card-copy">
-              <h4>${escapeHTML(journalName)}</h4>
+              <h4 title="${escapeHTML(journalName)}">${escapeHTML(journalName)}</h4>
               <p class="submission-card-title">${escapeHTML(manTitle)}</p>
             </div>
           </div>

@@ -12,7 +12,7 @@ const manifestPath = path.join(distZotero, 'manifest.json');
 assert(fs.existsSync(manifestPath), 'dist-zotero/manifest.json must exist');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert.equal(manifest.applications?.zotero?.id, 'researchflow@groele.org');
-assert.equal(manifest.version, '9.1.4');
+assert.equal(manifest.version, '9.1.5');
 
 // 2. Verify bootstrap.js and chrome.manifest
 const bootstrapPath = path.join(distZotero, 'bootstrap.js');
