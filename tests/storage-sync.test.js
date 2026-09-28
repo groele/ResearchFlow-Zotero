@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const localStorageState = {};
 
-global.chrome = {
+global.RFPlatform = {
   storage: {
     local: {
       get(keys, callback) {
@@ -296,30 +296,15 @@ assert.equal(
   });
   assert.equal(scheduledSyncs, 1, 'local save should schedule a complete WebDAV route');
 
-  let delegatedMessage = null;
-  global.window = {};
-  const originalSendMessage = chrome.runtime.sendMessage;
-  chrome.runtime.sendMessage = (message, callback) => {
-    delegatedMessage = message;
-    callback?.({
-      success: true,
-      data: {
-        revision: 7,
-        settings: { syncProviders: { metadata: { provider: 'local', config: {} } } }
-      }
-    });
-  };
+  global.window = { Zotero: { ResearchFlow: { saveDatabase: async data => ({...data, revision:7}) } } };
   const delegatedInput = {
     revision: 6,
     settings: { syncProviders: { metadata: { provider: 'local', config: {} } } }
   };
   const delegatedResult = await engine.saveAll(delegatedInput, { mergeOnConflict: true });
-  assert.equal(delegatedMessage.action, 'SAVE_DATABASE');
-  assert.equal(delegatedMessage.mergeOnConflict, true);
   assert.equal(delegatedResult.revision, 7, 'workspace should adopt the serialized writer result');
   assert.equal(delegatedInput.revision, 7, 'the caller database reference should receive the committed revision');
   assert.equal(delegatedResult, delegatedInput, 'save callers should retain one authoritative in-memory database object');
-  chrome.runtime.sendMessage = originalSendMessage;
   delete global.window;
 
   console.log('storage sync configuration tests passed');

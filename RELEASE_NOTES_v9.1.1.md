@@ -11,8 +11,8 @@
 
 ## Verification
 
-Node regression and syntax checks, real MV3 browser tests, and browser tests exercising Zotero's host API path with a mocked host passed. Shared edits from all three views, continuous typing, reload, legacy publication dates, and historical submission preservation were tested. An actual Zotero 10.0.3 isolated-profile probe exercised submission edits, Kanban status changes, dashboard dates, and disk persistence through the workspace DOM using a private copy of the supplied 9-manuscript/9-submission JSON. All status pairs matched. The supplied JSON also passed import round-trip and field/date preservation checks. Personal research data and the temporary QA package are not included in the release.
+Node regression and syntax checks, browser tests exercising Zotero's host API path with a mocked host passed. Shared edits from all three views, continuous typing, reload, legacy publication dates, and historical submission preservation were tested. An actual Zotero 10.0.3 isolated-profile probe exercised submission edits, Kanban status changes, dashboard dates, and disk persistence through the workspace DOM using a private copy of the supplied 9-manuscript/9-submission JSON. All status pairs matched. The supplied JSON also passed import round-trip and field/date preservation checks. Personal research data and the temporary QA package are not included in the release.
 
 ## Install
 
-Install `researchflow-zotero-9.1.1.xpi` using Zotero's add-on manager, restart Zotero, and reopen the ResearchFlow tab. The existing local database is migrated automatically. For Chrome Companion, extract `researchflow-companion-9.1.1.zip` and select the extracted folder using **Load unpacked**.
+Install `researchflow-zotero-9.1.1.xpi` using Zotero's add-on manager, restart Zotero, and reopen the ResearchFlow tab. The existing local database is migrated automatically.

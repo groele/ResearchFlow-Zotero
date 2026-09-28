@@ -22,7 +22,7 @@
         <div class="logo-orb" aria-hidden="true"></div>
         <div>
           <h2>ResearchFlow OS</h2>
-          <span class="version">v9.1.1 Companion</span>
+          <span class="version">v9.1.2 Zotero</span>
         </div>
       </div>
 
@@ -481,65 +481,7 @@
 </div>
 <p class="settings-inline-status" id="language-auto-save-status" role="status">Interface preferences are saved automatically.</p>
 </div>
-<!-- Submission portal recognition -->
-<div class="glass-panel settings-card settings-assist-card" id="settings-submission-assist-card">
-<div class="settings-assist-heading">
-<div aria-hidden="true" class="settings-assist-mark">
-<svg class="svg-icon" viewbox="0 0 24 24">
-<circle cx="12" cy="12" r="3"></circle>
-<path d="M3 12a9 9 0 0 1 9-9"></path>
-<path d="M12 21a9 9 0 0 1-9-9"></path>
-<path d="M21 12a9 9 0 0 1-9 9"></path>
-<path d="M12 3a9 9 0 0 1 9 9"></path>
-</svg>
-</div>
-<div class="settings-assist-title-copy">
 
-<div class="settings-assist-title-line">
-<h3>Submission Portal Recognition</h3>
-<span class="settings-assist-status" id="submission-assist-state-label">Enabled</span>
-</div>
-<p class="text-muted" id="submission-assist-help">Show a quick-entry card when a supported journal submission system is detected.</p>
-</div>
-</div>
-<div class="settings-assist-control">
-<div class="settings-assist-control-copy">
-<strong id="submission-assist-toggle-label">Automatic detection</strong>
-<small id="submission-assist-toggle-help">Recognize supported portals without opening a popup or side panel.</small>
-</div>
-<label class="settings-switch" for="submission-assist-enabled">
-<input checked="" id="submission-assist-enabled" type="checkbox"/>
-<span aria-hidden="true" class="settings-switch-track">
-<span class="settings-switch-thumb"></span>
-</span>
-</label>
-</div>
-<div class="settings-assist-control settings-assist-capture-control">
-<div class="settings-assist-control-copy">
-<strong id="submission-assist-capture-label">Automatic information capture</strong>
-<small id="submission-assist-capture-help">Collect manuscript and workflow fields for human review.</small>
-</div>
-<label class="settings-switch" for="submission-assist-capture-enabled">
-<input checked="" id="submission-assist-capture-enabled" type="checkbox"/>
-<span aria-hidden="true" class="settings-switch-track">
-<span class="settings-switch-thumb"></span>
-</span>
-</label>
-</div>
-<div class="settings-assist-footer">
-<div class="settings-assist-scope">
-<svg aria-hidden="true" class="svg-icon" viewbox="0 0 24 24">
-<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-<path d="m9 12 2 2 4-4"></path>
-</svg>
-<div>
-<span id="submission-assist-ignored-count">No websites ignored.</span>
-<small id="submission-assist-scope-help">Recognition runs only on supported submission domains.</small>
-</div>
-</div>
-<button class="btn-secondary" id="btn-reset-submission-assist">Reset ignored websites</button>
-</div>
-</div>
 </aside>
 </div>
 <!-- Zotero Native Settings Card -->
@@ -604,6 +546,7 @@
     </div>
   </div>
 
+  <script src="../scripts/zotero-ui-api.js"></script>
   <script src="../scripts/zotero-bridge.js"></script>
   <script src="../scripts/storage.js"></script>
   <script src="../scripts/ui-utils.js"></script>

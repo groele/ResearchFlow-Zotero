@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 
-async function testChromeCompatibility() {
+async function testZoteroUiApi() {
   const values = new Map();
   const window = {
     location: { protocol: 'chrome:', host: 'researchflow' },
@@ -16,21 +16,21 @@ async function testChromeCompatibility() {
     }
   };
   const context = vm.createContext({ window, console });
-  vm.runInContext(fs.readFileSync(path.join(root, 'scripts/zotero-chrome-compat.js'), 'utf8'), context);
-  const { chrome } = context;
-  assert(chrome?.runtime?.onMessage && chrome?.storage?.local);
+  vm.runInContext(fs.readFileSync(path.join(root, 'scripts/zotero-ui-api.js'), 'utf8'), context);
+  const { RFPlatform } = context;
+  assert(RFPlatform?.runtime?.onMessage && RFPlatform?.storage?.local);
   const messages = [];
-  chrome.runtime.onMessage.addListener(message => messages.push(message));
-  await chrome.storage.local.set({ researchflow_pipeline_expanded: true });
-  assert.equal((await chrome.storage.local.get(['researchflow_pipeline_expanded'])).researchflow_pipeline_expanded, true);
-  const callbackValue = await new Promise(resolve => chrome.storage.local.get('researchflow_pipeline_expanded', resolve));
+  RFPlatform.runtime.onMessage.addListener(message => messages.push(message));
+  await RFPlatform.storage.local.set({ researchflow_pipeline_expanded: true });
+  assert.equal((await RFPlatform.storage.local.get(['researchflow_pipeline_expanded'])).researchflow_pipeline_expanded, true);
+  const callbackValue = await new Promise(resolve => RFPlatform.storage.local.get('researchflow_pipeline_expanded', resolve));
   assert.equal(callbackValue.researchflow_pipeline_expanded, true);
-  await chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: { revision: 2 } });
+  await RFPlatform.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: { revision: 2 } });
   assert.equal(messages.length, 1);
   assert.equal(messages[0].data.revision, 2);
-  await chrome.storage.local.remove('researchflow_pipeline_expanded');
-  assert.deepEqual(Object.keys(await chrome.storage.local.get('researchflow_pipeline_expanded')), []);
-  await assert.rejects(chrome.runtime.sendMessage({ action: 'TRIGGER_SYNC' }), /Unsupported Zotero runtime request/);
+  await RFPlatform.storage.local.remove('researchflow_pipeline_expanded');
+  assert.deepEqual(Object.keys(await RFPlatform.storage.local.get('researchflow_pipeline_expanded')), []);
+  await assert.rejects(RFPlatform.runtime.sendMessage({ action: 'TRIGGER_SYNC' }), /Unsupported Zotero runtime request/);
 
   let nativeUi = {};
   window.Zotero = { ResearchFlow: {
@@ -41,9 +41,9 @@ async function testChromeCompatibility() {
       return nativeUi;
     }
   } };
-  await chrome.storage.local.set({ pre_import_backup: { manuscripts: [{ id: 'large-backup' }] } });
+  await RFPlatform.storage.local.set({ pre_import_backup: { manuscripts: [{ id: 'large-backup' }] } });
   assert.equal(nativeUi.pre_import_backup.manuscripts[0].id, 'large-backup');
-  await chrome.storage.local.remove('pre_import_backup');
+  await RFPlatform.storage.local.remove('pre_import_backup');
   assert.equal(nativeUi.pre_import_backup, undefined);
 }
 
@@ -216,7 +216,7 @@ async function testStartupHooks() {
 }
 
 Promise.resolve()
-  .then(testChromeCompatibility)
+  .then(testZoteroUiApi)
   .then(testHostPersistence)
   .then(testFileActions)
   .then(testLiteratureActions)

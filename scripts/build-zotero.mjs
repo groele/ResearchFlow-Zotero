@@ -55,7 +55,17 @@ async function main() {
 
   console.log('📂 [2/4] Integrating web app assets (styles, scripts, assets, data, pages)...');
   copyDirRecursive(path.join(projectRoot, 'styles'), path.join(contentDir, 'styles'));
-  copyDirRecursive(path.join(projectRoot, 'scripts'), path.join(contentDir, 'scripts'), (name) => !name.startsWith('build-zotero'));
+  // Ship only the Zotero workspace runtime. Build/test helpers cannot enter an XPI.
+  const runtimeScripts = [
+    'zotero-ui-api.js', 'zotero-bridge.js', 'zotero-window-polyfill.js',
+    'settings-only.js', 'storage.js', 'ui-utils.js', 'core/research-core.js',
+    'share-card.js', 'options.js'
+  ];
+  for (const relativePath of runtimeScripts) {
+    const target = path.join(contentDir, 'scripts', relativePath);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(path.join(projectRoot, 'scripts', relativePath), target);
+  }
   copyDirRecursive(path.join(projectRoot, 'assets'), path.join(contentDir, 'assets'));
   copyDirRecursive(path.join(projectRoot, 'data'), path.join(contentDir, 'data'));
   copyDirRecursive(path.join(projectRoot, 'pages'), path.join(contentDir, 'pages'));
@@ -71,11 +81,11 @@ async function main() {
     .replace(/\.\.\/assets\//g, 'assets/')
     .replace(/\.\.\/data\//g, 'data/');
 
-  // Load the Zotero implementation of the small Chrome UI API before shared scripts.
-  if (!indexHtml.includes('scripts/zotero-chrome-compat.js')) {
+  // Load device-local Zotero UI state before storage and workspace scripts.
+  if (!indexHtml.includes('scripts/zotero-ui-api.js')) {
     indexHtml = indexHtml.replace(
       '<script src="scripts/zotero-bridge.js"></script>',
-      '<script src="scripts/zotero-chrome-compat.js"></script>\n  <script src="scripts/zotero-bridge.js"></script>'
+      '<script src="scripts/zotero-ui-api.js"></script>\n  <script src="scripts/zotero-bridge.js"></script>'
     );
   }
 
@@ -97,7 +107,7 @@ async function main() {
   execSync(`node --check "${path.join(zoteroStaging, 'chrome', 'content', 'scripts', 'index.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(zoteroStaging, 'chrome', 'content', 'scripts', 'preferences.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'zotero-bridge.js')}"`, { stdio: 'inherit' });
-  execSync(`node --check "${path.join(contentDir, 'scripts', 'zotero-chrome-compat.js')}"`, { stdio: 'inherit' });
+  execSync(`node --check "${path.join(contentDir, 'scripts', 'zotero-ui-api.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'storage.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'ui-utils.js')}"`, { stdio: 'inherit' });
   execSync(`node --check "${path.join(contentDir, 'scripts', 'core', 'research-core.js')}"`, { stdio: 'inherit' });

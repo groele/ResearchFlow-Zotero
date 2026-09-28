@@ -8,9 +8,8 @@ const optionsHtml = read('pages/options.html');
 const optionsJs = read('scripts/options.js');
 const shareRenderer = read('scripts/share-card.js');
 const optionsCss = read('styles/options.css') + read('styles/settings.css') + read('styles/workspace.css');
-const manifest = JSON.parse(read('manifest.json'));
+const manifest = JSON.parse(read('zotero/manifest.json'));
 
-assert(optionsJs.includes('consumePendingAcademicDraft'), 'main workspace should consume captured Scholar metadata');
 assert(optionsJs.includes('openManuscriptModal(man = null, prefill = null)'), 'manuscript review form should support capture prefill');
 assert(optionsJs.includes('id="man-authors"'), 'manuscript review should expose authors');
 assert(optionsJs.includes('id="man-doi"'), 'manuscript review should expose DOI');
@@ -20,10 +19,6 @@ assert(optionsJs.includes('academicCaptureProvenance'), 'confirmed Scholar captu
 ['view-dashboard', 'view-manuscripts', 'view-submissions', 'view-settings'].forEach((id) => {
   assert(optionsHtml.includes(`id="${id}"`), `main workspace should include ${id}`);
 });
-['submission-assist-enabled', 'submission-assist-capture-enabled', 'submission-assist-state-label', 'submission-assist-scope-help', 'btn-reset-submission-assist'].forEach((id) => {
-  assert(optionsHtml.includes(`id="${id}"`), `submission recognition settings should include ${id}`);
-});
-assert(optionsHtml.includes('settings-switch-track'), 'submission recognition should use the shared custom switch treatment');
 ['settings-workbench', 'settings-primary-column', 'settings-secondary-column', 'settings-route-savebar', 'settings-backup-actions'].forEach((className) => {
   assert(optionsHtml.includes(`class="${className}`) || optionsHtml.includes(` ${className}`), `settings redesign should include ${className}`);
 });
@@ -49,8 +44,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('hsl(var(--card-bg))'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes(`v${manifest.version} Companion`), 'workspace version label should match the current companion release');
-assert.equal(manifest.version, '9.1.1', 'manifest version should match the current companion release');
+assert(optionsHtml.includes(`v${manifest.version} Zotero`), 'workspace version label should match the current Zotero release');
+assert.equal(manifest.version, '9.1.2', 'manifest version should match the current Zotero release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -67,12 +62,7 @@ assert.equal(manifest.version, '9.1.1', 'manifest version should match the curre
   assert(optionsJs.includes(definition), `restored workspace should define ${definition}`);
 });
 assert(!/renderEvidence|aiCopilot|btn-ai-draft|btn-import-guidelines/i.test(optionsJs), 'removed Evidence and AI behavior should stay absent');
-assert(!manifest.host_permissions.some((origin) => origin.includes('openai.com') || origin.includes('deepseek.com')), 'active core must not request AI provider access');
 assert(optionsJs.includes('sub-journal-url'), 'new submission flow should accept a detected portal URL');
-assert(optionsJs.includes('submission-capture-review'), 'captured portal data should open a human review panel');
-assert(optionsJs.includes('sub-capture-project-title'), 'capture review should require a new project name');
-assert(optionsJs.includes('captureProvenance'), 'confirmed captures should retain local provenance and confidence');
-assert(optionsJs.includes("reviewedByUser: true"), 'captured information should only be marked reviewed after confirmation');
 assert(optionsJs.includes('sub-edit-first-author'), 'submission editor should expose a first-author module');
 assert(optionsJs.includes('pipeline-first-author'), 'dashboard pipeline cards should render first-author information');
 assert(optionsJs.includes('btn-pipeline-share'), 'dashboard pipeline cards should expose a one-click share-image action');
@@ -103,7 +93,6 @@ assert(
   /\$\{t\('timelineDateSource'\)\}:[\s\S]{0,500}pipeline-first-author/.test(optionsJs),
   'dashboard first-author entry should follow the submission date source'
 );
-assert(optionsJs.includes('captureDetailsEnabled'), 'automatic detailed capture should have an independent setting');
 assert(optionsJs.includes('function setupSubmissionAutoSave'), 'submission editor should configure automatic persistence');
 assert(optionsJs.includes("editCenter.addEventListener('input'"), 'text fields should trigger debounced automatic persistence');
 assert(optionsJs.includes("editCenter.addEventListener('change'"), 'select, date, and checklist changes should persist immediately');
@@ -127,7 +116,6 @@ assert(
   /legacy relationship on edits[\s\S]{0,220}new manuscripts stay independent/.test(optionsJs),
   'manuscript editor should preserve legacy project data without creating new project context'
 );
-assert(optionsJs.includes('openAcademicCaptureChooser'), 'multiple Scholar results should require an explicit selection');
 assert(optionsJs.includes('academicCaptureProvenance: man.academicCaptureProvenance'), 'database import should preserve Scholar provenance');
 assert(optionsJs.includes('previousSubmissionId: sub.previousSubmissionId'), 'database import should preserve transfer lineage');
 assert(optionsJs.includes('roundIndex: Number.isFinite(Number(sub.roundIndex))'), 'database import should preserve the submission round');
@@ -136,7 +124,6 @@ assert(optionsJs.includes('const allSubmissions = db.submissions;'), 'dashboard 
 assert(optionsJs.includes("const explicitStatus = normalizeSubmissionStatus(sub.status || 'submitted');"), 'dashboard state labels should use the explicit submission status');
 assert(optionsHtml.includes('id="card-filter-all" aria-pressed="true"'), 'dashboard filters should expose keyboard-accessible button state');
 assert(optionsJs.includes("window.addEventListener('pagehide', flushPendingSave)"), 'pending editor changes should flush when the page closes');
-assert(optionsJs.includes('findExistingCapturedSubmission'), 'captured submissions should be checked for duplicates');
 assert(optionsJs.includes('sanitizeDatabaseForExternalUse'), 'database export should redact device credentials');
 assert(optionsJs.includes('function normalizeSubmissionStatus'), 'legacy submission status aliases should normalize to one canonical enum');
 assert(optionsJs.includes('openLinkSubmissionModal'), 'detached submissions should provide a direct manuscript-linking flow');

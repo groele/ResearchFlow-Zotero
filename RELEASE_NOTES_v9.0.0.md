@@ -1,4 +1,4 @@
-# ResearchFlow Companion 9.0.0 — Share Studio
+# ResearchFlow for Zotero 9.0.0 — Share Studio
 
 This major product release turns the sharing dialog into a configurable card studio, with visible style choices, adjustable branding, and safer exports.
 
@@ -21,11 +21,11 @@ This major product release turns the sharing dialog into a configurable card stu
 
 ## Validation
 
-- Full `tests/verify.ps1 -Browser` verification, including real Manifest V3 extension smoke tests.
+- Full `tests/verify.ps1 -Browser` verification.
 - 468 layout combinations across 13 themes, three brand sizes, two languages, and six timeline lengths.
 - Browser checks for style selection, ultra resolution, bounded long exports, injected render-failure recovery, privacy-preserving reset, preference persistence, PNG download, mobile control reachability, and blob URL cleanup.
 - Exported cards and desktop/mobile studio screenshots reviewed visually.
 
 ## Upgrade
 
-Extract the release ZIP into your extension folder, reload ResearchFlow in Chrome's extension manager, and reopen its workspace. The extension manager and workspace should both show 9.0.0.
+Install the Zotero XPI through Zotero's add-on manager, restart Zotero, and reopen ResearchFlow. Use the latest Zotero release for subsequent fixes.

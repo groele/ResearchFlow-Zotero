@@ -58,8 +58,8 @@ class StorageEngine {
     this.deviceIdPromise = null;
     this.syncTimer = null;
     this.syncCredentials = null;
-    if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
-      chrome.storage.onChanged.addListener((changes, area) => {
+    if (typeof RFPlatform !== 'undefined' && RFPlatform.storage?.onChanged) {
+      RFPlatform.storage.onChanged.addListener((changes, area) => {
         if (area === 'local' && changes[SYNC_CREDENTIALS_KEY]) this.syncCredentials = null;
       });
     }
@@ -104,22 +104,13 @@ class StorageEngine {
       return this.cache;
     }
 
-    if (this.isZotero() && typeof ZoteroBridge !== 'undefined') {
-      if (this.cache) return this.cache;
-    }
+    if (this.isZotero()) throw new Error('Zotero database host unavailable. Reopen the ResearchFlow workspace.');
 
-    // Initialization and migration are writes: only the service worker owns them.
-    if (typeof window !== 'undefined' && chrome.runtime?.sendMessage) {
-      const response = await this.sendRequest({ action: 'LOAD_DATABASE' });
-      if (!response?.success || !response.data) throw new Error(response?.error || 'Database load failed.');
-      this.cache = response.data;
-      return this.cache;
-    }
-
-    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    // A local fallback supports isolated UI tests; installed plugins use the host above.
+    if (typeof RFPlatform !== 'undefined' && RFPlatform.storage?.local) {
       const result = await new Promise((resolve, reject) => {
-        chrome.storage.local.get(['researchflow_db'], result => {
-          const error = chrome.runtime?.lastError;
+        RFPlatform.storage.local.get(['researchflow_db'], result => {
+          const error = RFPlatform.runtime?.lastError;
           if (error) reject(new Error(error.message || 'Local storage read failed.'));
           else resolve(result);
         });
@@ -127,7 +118,7 @@ class StorageEngine {
       let source = result.researchflow_db;
       if (!source) {
         try {
-          const response = await this.fetchWithTimeout(chrome.runtime.getURL('data/preloaded_db.json'));
+          const response = await this.fetchWithTimeout(RFPlatform.runtime.getURL('data/preloaded_db.json'));
           if (response.ok) source = await response.json();
         } catch (error) {
           console.warn('Preloaded database unavailable:', error.message);
@@ -204,34 +195,13 @@ class StorageEngine {
       return this.cache;
     }
 
-    if (
-      options.localOnly !== true
-      && typeof window !== 'undefined'
-      && typeof chrome !== 'undefined'
-      && chrome.runtime?.sendMessage
-    ) {
-      const backgroundResult = await this.sendRequest({
-        action: 'SAVE_DATABASE',
-        data,
-        mergeOnConflict: options.mergeOnConflict === true,
-        replace: options.replace === true,
-        expectedRevision: options.expectedRevision
-      });
-      if (backgroundResult?.success && backgroundResult.data) {
-        const normalizedResult = await this.ensureDbShape(backgroundResult.data, { stamp: false });
-        this.cache = this.adoptSavedSnapshot(data, normalizedResult);
-        return this.cache;
-      }
-      throw new Error(backgroundResult?.error || 'Database save failed. Please retry.');
-    }
-
     const normalized = await this.ensureDbShape(data, { stamp: true });
     await this.persistLocal(normalized);
     this.cache = this.adoptSavedSnapshot(data, normalized);
 
-    // Notify other pages (e.g. side panel or dashboard) of data changes
-    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: this.cache }).catch(() => {});
+    // Notify workspace views of data changes
+    if (typeof RFPlatform !== 'undefined' && RFPlatform.runtime?.sendMessage) {
+      RFPlatform.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: this.cache }).catch(() => {});
     }
 
     // Trigger asynchronous cloud sync only when the selected remote provider
@@ -265,7 +235,7 @@ class StorageEngine {
     if (this.syncTimer) clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
       this.syncTimer = null;
-      (this.isZotero() ? this.syncDatabaseNow() : this.triggerBackgroundSync()).catch(console.error);
+      this.syncDatabaseNow().catch(console.error);
     }, delayMs);
   }
 
@@ -277,10 +247,10 @@ class StorageEngine {
     }
 
     const safeData = this.sanitizeDatabaseForExternalUse(data);
-    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    if (typeof RFPlatform !== 'undefined' && RFPlatform.storage?.local) {
       await new Promise((resolve, reject) => {
-        chrome.storage.local.set({ researchflow_db: safeData }, () => {
-          const error = chrome.runtime?.lastError;
+        RFPlatform.storage.local.set({ researchflow_db: safeData }, () => {
+          const error = RFPlatform.runtime?.lastError;
           if (error) reject(new Error(error.message || 'Local storage write failed.'));
           else resolve();
         });
@@ -489,10 +459,10 @@ class StorageEngine {
       } catch (_) {}
     }
 
-    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    if (typeof RFPlatform !== 'undefined' && RFPlatform.storage?.local) {
       this.syncCredentials = await new Promise((resolve, reject) => {
-        chrome.storage.local.get([SYNC_CREDENTIALS_KEY], (result) => {
-          if (chrome.runtime?.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+        RFPlatform.storage.local.get([SYNC_CREDENTIALS_KEY], (result) => {
+          if (RFPlatform.runtime?.lastError) { reject(new Error(RFPlatform.runtime.lastError.message)); return; }
           const stored = result?.[SYNC_CREDENTIALS_KEY];
           resolve(stored && typeof stored === 'object' ? stored : {});
         });
@@ -522,10 +492,10 @@ class StorageEngine {
       } catch (_) {}
     }
 
-    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    if (typeof RFPlatform !== 'undefined' && RFPlatform.storage?.local) {
       await new Promise((resolve, reject) => {
-        chrome.storage.local.set({ [SYNC_CREDENTIALS_KEY]: credentials }, () => {
-          if (chrome.runtime?.lastError) reject(new Error(chrome.runtime.lastError.message));
+        RFPlatform.storage.local.set({ [SYNC_CREDENTIALS_KEY]: credentials }, () => {
+          if (RFPlatform.runtime?.lastError) reject(new Error(RFPlatform.runtime.lastError.message));
           else resolve();
         });
       });
@@ -621,17 +591,17 @@ class StorageEngine {
           return devId;
         }
 
-        if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        if (typeof RFPlatform !== 'undefined' && RFPlatform.storage?.local) {
           return new Promise((resolve, reject) => {
-            chrome.storage.local.get(['researchflow_device_id'], (result) => {
-              if (chrome.runtime?.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+            RFPlatform.storage.local.get(['researchflow_device_id'], (result) => {
+              if (RFPlatform.runtime?.lastError) { reject(new Error(RFPlatform.runtime.lastError.message)); return; }
               if (result.researchflow_device_id) {
                 resolve(result.researchflow_device_id);
                 return;
               }
               const id = 'device_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-              chrome.storage.local.set({ researchflow_device_id: id }, () => {
-                if (chrome.runtime?.lastError) reject(new Error(chrome.runtime.lastError.message));
+              RFPlatform.storage.local.set({ researchflow_device_id: id }, () => {
+                if (RFPlatform.runtime?.lastError) reject(new Error(RFPlatform.runtime.lastError.message));
                 else resolve(id);
               });
             });
@@ -677,32 +647,6 @@ class StorageEngine {
     function isObject(item) {
       return (item && typeof item === 'object' && !Array.isArray(item));
     }
-  }
-
-  /**
-   * Notifies the background script to perform a sync
-   */
-  async triggerBackgroundSync() {
-    return this.sendRequest({ action: 'TRIGGER_SYNC' }, 90000);
-  }
-
-  sendRequest(message, timeoutMs = 15000) {
-    return new Promise((resolve, reject) => {
-      const timeoutMessage = message.action === 'SAVE_DATABASE'
-        ? 'Save response timed out. Check the latest data before retrying.'
-        : 'Background response timed out. Please retry.';
-      const timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
-      try {
-        chrome.runtime.sendMessage(message, response => {
-          clearTimeout(timer);
-          if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-          else resolve(response);
-        });
-      } catch (error) {
-        clearTimeout(timer);
-        reject(error);
-      }
-    });
   }
 
   /**
@@ -764,9 +708,6 @@ class StorageEngine {
    * Syncs the JSON database with the configured metadata cloud provider
    */
   async syncDatabaseNow() {
-    if (!this.isZotero() && typeof window !== 'undefined' && chrome.runtime?.sendMessage) {
-      return this.triggerBackgroundSync();
-    }
     if (this.syncing) return { success: false, error: 'Sync already in progress' };
     this.syncing = true;
     try {
@@ -785,7 +726,7 @@ class StorageEngine {
         const committed = await this.ensureDbShape(merged, { stamp: true });
         await this.persistLocal(committed);
         this.cache = committed;
-        chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: committed }).catch(() => {});
+        RFPlatform.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: committed }).catch(() => {});
         return JSON.parse(JSON.stringify(committed));
       });
       await this.saveToCloud(provider.provider, provider.config, pushDb);
@@ -795,7 +736,7 @@ class StorageEngine {
         const pending = this.hasMeaningfulChanges(pushDb, merged);
         await this.persistLocal(merged);
         this.cache = merged;
-        chrome.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: merged }).catch(() => {});
+        RFPlatform.runtime.sendMessage({ action: 'DATABASE_UPDATED', data: merged }).catch(() => {});
         return pending;
       });
       if (pending) this.scheduleBackgroundSync();
@@ -934,35 +875,12 @@ class StorageEngine {
     db._webdav_etag = response.headers?.get?.('etag') || null;
   }
 
-  async ensureHostPermissionForUrl(url, options = {}) {
-    const shouldRequest = options.request !== false;
-    let originPattern = '';
+  async ensureHostPermissionForUrl(url) {
     try {
       const parsed = new URL(url);
-      if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) {
-        throw new Error('Invalid WebDAV URL');
-      }
-      originPattern = `${parsed.origin}/*`;
-    } catch (e) {
-      throw new Error('Invalid WebDAV URL');
-    }
-
-    if (!chrome.permissions) return true;
-
-    const hasPermission = await new Promise((resolve) => {
-      chrome.permissions.contains({ origins: [originPattern] }, resolve);
-    });
-    if (hasPermission) return true;
-
-    if (!shouldRequest) {
-      throw new Error(`Missing optional host permission for ${originPattern}. Use Test WebDAV Connection once to grant access.`);
-    }
-
-    const granted = await new Promise((resolve) => {
-      chrome.permissions.request({ origins: [originPattern] }, resolve);
-    });
-    if (!granted) throw new Error(`Permission denied for ${originPattern}`);
-    return true;
+      if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) throw new Error();
+      return true;
+    } catch (_) { throw new Error('Invalid WebDAV URL'); }
   }
 
   // --- GitHub Methods ---

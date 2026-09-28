@@ -1,5 +1,5 @@
-// Chrome APIs used by the shared workspace UI, backed by Zotero's own window.
-// This file is injected only into the Zotero package, before storage.js.
+// Device-local UI state and messages for the Zotero workspace.
+// Database writes go directly to the Zotero host, not through this adapter.
 (function () {
   if (typeof window === 'undefined' || window.location?.protocol !== 'chrome:' || window.location?.host !== 'researchflow') return;
 
@@ -34,8 +34,8 @@
       return value;
     }, (error) => {
       console.error('[ResearchFlow] Zotero compatibility operation failed:', error);
-      globalThis.chrome.runtime.lastError = { message: String(error?.message || error) };
-      try { callback(undefined); } finally { delete globalThis.chrome.runtime.lastError; }
+      globalThis.RFPlatform.runtime.lastError = { message: String(error?.message || error) };
+      try { callback(undefined); } finally { delete globalThis.RFPlatform.runtime.lastError; }
       return undefined;
     });
   };
@@ -77,10 +77,7 @@
     }
   };
 
-  // Zotero is a privileged chrome window, but it is not a Chrome extension.
-  // Keep its compatibility API local to this origin and never replace a real extension API.
-  if (globalThis.chrome?.runtime?.id) return;
-  globalThis.chrome = {
+  globalThis.RFPlatform = {
     runtime: {
       onMessage: { addListener: (listener) => listeners.add(listener), removeListener: (listener) => listeners.delete(listener) },
       getURL: (path) => `chrome://researchflow/content/${String(path || '').replace(/^\/+/, '')}`,

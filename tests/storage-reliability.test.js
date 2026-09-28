@@ -1,14 +1,14 @@
 const assert = require('node:assert/strict');
 const values = {};
 let failWrite = false;
-global.chrome = {
+global.RFPlatform = {
   storage: { local: {
     get(keys, callback) { callback(values); },
     set(next, callback) {
-      if (failWrite) chrome.runtime.lastError = { message: 'disk full' };
+      if (failWrite) RFPlatform.runtime.lastError = { message: 'disk full' };
       else Object.assign(values, structuredClone(next));
       callback?.();
-      chrome.runtime.lastError = null;
+      RFPlatform.runtime.lastError = null;
     }
   } },
   runtime: { sendMessage() { return Promise.resolve(); } }
@@ -64,14 +64,11 @@ const defer = () => { let resolve; const promise = new Promise(r => resolve = r)
   };
   await engine.fetchWithTimeout('https://example.invalid');
 
-  global.window = {};
-  chrome.runtime.sendMessage = (_message, callback) => {
-    chrome.runtime.lastError = { message: 'Background unavailable' };
-    callback();
-    chrome.runtime.lastError = null;
-  };
+  global.window = { Zotero: { ResearchFlow: {
+    saveDatabase: async () => { throw new Error('Zotero writer unavailable'); }
+  } } };
   const persisted = JSON.stringify(values.researchflow_db);
-  await assert.rejects(engine.saveAll({ manuscripts: [] }), /Background unavailable/);
+  await assert.rejects(engine.saveAll({ manuscripts: [] }), /Zotero writer unavailable/);
   assert.equal(JSON.stringify(values.researchflow_db), persisted, 'page cannot bypass the writer');
   delete global.window;
   console.log('storage reliability tests passed');

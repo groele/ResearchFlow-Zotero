@@ -30,7 +30,6 @@ let currentDashboardFilter = 'all'; // 'all', 'accepted', 'active'
 let currentLanguage = 'en';
 let isPipelineExpanded = false;
 let showEmptyKanbanColumns = false;
-let pendingSubmissionCapture = null;
 let submissionAutoSaveCleanup = null;
 let pendingSubmissionSaves = 0;
 let acceptanceCelebrationCleanup = null;
@@ -39,10 +38,7 @@ let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '9.1.1';
-const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
-const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
-const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
+const RF_OPTIONS_RENDER_VERSION = '9.1.2';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
 const SHARE_PREFS_STORAGE_KEY = 'researchflow_share_visibility';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
@@ -187,20 +183,6 @@ const I18N = {
     autoCloudSyncLabel: 'Automatic cloud sync',
     autoCloudSyncHelp: 'Sync valid cloud routes shortly after local changes are saved.',
     autoCloudSyncLocalHelp: 'Choose WebDAV or GitHub to enable automatic cloud sync.',
-    submissionAssistTitle: 'Submission Portal Recognition',
-    submissionAssistHelp: 'Show a quick-entry card when a supported journal submission system is detected.',
-    submissionAssistToggle: 'Automatic detection',
-    submissionAssistToggleHelp: 'Recognize supported portals without opening a popup or side panel.',
-    submissionAssistCaptureToggle: 'Automatic information capture',
-    submissionAssistCaptureHelp: 'Collect manuscript and workflow fields for human review. Passwords, email addresses, and files are excluded.',
-    submissionAssistEnabled: 'Enabled',
-    submissionAssistDisabled: 'Disabled',
-    submissionAssistScopeHelp: 'Recognition runs only on supported submission domains.',
-    submissionAssistReset: 'Reset ignored websites',
-    submissionAssistNoneIgnored: 'No websites ignored.',
-    submissionAssistIgnoredCount: '{count} website(s) ignored.',
-    submissionAssistSaved: 'Submission portal recognition updated.',
-    submissionAssistResetToast: 'Ignored submission websites reset.',
     detectedSubmissionPrefilled: 'Captured from {platform}. Review every field before creating the project.',
     captureReviewTitle: 'Review captured submission',
     captureReviewHelp: 'Nothing is saved yet. Check the detected fields, then confirm to create a linked project, manuscript, and submission record.',
@@ -543,7 +525,7 @@ const I18N = {
     academicCaptureDetected: 'results detected',
     academicDuplicateConfirm: 'A matching manuscript already exists. Update the existing record with the reviewed fields?',
     academicDuplicateUpdated: 'Existing manuscript updated without creating a duplicate.',
-    academicCaptureSaved: 'Scholar manuscript reviewed and saved.'
+    academicCaptureSaved: 'Zotero manuscript reviewed and saved.'
   },
   zh: {
     searchClear: '清除关键词', searchStatus: '按状态筛选', searchAll: '全部状态', searchActive: '进行中', searchRevision: '修回中', searchAccepted: '已接收 / 发表', searchRejected: '已拒稿', searchEmpty: '没有找到匹配的投稿', searchEmptyHelp: '试试更短的关键词，或切换投稿状态。', searchReset: '清除筛选条件',
@@ -683,20 +665,6 @@ const I18N = {
     autoCloudSyncLabel: '自动云同步',
     autoCloudSyncHelp: '本地修改保存后，自动同步到已配置完成的云端。',
     autoCloudSyncLocalHelp: '选择 WebDAV 或 GitHub 后可启用自动云同步。',
-    submissionAssistTitle: '投稿网站智能识别',
-    submissionAssistHelp: '识别到支持的期刊投稿系统时，在网页内显示快捷录入卡片。',
-    submissionAssistToggle: '自动识别投稿网站',
-    submissionAssistToggleHelp: '无需弹窗或侧边栏，直接识别投稿系统。',
-    submissionAssistCaptureToggle: '自动捕获投稿信息',
-    submissionAssistCaptureHelp: '采集稿件与流程字段供人工核对；不会读取密码、邮箱和上传文件。',
-    submissionAssistEnabled: '已启用',
-    submissionAssistDisabled: '已关闭',
-    submissionAssistScopeHelp: '仅在支持的投稿系统域名中运行识别。',
-    submissionAssistReset: '恢复已忽略的网站',
-    submissionAssistNoneIgnored: '当前没有忽略的网站。',
-    submissionAssistIgnoredCount: '已忽略 {count} 个网站。',
-    submissionAssistSaved: '投稿网站识别设置已更新。',
-    submissionAssistResetToast: '已恢复所有被忽略的投稿网站。',
     detectedSubmissionPrefilled: '已从 {platform} 捕获信息，请逐项核对后再新建项目。',
     captureReviewTitle: '核对捕获的投稿信息',
     captureReviewHelp: '当前尚未保存。请人工核对识别字段，确认后再创建相互关联的项目、稿件和投稿记录。',
@@ -998,7 +966,7 @@ const I18N = {
     academicCaptureDetected: '条结果已识别',
     academicDuplicateConfirm: '检测到相同手稿。是否用当前核对后的信息更新已有记录，避免重复创建？',
     academicDuplicateUpdated: '已更新现有手稿，未创建重复条目。',
-    academicCaptureSaved: 'Scholar 手稿已核对并保存。',
+    academicCaptureSaved: 'Zotero 手稿已核对并保存。',
     storageRoutingHelp: '选择 ResearchFlow 元数据数据库的存储与同步位置。',
     routeDbLabel: '同步位置',
     optionLocalCache: '无（仅使用本地缓存）',
@@ -1254,14 +1222,6 @@ function applyLanguage() {
   setText('#language-help', t('languageHelp'));
   setText('#language-auto-save-status', t('languageAutoSaved'));
   setText('#auto-cloud-sync-label', t('autoCloudSyncLabel'));
-  setText('#settings-submission-assist-card h3', t('submissionAssistTitle'));
-  setText('#submission-assist-help', t('submissionAssistHelp'));
-  setText('#submission-assist-toggle-label', t('submissionAssistToggle'));
-  setText('#submission-assist-toggle-help', t('submissionAssistToggleHelp'));
-  setText('#submission-assist-capture-label', t('submissionAssistCaptureToggle'));
-  setText('#submission-assist-capture-help', t('submissionAssistCaptureHelp'));
-  setText('#submission-assist-scope-help', t('submissionAssistScopeHelp'));
-  setButtonText('#btn-reset-submission-assist', t('submissionAssistReset'));
   setText('#settings-cloud-card h3', t('cloudRoutingTitle'));
   setText('#settings-webdav-card h3', t('webdavTitle'));
   setText('#settings-github-card h3', t('githubTitle'));
@@ -1417,8 +1377,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dbMigrationChanged) {
       try {
         const backupKey = 'researchflow_pre_workflow_sync_backup';
-        const existing = await chrome.storage.local.get([backupKey]);
-        if (!existing[backupKey]) await chrome.storage.local.set({ [backupKey]: { createdAt: new Date().toISOString(), database: originalDatabase } });
+        const existing = await RFPlatform.storage.local.get([backupKey]);
+        if (!existing[backupKey]) await RFPlatform.storage.local.set({ [backupKey]: { createdAt: new Date().toISOString(), database: originalDatabase } });
         db = await window.storage.saveAll(db, { mergeOnConflict: true });
       }
       catch (error) { showGlobalToast(error.message, 'error'); }
@@ -1426,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Set up synchronization alerts/updates
-  chrome.runtime.onMessage.addListener((message) => {
+  RFPlatform.runtime.onMessage.addListener((message) => {
     if (message.action === 'DATABASE_UPDATED') {
       applyDatabaseUpdate(message.data);
     }
@@ -1444,13 +1404,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     views.forEach(view => view.classList.toggle('active', view.id === 'view-settings'));
     await loadSettings();
   }
-  const requestedMode = new URL(window.location.href).searchParams.get('mode');
-  if (requestedMode === 'academic-capture') {
-    await consumePendingAcademicDraft();
-  } else {
-    await consumePendingSubmissionDraft();
-  }
-
   // Pipeline View Toggle and Drawer Event Listeners
   initializePipelineViewMode();
   initializeKanbanEmptyColumnsMode();
@@ -1466,7 +1419,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initializePipelineViewMode() {
-  chrome.storage.local.get(['researchflow_pipeline_expanded'], (result) => {
+  RFPlatform.storage.local.get(['researchflow_pipeline_expanded'], (result) => {
     setPipelineViewMode(Boolean(result.researchflow_pipeline_expanded), { persist: false });
   });
 }
@@ -1486,9 +1439,9 @@ function initializeKanbanEmptyColumnsMode() {
   button?.addEventListener('click', () => {
     showEmptyKanbanColumns = !showEmptyKanbanColumns;
     updateKanbanEmptyColumns();
-    chrome.storage.local.set({ researchflow_kanban_show_empty: showEmptyKanbanColumns });
+    RFPlatform.storage.local.set({ researchflow_kanban_show_empty: showEmptyKanbanColumns });
   });
-  chrome.storage.local.get(['researchflow_kanban_show_empty'], result => {
+  RFPlatform.storage.local.get(['researchflow_kanban_show_empty'], result => {
     showEmptyKanbanColumns = result?.researchflow_kanban_show_empty === true;
     updateKanbanEmptyColumns();
   });
@@ -1500,7 +1453,7 @@ function setPipelineViewMode(expanded, options = {}) {
   if (container) container.classList.toggle('expanded', isPipelineExpanded);
   updatePipelineViewToggle();
   if (options.persist !== false) {
-    chrome.storage.local.set({ researchflow_pipeline_expanded: isPipelineExpanded });
+    RFPlatform.storage.local.set({ researchflow_pipeline_expanded: isPipelineExpanded });
   }
 }
 
@@ -1668,7 +1621,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
 
   try {
     await sharePreferenceWrites.catch(() => {});
-    const stored = await chrome.storage.local.get([SHARE_PREFS_STORAGE_KEY]);
+    const stored = await RFPlatform.storage.local.get([SHARE_PREFS_STORAGE_KEY]);
     let visibility = normalizeShareVisibility(stored?.[SHARE_PREFS_STORAGE_KEY]);
     let currentBlob = null;
     let currentFileName = '';
@@ -1840,7 +1793,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     const updatePreview = patch => {
       visibility = normalizeShareVisibility({ ...visibility, ...patch });
       const snapshot = { ...visibility };
-      sharePreferenceWrites = sharePreferenceWrites.catch(() => {}).then(() => chrome.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: snapshot }));
+      sharePreferenceWrites = sharePreferenceWrites.catch(() => {}).then(() => RFPlatform.storage.local.set({ [SHARE_PREFS_STORAGE_KEY]: snapshot }));
       sharePreferenceWrites.catch(() => { if (!closed) showGlobalToast(t('sharePrefsFailed'), 'warning'); });
       modalContent.querySelectorAll('[data-share-style]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.shareStyle === visibility.appearance)));
       document.getElementById('share-appearance').value = visibility.appearance;
@@ -3538,8 +3491,6 @@ function renderDashboard() {
   }
 
 
-
-
   // 2. Recent Research Logs (Removed)
 
   // 3. Timeline alerts and review milestones
@@ -4265,7 +4216,7 @@ function findAcademicManuscriptMatch({ title, doi, articleUrl }) {
 function academicCaptureProvenance(prefill) {
   if (!prefill) return null;
   return {
-    sourceType: prefill.sourceType || 'google-scholar-mirror',
+    sourceType: prefill.sourceType || 'zotero-library',
     sourceHost: prefill.sourceHost || '',
     sourcePageUrl: prefill.sourcePageUrl || '',
     pdfUrl: prefill.pdfUrl || '',
@@ -4277,7 +4228,7 @@ function academicCaptureProvenance(prefill) {
 
 function buildAcademicCaptureSummary(prefill) {
   if (!prefill) return '';
-  const source = prefill.sourceHost || prefill.sourceType || 'Google Scholar';
+  const source = prefill.sourceHost || prefill.sourceType || 'Zotero';
   const confidence = Math.max(0, Math.min(Number(prefill.confidenceScore) || 0, 100));
   return `
     <section class="academic-capture-review" aria-label="${escapeHTML(t('academicCaptureSource'))}">
@@ -4995,9 +4946,6 @@ function openManuscriptModal(man = null, prefill = null) {
     }
 
     await window.storage.saveAll(db);
-    if (prefill && typeof chrome !== 'undefined' && chrome?.storage?.local?.remove) {
-      await chrome.storage.local.remove(PENDING_ACADEMIC_DRAFT_KEY);
-    }
     if (currentZoteroItemKey && typeof ZoteroBridge !== 'undefined' && ZoteroBridge.isZotero) {
       ZoteroBridge.syncStatusTag(currentZoteroItemKey, status);
       ZoteroBridge.addToPipelineCollection(currentZoteroItemKey);
@@ -6577,105 +6525,14 @@ function openTransferSubmissionModal(sourceSub) {
   });
 }
 
-function normalizeCapturedSubmissionStatus(value) {
-  const normalized = String(value || '').trim().toLowerCase().replace('-', '_');
-  if (['submitted', 'under_review', 'revision', 'accepted', 'rejected'].includes(normalized)) return normalized;
-  return 'submitted';
-}
-
-function captureConfidenceLabel(level) {
-  if (level === 'high') return t('confidenceHigh');
-  if (level === 'medium') return t('confidenceMedium');
-  return t('confidenceLow');
-}
-
-function findExistingCapturedSubmission({ externalManuscriptId, manuscriptTitle, targetJournal, sourceOrigin }) {
-  return window.RFUI.findCapturedSubmissionMatch({
-    submissions: db.submissions,
-    manuscripts: db.manuscripts,
-    capture: { externalManuscriptId, manuscriptTitle, targetJournal, sourceOrigin }
-  });
-}
-
-function buildSubmissionCaptureReview(draft) {
-  if (!draft) return '';
-  const suggestedProject = [
-    draft.manuscriptTitle || t('untitledManuscript'),
-    draft.targetJournal ? `— ${draft.targetJournal}` : ''
-  ].filter(Boolean).join(' ');
-  const status = normalizeCapturedSubmissionStatus(draft.workflowStage);
-  const statusOptions = [
-    ['submitted', t('stateSubmitted')],
-    ['under_review', t('stateUnderReview')],
-    ['revision', t('eventTypeRevision')],
-    ['accepted', t('stateAccepted')],
-    ['rejected', t('statusRejected')]
-  ].map(([value, label]) => (
-    `<option value="${value}" ${value === status ? 'selected' : ''}>${escapeHTML(label)}</option>`
-  )).join('');
-
-  return `
-    <section class="submission-capture-review" id="submission-capture-review">
-      <div class="capture-review-heading">
-        <div class="capture-review-mark" aria-hidden="true">✓</div>
-        <div>
-          <div class="capture-review-title-line">
-            <h3>${escapeHTML(t('captureReviewTitle'))}</h3>
-            <span class="capture-confidence capture-confidence-${escapeHTML(draft.confidenceLevel || 'low')}">
-              ${escapeHTML(t('captureConfidence'))} · ${escapeHTML(captureConfidenceLabel(draft.confidenceLevel))} ${Number(draft.confidenceScore) || 0}%
-            </span>
-          </div>
-          <p>${escapeHTML(t('captureReviewHelp'))}</p>
-          <span class="capture-fields-count">${escapeHTML(tf('captureFieldsDetected', { count: Number(draft.detectedFieldCount) || 0 }))}</span>
-        </div>
-      </div>
-
-      <div class="form-group capture-project-field">
-        <label>${escapeHTML(t('captureProjectTitle'))}</label>
-        <input type="text" id="sub-capture-project-title" value="${escapeHTML(suggestedProject)}" placeholder="${escapeHTML(t('captureProjectPlaceholder'))}">
-      </div>
-
-      <div class="grid-cols-2 capture-review-grid">
-        <div class="form-group">
-          <label>${escapeHTML(t('manuscriptIdLabel'))}</label>
-          <input type="text" id="sub-capture-manuscript-id" value="${escapeHTML(draft.manuscriptId || '')}">
-        </div>
-        <div class="form-group">
-          <label>${escapeHTML(t('capturedStatusLabel'))}</label>
-          <select id="sub-capture-status">${statusOptions}</select>
-        </div>
-        <div class="form-group">
-          <label>${escapeHTML(t('revisionDueLabel'))}</label>
-          <input type="date" id="sub-capture-revision-due" value="${escapeHTML(draft.revisionDueDate || '')}">
-        </div>
-        <div class="form-group">
-          <label>${escapeHTML(t('keywordsLabel'))}</label>
-          <input type="text" id="sub-capture-keywords" value="${escapeHTML(draft.keywords || '')}">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>${escapeHTML(t('authorsLabel'))}</label>
-        <input type="text" id="sub-capture-authors" value="${escapeHTML(draft.authors || '')}">
-      </div>
-      <div class="form-group">
-        <label>${escapeHTML(t('abstractLabel'))}</label>
-        <textarea id="sub-capture-abstract" rows="4">${escapeHTML(draft.abstract || '')}</textarea>
-      </div>
-    </section>
-  `;
-}
 
 // Track New Submission trigger
 document.getElementById('btn-add-submission').addEventListener('click', () => {
-  const captureDraft = pendingSubmissionCapture;
   let manOpts = db.manuscripts.map(m => `
     <option value="${escapeHTML(m.id)}">${escapeHTML(m.title || t('untitledManuscript'))}</option>
   `).join('');
   manOpts += `<option value="__new__">${escapeHTML(t('createNewManuscriptOption'))}</option>`;
-  const defaultManuscriptMode = captureDraft
-    ? '__new__'
-    : (db.manuscripts.length === 0 ? '__new__' : (db.manuscripts[0]?.id || '__new__'));
+  const defaultManuscriptMode = db.manuscripts.length === 0 ? '__new__' : (db.manuscripts[0]?.id || '__new__');
   manOpts = manOpts.replace(`value="${escapeHTML(defaultManuscriptMode)}"`, `value="${escapeHTML(defaultManuscriptMode)}" selected`);
   openModal(`
     <div class="modal-header">
@@ -6683,7 +6540,6 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       <button class="btn-secondary btn-icon" id="btn-close-modal">✕</button>
     </div>
 
-    ${buildSubmissionCaptureReview(captureDraft)}
 
     <div id="sub-zotero-active-item-banner" class="zotero-active-item-banner" style="display:none; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; background:rgba(204,0,0,0.06); border:1px solid rgba(204,0,0,0.22); border-radius:8px; margin-bottom:12px;">
       <span id="sub-zotero-active-item-text" style="font-size:12px; color:hsl(var(--text-primary)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;"></span>
@@ -6708,7 +6564,7 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     <div class="grid-cols-2">
       <div class="form-group">
         <label for="sub-first-author">${escapeHTML(t('firstAuthorLabel'))}</label>
-        <input type="text" id="sub-first-author" value="${escapeHTML(captureDraft?.firstAuthor || firstAuthorFromList(captureDraft?.authors) || '')}" placeholder="${escapeHTML(currentLanguage === 'zh' ? '例如: Zhang San' : t('firstAuthorPlaceholder'))}">
+        <input type="text" id="sub-first-author" value="" placeholder="${escapeHTML(currentLanguage === 'zh' ? '例如: Zhang San' : t('firstAuthorPlaceholder'))}">
       </div>
       <div class="form-group">
         <label for="sub-journal">${t('targetJournalInput')}</label>
@@ -6729,7 +6585,7 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
 
     <div class="modal-footer">
       <button type="button" class="btn-secondary" id="btn-cancel-sub">${escapeHTML(t('cancel') || '取消')}</button>
-      <button type="button" class="btn-primary" id="btn-submit-sub" style="min-width:140px;">${captureDraft ? t('confirmCreateProject') : t('trackSubmissionButton')}</button>
+      <button type="button" class="btn-primary" id="btn-submit-sub" style="min-width:140px;">${t('trackSubmissionButton')}</button>
     </div>
   `);
 
@@ -6775,7 +6631,7 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
   // Active item detection in Zotero
   setTimeout(async () => {
     try {
-      if (typeof ZoteroBridge !== 'undefined' && !captureDraft) {
+      if (typeof ZoteroBridge !== 'undefined') {
         const activeItem = await ZoteroBridge.getActiveItem();
         const banner = document.getElementById('sub-zotero-active-item-banner');
         const textEl = document.getElementById('sub-zotero-active-item-text');
@@ -6817,10 +6673,6 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     } catch (_) {}
   }, 60);
 
-  if (captureDraft) {
-    manuscriptSelect.disabled = true;
-    manuscriptSelect.setAttribute('aria-describedby', 'submission-capture-review');
-  }
 
   document.getElementById('btn-submit-sub').addEventListener('click', async () => {
     const createMode = window.RFUI.buildSubmissionCreateMode({
@@ -6831,16 +6683,12 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     const subDate = document.getElementById('sub-date').value;
     const journalUrl = document.getElementById('sub-journal-url').value.trim();
     const firstAuthor = document.getElementById('sub-first-author').value.trim().slice(0, 160);
-    const captureProjectTitle = document.getElementById('sub-capture-project-title')?.value.trim() || '';
 
     if (!createMode.ok) {
       alert(createMode.error);
       return;
     }
-    if (captureDraft && !captureProjectTitle) {
-      alert(t('captureProjectTitle'));
-      return;
-    }
+
     if (journalUrl) {
       try {
         const parsedPortalUrl = new URL(journalUrl);
@@ -6851,72 +6699,29 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       }
     }
 
-    if (captureDraft) {
-      const existingSubmission = findExistingCapturedSubmission({
-        externalManuscriptId: document.getElementById('sub-capture-manuscript-id')?.value,
-        manuscriptTitle: createMode.title,
-        targetJournal: createMode.targetJournal,
-        sourceOrigin: captureDraft.sourceOrigin
-      });
-      if (existingSubmission) {
-        selectedSubmissionId = existingSubmission.id;
-        await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
-        closeModal();
-        renderDashboard();
-        renderKanban();
-        renderSubmissions();
-        showGlobalToast(t('captureExistingOpenedToast'), 'success');
-        return;
-      }
-    }
 
     let manuscriptId = createMode.manuscriptId;
-    let capturedProject = null;
-    if (captureDraft) {
-      capturedProject = window.RFCore.upsertProject(db, {
-        title: captureProjectTitle,
-        discipline: createMode.targetJournal,
-        hypothesis: '',
-        abstract: document.getElementById('sub-capture-abstract')?.value.trim() || '',
-        status: 'active'
-      });
-      if (capturedProject && Array.isArray(capturedProject.tags) && !capturedProject.tags.includes('submission-capture')) {
-        capturedProject.tags.push('submission-capture');
-      }
-    }
+
 
     if (createMode.mode === 'new') {
-      const capturedAuthors = (document.getElementById('sub-capture-authors')?.value || '')
-        .split(/[;,，；]\s*/)
-        .map(name => name.trim())
-        .filter(Boolean);
-      const capturedKeywords = (document.getElementById('sub-capture-keywords')?.value || '')
-        .split(/[;,，；]\s*/)
-        .map(keyword => keyword.trim())
-        .filter(Boolean);
-      const capturedStatus = normalizeCapturedSubmissionStatus(
-        document.getElementById('sub-capture-status')?.value || captureDraft?.workflowStage
-      );
       const newMan = {
         id: 'man_' + Math.random().toString(36).substring(2, 9),
         userId: 'user',
-        projectId: capturedProject?.id || document.getElementById('sub-new-man-project')?.value || null,
+        projectId: null,
         title: createMode.title,
         shortTitle: null,
         manuscriptType: 'article',
-        status: captureDraft ? capturedStatus : 'submitted',
-        abstract: document.getElementById('sub-capture-abstract')?.value.trim() || '',
-        keywords: capturedKeywords,
-        authors: capturedAuthors,
+        status: 'submitted',
+        abstract: '',
+        keywords: [],
+        authors: firstAuthor ? [firstAuthor] : [],
         firstAuthor: firstAuthor || null,
         correspondingAuthors: [],
         targetJournals: [createMode.targetJournal],
         currentVersion: '1.0',
         plannedFigures: [],
-        notes: captureDraft
-          ? `Created from a reviewed ${captureDraft.platformName || 'submission portal'} capture.`
-          : 'Created inline while tracking a new submission',
-        externalManuscriptId: document.getElementById('sub-capture-manuscript-id')?.value.trim() || null,
+        notes: 'Created inline while tracking a new submission',
+        externalManuscriptId: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -6933,34 +6738,22 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
       id: 'sub_' + Math.random().toString(36).substring(2, 9),
       userId: 'user',
       manuscriptId,
-      projectId: capturedProject?.id || db.manuscripts.find(m => m.id === manuscriptId)?.projectId || null,
+      projectId: db.manuscripts.find(m => m.id === manuscriptId)?.projectId || null,
       targetJournal: createMode.targetJournal,
       journalUrl: journalUrl || null,
       doi: null,
       articleUrl: null,
-      status: captureDraft
-        ? normalizeCapturedSubmissionStatus(document.getElementById('sub-capture-status')?.value)
-        : 'submitted',
+      status: 'submitted',
       submissionDate: dateInputToIso(subDate),
       decisionDate: null,
-      revisionDueDate: document.getElementById('sub-capture-revision-due')?.value
-        ? dateInputToIso(document.getElementById('sub-capture-revision-due').value)
-        : null,
+      revisionDueDate: null,
       firstDecisionDate: null,
       complianceChecklist: {},
       reviewMatrix: [],
       timelineNodes: [],
-      externalManuscriptId: document.getElementById('sub-capture-manuscript-id')?.value.trim() || null,
+      externalManuscriptId: null,
       firstAuthor: firstAuthor || null,
-      captureProvenance: captureDraft ? {
-        source: 'submission-portal',
-        platformId: captureDraft.platformId || '',
-        platformName: captureDraft.platformName || '',
-        sourceOrigin: captureDraft.sourceOrigin || '',
-        capturedAt: new Date().toISOString(),
-        confidenceScore: Number(captureDraft.confidenceScore) || 0,
-        reviewedByUser: true
-      } : null,
+      captureProvenance: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -6970,173 +6763,18 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
     syncManuscriptStatusFromSubmission(newSub);
     selectedSubmissionId = newSub.id;
     await window.storage.saveAll(db);
-    if (captureDraft) await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
+
     closeModal();
     renderDashboard();
     renderKanban();
     renderSubmissions();
-    showGlobalToast(t(captureDraft ? 'captureCreatedToast' : 'submissionAddedToast'), 'success');
+    showGlobalToast(t('submissionAddedToast'), 'success');
   });
 });
 
-async function consumePendingSubmissionDraft() {
-  const stored = await chrome.storage.local.get([PENDING_SUBMISSION_DRAFT_KEY]);
-  const draft = stored?.[PENDING_SUBMISSION_DRAFT_KEY];
-  if (!draft) return;
-
-  if (!draft.expiresAt || Number(draft.expiresAt) < Date.now()) {
-    await chrome.storage.local.remove(PENDING_SUBMISSION_DRAFT_KEY);
-    return;
-  }
-
-  const submissionNav = document.querySelector('.nav-item[data-view="view-submissions"]');
-  submissionNav?.click();
-  pendingSubmissionCapture = draft;
-  document.getElementById('btn-add-submission')?.click();
-  document.body.classList.add('submission-capture-mode');
-  modalContent?.classList.add('submission-capture-card');
-
-  const journalInput = document.getElementById('sub-journal');
-  const journalUrlInput = document.getElementById('sub-journal-url');
-  const dateInput = document.getElementById('sub-date');
-  const manuscriptSelect = document.getElementById('sub-man-select');
-  const manuscriptTitleInput = document.getElementById('sub-new-man-title');
-  if (!journalInput || !journalUrlInput || !dateInput || !manuscriptSelect || !manuscriptTitleInput) return;
-
-  manuscriptSelect.value = '__new__';
-  manuscriptSelect.dispatchEvent(new Event('change', { bubbles: true }));
-  manuscriptTitleInput.value = String(draft.manuscriptTitle || '').trim();
-  journalInput.value = String(draft.targetJournal || '').trim();
-  journalUrlInput.value = String(draft.journalUrl || '').trim();
-  if (draft.submissionDate) dateInput.value = draft.submissionDate;
-
-  if (!manuscriptTitleInput.value) {
-    manuscriptTitleInput.focus();
-  } else {
-    document.getElementById('sub-capture-project-title')?.focus();
-  }
-
-  showGlobalToast(tf('detectedSubmissionPrefilled', {
-    platform: draft.platformName || draft.targetJournal || 'submission portal'
-  }), 'success');
-}
-
-async function consumePendingAcademicDraft() {
-  const stored = await chrome.storage.local.get([PENDING_ACADEMIC_DRAFT_KEY]);
-  const draft = stored?.[PENDING_ACADEMIC_DRAFT_KEY];
-  if (!draft) return;
-
-  if (!draft.expiresAt || Number(draft.expiresAt) < Date.now()) {
-    await chrome.storage.local.remove(PENDING_ACADEMIC_DRAFT_KEY);
-    return;
-  }
-
-  document.querySelector('.nav-item[data-view="view-manuscripts"]')?.click();
-  const results = Array.isArray(draft.results) && draft.results.length
-    ? draft.results
-    : [draft];
-  if (results.length > 1) {
-    openAcademicCaptureChooser(draft, results);
-  } else {
-    openManuscriptModal(null, results[0]);
-    enableAcademicCaptureLayout();
-    showGlobalToast(t('academicCapturePrefilled'), 'success');
-  }
-}
-
-function enableAcademicCaptureLayout() {
-  document.body.classList.add('academic-capture-mode');
-  modalContent?.classList.add('academic-capture-card');
-}
-
-function openAcademicCaptureChooser(draft, results) {
-  openModal(`
-    <div class="modal-header">
-      <div>
-        <h2>${escapeHTML(t('academicCaptureChooseTitle'))}</h2>
-        <p class="text-muted academic-capture-chooser-help">${escapeHTML(t('academicCaptureChooseHelp'))}</p>
-      </div>
-      <button class="btn-secondary btn-icon" id="btn-close-modal" aria-label="${escapeHTML(t('close'))}">✕</button>
-    </div>
-    <section class="academic-capture-chooser" aria-label="${escapeHTML(t('academicCaptureChooseTitle'))}">
-      <div class="academic-capture-count">
-        <strong>${results.length}</strong> ${escapeHTML(t('academicCaptureDetected'))}
-        <span>${escapeHTML(draft.sourceHost || '')}</span>
-      </div>
-      <div class="academic-capture-result-list">
-        ${results.map((result, index) => `
-          <button type="button" class="academic-capture-result" data-academic-result-index="${index}">
-            <span class="academic-result-index">${String(index + 1).padStart(2, '0')}</span>
-            <span class="academic-result-copy">
-              <strong>${escapeHTML(result.title || t('untitledManuscript'))}</strong>
-              <span>${escapeHTML(result.authors || '')}</span>
-              <small>${escapeHTML(result.publication || result.articleUrl || '')}</small>
-            </span>
-            <span class="academic-result-arrow" aria-hidden="true">→</span>
-          </button>
-        `).join('')}
-      </div>
-    </section>
-  `);
-  enableAcademicCaptureLayout();
-  modalContent.querySelectorAll('[data-academic-result-index]').forEach(button => {
-    button.addEventListener('click', () => {
-      const result = results[Number(button.dataset.academicResultIndex)];
-      if (!result) return;
-      openManuscriptModal(null, result);
-      enableAcademicCaptureLayout();
-      showGlobalToast(t('academicCapturePrefilled'), 'success');
-    });
-  });
-}
 
 // --- VIEW 6: MULTI-CLOUD SETTINGS ---
-function normalizeSubmissionAssistSettings(value = {}) {
-  return {
-    enabled: value.enabled !== false,
-    captureDetailsEnabled: value.captureDetailsEnabled !== false,
-    disabledOrigins: Array.isArray(value.disabledOrigins) ? value.disabledOrigins : [],
-    snoozedUntil: value.snoozedUntil && typeof value.snoozedUntil === 'object'
-      ? value.snoozedUntil
-      : {}
-  };
-}
 
-function updateSubmissionAssistIgnoredCount(state) {
-  const countNode = document.getElementById('submission-assist-ignored-count');
-  const stateNode = document.getElementById('submission-assist-state-label');
-  const card = document.getElementById('settings-submission-assist-card');
-  const enabled = state.enabled !== false;
-  const count = state.disabledOrigins.length;
-  if (countNode) {
-    countNode.textContent = count
-      ? tf('submissionAssistIgnoredCount', { count })
-      : t('submissionAssistNoneIgnored');
-  }
-  if (stateNode) stateNode.textContent = enabled ? t('submissionAssistEnabled') : t('submissionAssistDisabled');
-  if (card) card.classList.toggle('is-enabled', enabled);
-}
-
-async function loadSubmissionAssistSettings() {
-  const stored = await chrome.storage.local.get([SUBMISSION_ASSIST_STORAGE_KEY]);
-  const state = normalizeSubmissionAssistSettings(stored?.[SUBMISSION_ASSIST_STORAGE_KEY]);
-  const checkbox = document.getElementById('submission-assist-enabled');
-  const captureCheckbox = document.getElementById('submission-assist-capture-enabled');
-  if (checkbox) checkbox.checked = state.enabled;
-  if (captureCheckbox) {
-    captureCheckbox.checked = state.captureDetailsEnabled;
-    captureCheckbox.disabled = !state.enabled;
-  }
-  updateSubmissionAssistIgnoredCount(state);
-  return state;
-}
-
-async function saveSubmissionAssistSettings(state) {
-  const normalized = normalizeSubmissionAssistSettings(state);
-  await chrome.storage.local.set({ [SUBMISSION_ASSIST_STORAGE_KEY]: normalized });
-  updateSubmissionAssistIgnoredCount(normalized);
-  return normalized;
-}
 
 function updateSyncProviderVisibility() {
   const routeSelect = document.getElementById('route-db');
@@ -7216,47 +6854,10 @@ async function loadSettings() {
   document.getElementById('github-repo').value = syncProviders.metadata.config?.repo || '';
   document.getElementById('github-branch').value = syncProviders.metadata.config?.branch || 'main';
 
-  loadSubmissionAssistSettings().catch(console.error);
   applyLanguage();
 }
 
 function setupSettingsListeners() {
-  const submissionAssistToggle = document.getElementById('submission-assist-enabled');
-  const submissionCaptureToggle = document.getElementById('submission-assist-capture-enabled');
-  if (submissionAssistToggle) {
-    submissionAssistToggle.addEventListener('change', async () => {
-      const enabled = submissionAssistToggle.checked;
-      const state = await loadSubmissionAssistSettings();
-      state.enabled = enabled;
-      await saveSubmissionAssistSettings(state);
-      submissionAssistToggle.checked = enabled;
-      if (submissionCaptureToggle) submissionCaptureToggle.disabled = !enabled;
-      showGlobalToast(t('submissionAssistSaved'), 'success');
-    });
-  }
-
-  if (submissionCaptureToggle) {
-    submissionCaptureToggle.addEventListener('change', async () => {
-      const captureDetailsEnabled = submissionCaptureToggle.checked;
-      const state = await loadSubmissionAssistSettings();
-      state.captureDetailsEnabled = captureDetailsEnabled;
-      await saveSubmissionAssistSettings(state);
-      submissionCaptureToggle.checked = captureDetailsEnabled;
-      showGlobalToast(t('submissionAssistSaved'), 'success');
-    });
-  }
-
-  const resetSubmissionAssistButton = document.getElementById('btn-reset-submission-assist');
-  if (resetSubmissionAssistButton) {
-    resetSubmissionAssistButton.addEventListener('click', async () => {
-      const state = await loadSubmissionAssistSettings();
-      state.disabledOrigins = [];
-      state.snoozedUntil = {};
-      await saveSubmissionAssistSettings(state);
-      showGlobalToast(t('submissionAssistResetToast'), 'success');
-    });
-  }
-
   const languageSelect = document.getElementById('ui-language');
   if (languageSelect) {
     languageSelect.addEventListener('change', async () => {
@@ -7463,8 +7064,8 @@ function setupSettingsListeners() {
     const diagnosticReport = {
       generatedAt: new Date().toISOString(),
       extension: {
-        name: chrome?.runtime?.getManifest?.()?.name || 'ResearchFlow Companion',
-        version: chrome?.runtime?.getManifest?.()?.version || RF_OPTIONS_RENDER_VERSION,
+        name: RFPlatform?.runtime?.getManifest?.()?.name || 'ResearchFlow Zotero',
+        version: RFPlatform?.runtime?.getManifest?.()?.version || RF_OPTIONS_RENDER_VERSION,
         schemaVersion: Number(db.schemaVersion) || null,
         revision: Number(db.revision) || 0
       },
@@ -7584,7 +7185,7 @@ function setupSettingsListeners() {
     }
 
     const result = await new Promise((resolve) => {
-      chrome.storage.local.get([PRE_IMPORT_BACKUP_KEY], resolve);
+      RFPlatform.storage.local.get([PRE_IMPORT_BACKUP_KEY], resolve);
     });
     const backup = result?.[PRE_IMPORT_BACKUP_KEY];
     if (!backup?.database) {
@@ -7848,15 +7449,15 @@ function setupSettingsListeners() {
         const normalizedImport = await window.storage.ensureDbShape(newDb, { stamp: false });
         const safeCurrentDb = window.storage.sanitizeDatabaseForExternalUse(db);
         await new Promise((resolve, reject) => {
-          chrome.storage.local.set({
+          RFPlatform.storage.local.set({
             [PRE_IMPORT_BACKUP_KEY]: {
               database: safeCurrentDb,
               createdAt: new Date().toISOString(),
               sourceFileName: String(file.name || '').slice(0, 260)
             }
           }, () => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(`Unable to create the pre-import backup: ${chrome.runtime.lastError.message}`));
+            if (RFPlatform.runtime.lastError) {
+              reject(new Error(`Unable to create the pre-import backup: ${RFPlatform.runtime.lastError.message}`));
               return;
             }
             resolve();
@@ -7950,7 +7551,6 @@ function closeModal() {
   }
   document.body.classList.remove('submission-capture-mode');
   document.body.classList.remove('academic-capture-mode');
-  pendingSubmissionCapture = null;
   const url = new URL(window.location.href);
   if (url.searchParams.has('mode')) {
     url.searchParams.delete('mode');
@@ -8085,7 +7685,6 @@ window.addEventListener('beforeunload', event => {
     event.returnValue = '';
   }
 });
-
 
 
 window.showLinkManuscriptModal = function(item) {

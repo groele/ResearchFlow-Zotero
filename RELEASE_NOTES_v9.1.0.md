@@ -12,7 +12,7 @@
 
 ## Compatibility and data
 
-The database format is unchanged. Existing browser-extension and Zotero local databases remain separate; use JSON export and import to transfer data. Credentials remain device-local and are excluded from database exports and cloud payloads.
+The database format is unchanged. Use JSON export and import to transfer data. Credentials remain device-local and are excluded from database exports and cloud payloads.
 
 ## Verification
 
@@ -21,4 +21,3 @@ Node regression and syntax checks, browser interaction checks, and Zotero 10.0.3
 ## Install
 
 - Zotero: install `researchflow-zotero-9.1.0.xpi` from Zotero's add-on manager and restart Zotero.
-- Chrome Companion: extract `researchflow-companion-9.1.0.zip`, then use Chrome's **Load unpacked** command to select the extracted folder.

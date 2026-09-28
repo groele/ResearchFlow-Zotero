@@ -2,17 +2,15 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'output/playwright');
 fs.mkdirSync(out, { recursive: true });
 (async () => {
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'researchflow-share-'));
-  const context = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true,
-    args: [`--disable-extensions-except=${root}`, `--load-extension=${root}`], viewport: { width: 1440, height: 1100 }, reducedMotion: 'reduce' });
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, reducedMotion: 'reduce' });
   try {
-    const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
     const page = await context.newPage();
+    await page.addInitScript({ path: path.join(__dirname, 'fixtures/zotero-ui-mock.js') });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => {
@@ -22,7 +20,7 @@ fs.mkdirSync(out, { recursive: true });
       URL.revokeObjectURL = url => { urls.delete(url); return revoke(url); };
       globalThis.__shareUrls = urls;
     });
-    await page.goto(`chrome-extension://${new URL(worker.url()).host}/pages/options.html`);
+    await page.goto('http://127.0.0.1:8765/pages/options.html');
     await page.locator('.btn-pipeline-share').first().waitFor();
     const measurements = await page.evaluate(() => {
       const ctx = document.createElement('canvas').getContext('2d');
@@ -173,5 +171,5 @@ fs.mkdirSync(out, { recursive: true });
     assert.equal(await page.evaluate(() => __shareUrls.size), 0);
     assert.deepEqual(errors, []);
     console.log('Share card browser smoke passed: 468 layout cases, gallery, brand sizes, export quality, bounded long export, retry, privacy-safe reset, real PNG download, zoom, mobile and blob cleanup.');
-  } finally { await context.close(); }
+  } finally { await context.close(); await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

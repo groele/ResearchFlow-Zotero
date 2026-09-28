@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const values = {};
-global.chrome = {
+global.RFPlatform = {
   storage: { local: {
     get(_keys, cb) { cb(values); },
     set(next, cb) { Object.assign(values, structuredClone(next)); cb?.(); }

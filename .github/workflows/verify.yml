@@ -1,4 +1,4 @@
-name: Verify extension
+name: Verify Zotero plugin
 
 on:
   push:

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="16" height="16" role="img" aria-labelledby="title desc">
-  <title id="title">ResearchFlow Companion</title>
+  <title id="title">ResearchFlow for Zotero</title>
   <desc id="desc">A high contrast research workflow mark with a document, connected milestones, and a verified check.</desc>
   <defs>
     <linearGradient id="shell" x1="14" y1="12" x2="116" y2="118" gradientUnits="userSpaceOnUse">

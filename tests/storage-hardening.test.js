@@ -3,14 +3,14 @@ const values = {};
 let failWrite = false;
 let writes = 0;
 let changes;
-global.chrome = {
+global.RFPlatform = {
   storage: { onChanged: { addListener(fn) { changes = fn; } }, local: {
     get(_keys, cb) { setImmediate(() => cb(structuredClone(values))); },
     set(next, cb) {
       writes++;
-      if (failWrite) chrome.runtime.lastError = { message: 'disk full' };
+      if (failWrite) RFPlatform.runtime.lastError = { message: 'disk full' };
       else Object.assign(values, structuredClone(next));
-      cb?.(); chrome.runtime.lastError = null;
+      cb?.(); RFPlatform.runtime.lastError = null;
     }
   } },
   runtime: { getURL: p => p, sendMessage: () => Promise.resolve() }
@@ -45,11 +45,9 @@ const engine = global.storage;
   engine.cache = null;
   const before = writes;
   global.window = {};
-  chrome.runtime.sendMessage = (message, cb) => { assert.equal(message.action, 'LOAD_DATABASE'); cb({ success: true, data: one }); };
+  global.window.Zotero = { ResearchFlow: { loadDatabase: async () => one } };
   assert.equal((await engine.loadAll()).revision, 3);
-  assert.equal(writes, before, 'opening a page must not write a stale database');
-  chrome.runtime.sendMessage = () => {};
-  await assert.rejects(engine.sendRequest({ action: 'test' }, 5), /timed out/);
+  assert.equal(writes, before, 'opening a native workspace must not write a stale database');
   delete global.window;
   console.log('storage hardening tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

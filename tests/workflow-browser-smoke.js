@@ -2,7 +2,6 @@ const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const root = path.resolve(__dirname, '..');
 
 function fixture() {
@@ -87,29 +86,31 @@ async function exercise(page, readDatabase) {
   await page.locator('.btn-edit-submission[data-sub-id="s-two"]').click();
   assert.equal(await page.locator('#sub-edit-title').inputValue(), 'Edited from Kanban');
   assert.equal(await page.locator('#sub-edit-status').inputValue(), 'revision');
+  await page.locator('#btn-add-submission').click();
+  await page.locator('#sub-man-select').selectOption('__new__');
+  await page.locator('#sub-new-man-title').fill('New Zotero workflow');
+  await page.locator('#sub-journal').fill('QA Journal');
+  await page.locator('#sub-first-author').fill('QA New Author');
+  await page.locator('#sub-journal-url').fill('https://example.org/submit');
+  await page.locator('#btn-submit-sub').click();
+  await page.locator('#modal-container').waitFor({state:'hidden'});
+  const created = await readDatabase();
+  const newManuscript = created.manuscripts.find(m => m.title === 'New Zotero workflow');
+  assert(newManuscript, 'new submission must create its linked manuscript');
+  const newSubmission = created.submissions.find(s => s.manuscriptId === newManuscript.id);
+  assert.equal(newSubmission.targetJournal, 'QA Journal');
+  assert.equal(newSubmission.firstAuthor, 'QA New Author');
+  assert.equal(newSubmission.journalUrl, 'https://example.org/submit');
+  assert.equal(newManuscript.status, newSubmission.status);
 }
 
 (async () => {
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'rf-workflow-qa-'));
-  const extension = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, args: [`--disable-extensions-except=${root}`, `--load-extension=${root}`] });
-  try {
-    const worker = extension.serviceWorkers()[0] || await extension.waitForEvent('serviceworker');
-    await worker.evaluate(data => chrome.storage.local.set({ researchflow_db: data }), fixture());
-    const page = await extension.newPage();
-    const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
-    await page.goto(`chrome-extension://${new URL(worker.url()).host}/pages/options.html`);
-    await exercise(page, () => page.evaluate(async () => (await chrome.storage.local.get('researchflow_db')).researchflow_db));
-    assert.deepEqual(errors, []);
-    console.log('Real MV3 cross-view workflow smoke passed.');
-  } finally { await extension.close(); }
-
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.addInitScript({ path: path.join(__dirname, 'fixtures/chrome-mock.js') });
+    await page.addInitScript({ path: path.join(__dirname, 'fixtures/zotero-ui-mock.js') });
     await page.addInitScript(data => {
       window.__qaHostDb = JSON.parse(sessionStorage.getItem('qa-host-db') || 'null') || data;
       window.Zotero = { ResearchFlow: {
@@ -126,6 +127,6 @@ async function exercise(page, readDatabase) {
     await page.goto('http://127.0.0.1:8765/pages/options.html');
     await exercise(page, () => page.evaluate(() => window.__qaHostDb));
     assert.deepEqual(errors, []);
-    console.log('Zotero host API cross-view workflow smoke passed (host and Chrome APIs mocked).');
+    console.log('Zotero host API cross-view workflow smoke passed (Zotero host and UI APIs mocked).');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

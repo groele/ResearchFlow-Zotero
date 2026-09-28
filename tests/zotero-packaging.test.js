@@ -12,7 +12,7 @@ const manifestPath = path.join(distZotero, 'manifest.json');
 assert(fs.existsSync(manifestPath), 'dist-zotero/manifest.json must exist');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert.equal(manifest.applications?.zotero?.id, 'researchflow@groele.org');
-assert.equal(manifest.version, '9.1.1');
+assert.equal(manifest.version, '9.1.2');
 
 // 2. Verify bootstrap.js and chrome.manifest
 const bootstrapPath = path.join(distZotero, 'bootstrap.js');
@@ -40,8 +40,14 @@ const indexPath = path.join(distZotero, 'chrome', 'content', 'index.html');
 assert(fs.existsSync(indexPath), 'chrome/content/index.html must exist');
 const indexHtml = fs.readFileSync(indexPath, 'utf8');
 assert(indexHtml.includes('scripts/zotero-bridge.js'), 'index.html must include zotero-bridge.js');
-assert(indexHtml.includes('scripts/zotero-chrome-compat.js'), 'index.html must include Zotero Chrome API compatibility');
-assert(indexHtml.indexOf('scripts/zotero-chrome-compat.js') < indexHtml.indexOf('scripts/storage.js'), 'Zotero compatibility must load before shared storage');
+assert(indexHtml.includes('scripts/zotero-ui-api.js'), 'index.html must include native Zotero UI state');
+assert(indexHtml.indexOf('scripts/zotero-ui-api.js') < indexHtml.indexOf('scripts/storage.js'), 'Zotero compatibility must load before shared storage');
+const runtimeDir = path.join(distZotero, 'chrome', 'content', 'scripts');
+for (const removed of ['background.js', 'content.js', 'journal-portals.js', 'scholar-mirrors.js', 'zotero-chrome-compat.js', 'build-zotero.mjs']) {
+  assert(!fs.existsSync(path.join(runtimeDir, removed)), `XPI must exclude browser/build code: ${removed}`);
+}
+assert(!manifest.background && !manifest.content_scripts, 'XPI manifest must not define a browser extension');
+assert(!indexHtml.includes('submission-assist-enabled'), 'XPI must exclude browser detection settings');
 
 const prefXhtml = path.join(distZotero, 'chrome', 'content', 'preferences.xhtml');
 assert(fs.existsSync(prefXhtml), 'chrome/content/preferences.xhtml must exist');
