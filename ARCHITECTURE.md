@@ -24,6 +24,6 @@ Manuscript edits update current submission fields and linked title snapshots. Cu
 
 ## Packaging and tests
 
-scripts/build-zotero.mjs builds the native add-on and generates chrome/content/index.html from pages/options.html. A runtime allowlist excludes build helpers and browser-extension modules. scripts/build-zotero.ps1 creates the XPI. The only product manifest is zotero/manifest.json, and zotero/update.json points to an XPI release.
+scripts/build-zotero.mjs builds the native add-on and generates chrome/content/index.html from pages/options.html. A runtime allowlist excludes build helpers and non-runtime modules. scripts/build-zotero.ps1 creates the XPI. The only product manifest is zotero/manifest.json, and zotero/update.json points to an XPI release.
 
-Node suites verify shared data, transport, native adapters, file picker handling, preferences, and package contents. Optional Playwright suites exercise the UI through a simulated Zotero host; native desktop testing uses an isolated Zotero profile and data directory. Gecko chrome:// resources are part of Zotero's implementation.
+Node suites verify shared data, transport, native adapters, file picker handling, preferences, runtime contracts, and package contents. Browser-only Playwright smoke tests and their HTTP/mock-host harness are intentionally excluded from the repository. Native desktop verification should use an isolated Zotero profile and data directory. Gecko chrome:// resources are part of Zotero's implementation.
