@@ -11,8 +11,8 @@
   --card-fill: rgba(0, 0, 0, 0.02);
   --card-fill-hover: rgba(0, 0, 0, 0.04);
   
-  --text-primary: 222 47% 11%;             /* #0f172a - Deep contrast typography */
-  --text-muted: 215 16% 47%;               /* #64748b - Refined academic slate */
+  --text-primary: 218 20% 20%;             /* Soft ink, clear on white */
+  --text-muted: 216 12% 43%;               /* Secondary text retains contrast */
   --text-placeholder: 215 16% 65%;          /* #94a3b8 */
 
   /* Zotero 10 Iconic Accents */
@@ -42,14 +42,20 @@
   --scrollbar-thumb: rgba(0, 0, 0, 0.18);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.32);
 
-  /* Native System Fonts */
-  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  /* Local fonts only. One family serves headings, controls and body copy. */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", "Noto Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-display: var(--font-ui);
+  --font-body: var(--font-ui);
 
   /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.20s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* A CJK-first stack keeps Chinese and Latin glyphs in one coherent family. */
+:root:lang(zh) {
+  --font-ui: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
 }
 
 /* ========================================== */
@@ -106,10 +112,13 @@
 
 body {
   font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  font-synthesis: none;
   background-color: hsl(var(--bg-color));
   color: hsl(var(--text-primary));
   overflow-x: hidden;
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--transition-normal), color var(--transition-normal);
 }
@@ -185,7 +194,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: normal;
 }
 
 .logo-orb {
@@ -480,6 +489,11 @@ label {
    existing system palettes so manual selection never feels like a new theme. */
 :root[data-theme="light"] {
   color-scheme: light;
+  --accent-purple: 358 75% 48%;
+  --accent-cyan: 221 83% 53%;
+  --accent-emerald: 160 84% 33%;
+  --accent-rose: 350 80% 50%;
+  --accent-amber: 38 92% 43%;
   --bg-color: 210 20% 98%;
   --sidebar-bg: #ffffff;
   --card-bg: 0 0% 100%;
@@ -487,8 +501,8 @@ label {
   --card-border: 215 16% 89%;
   --card-fill: rgba(0, 0, 0, 0.02);
   --card-fill-hover: rgba(0, 0, 0, 0.04);
-  --text-primary: 222 47% 11%;
-  --text-muted: 215 16% 47%;
+  --text-primary: 218 20% 20%;
+  --text-muted: 216 12% 43%;
   --text-placeholder: 215 16% 65%;
   --glass-bg: #ffffff;
   --glass-border: #e2e8f0;
@@ -501,6 +515,11 @@ label {
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --accent-purple: 358 72% 60%;
+  --accent-cyan: 217 91% 60%;
+  --accent-emerald: 160 84% 39%;
+  --accent-rose: 350 80% 60%;
+  --accent-amber: 38 92% 50%;
   --bg-color: 220 14% 8%;
   --sidebar-bg: #18191e;
   --card-bg: 220 13% 13%;

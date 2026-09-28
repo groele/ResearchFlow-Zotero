@@ -1,6 +1,6 @@
 {
   "name": "researchflow-zotero",
-  "version": "9.1.2",
+  "version": "9.1.3",
   "description": "ResearchFlow for Zotero: 专为学术科研、论文写作、期刊投稿与同行评审打造的全流程工作台 (完美支持 Zotero 7+ & Zotero 10)",
   "scripts": {
     "build:zotero": "node scripts/build-zotero.mjs",

@@ -1,4 +1,4 @@
-researchflow-menu-open = ResearchFlow OS 科研工作台
+researchflow-menu-open = ResearchFlow 科研工作台
 researchflow-menu-preferences = ResearchFlow 偏好设置...
 researchflow-toolbar-tooltip = 打开 ResearchFlow 科研全流程工作台 (Ctrl+Alt+R)
 researchflow-item-menu-create = 新建论文稿件管线

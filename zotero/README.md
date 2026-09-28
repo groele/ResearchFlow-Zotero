@@ -9,4 +9,4 @@ node scripts/build-zotero.mjs
 pwsh -NoProfile -File tests/verify.ps1
 ```
 
-当前安装包为 dist-zip/researchflow-zotero-9.1.2.xpi。chrome/ 与 chrome.manifest 是 Zotero 的 Gecko 资源结构。
+当前安装包为 dist-zip/researchflow-zotero-9.1.3.xpi。chrome/ 与 chrome.manifest 是 Zotero 的 Gecko 资源结构。

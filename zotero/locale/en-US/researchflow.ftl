@@ -1,4 +1,4 @@
-researchflow-menu-open = ResearchFlow OS Master Workspace
+researchflow-menu-open = ResearchFlow Workspace
 researchflow-menu-preferences = ResearchFlow Preferences...
 researchflow-toolbar-tooltip = Open ResearchFlow Workspace (Ctrl+Alt+R)
 researchflow-item-menu-create = New Manuscript Pipeline for Selected Item

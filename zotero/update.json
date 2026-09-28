@@ -3,8 +3,8 @@
     "researchflow@groele.org": {
       "updates": [
         {
-          "version": "9.1.2",
-          "update_link": "https://github.com/groele/ResearchFlow-Zotero/releases/download/v9.1.2/researchflow-zotero-9.1.2.xpi",
+          "version": "9.1.3",
+          "update_link": "https://github.com/groele/ResearchFlow-Zotero/releases/download/v9.1.3/researchflow-zotero-9.1.3.xpi",
           "applications": {
             "zotero": {
               "strict_min_version": "6.999",

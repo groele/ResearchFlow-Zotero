@@ -4,9 +4,9 @@
 
 ResearchFlow is a Zotero Desktop plugin for manuscript planning, submission tracking, and review timelines. This repository distributes only the Zotero plugin. The former Chrome Companion entrypoint, webpage detectors, service worker, browser ZIP packages, and installation instructions have been removed.
 
-## Install 9.1.2
+## Install 9.1.3
 
-1. Download [researchflow-zotero-9.1.2.xpi](https://github.com/groele/ResearchFlow-Zotero/releases/download/v9.1.2/researchflow-zotero-9.1.2.xpi).
+1. Download [researchflow-zotero-9.1.3.xpi](https://github.com/groele/ResearchFlow-Zotero/releases/download/v9.1.3/researchflow-zotero-9.1.3.xpi).
 2. In Zotero, open **Tools → Plugins** (called **Add-ons** in some versions), choose **Install Add-on From File**, and select the XPI.
 3. Restart Zotero and open ResearchFlow from its toolbar or Tools menu.
 
@@ -51,4 +51,6 @@ The XPI is generated in dist-zip; unpacked staging is in dist-zotero. Packaging 
 
 The zotero/chrome directory, chrome.manifest, chrome:// resource URLs, and ChromeUtils are Gecko/Zotero mechanisms. They are required by Zotero and do not constitute a Google Chrome version.
 
-See [architecture](ARCHITECTURE.md), [usage](guide.md), and [9.1.2 changes](RELEASE_NOTES_v9.1.2.md). For a defect, report the Zotero version, steps, and ResearchFlow errors from **Help → Debug Output Logging**.
+See [architecture](ARCHITECTURE.md), [usage](guide.md), and [9.1.3 changes](RELEASE_NOTES_v9.1.3.md). For a defect, report the Zotero version, steps, and ResearchFlow errors from **Help → Debug Output Logging**.
+
+The interface uses local fonts without remote font requests. Chinese prioritizes installed Noto Sans SC with native CJK fallbacks; English uses Segoe UI. Headings, body text, numerals, and controls share a consistent font family and restrained weights.

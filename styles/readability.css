@@ -1,4 +1,4 @@
-/* Reading-first refinements shared by the browser and Zotero workspaces. */
+/* Typography and quiet surfaces for the Zotero workspace. */
 #view-dashboard .stat-box {
   min-height: 96px;
   padding: 16px 18px;
@@ -8,7 +8,7 @@
 #view-dashboard .stat-box h4 {
   font-size: 13px;
   line-height: 1.45;
-  letter-spacing: 0.01em;
+  letter-spacing: normal;
   text-transform: none;
 }
 
@@ -27,7 +27,7 @@
 .timeline-summary-header .summary-card .label {
   font-size: 12px;
   line-height: 1.4;
-  letter-spacing: 0.01em;
+  letter-spacing: normal;
   text-transform: none;
 }
 
@@ -42,7 +42,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-size: 14px;
-  line-height: 1.42;
+  line-height: 1.6;
+  font-weight: 500;
 }
 
 .pipeline-cards-container:not(.expanded) .pipeline-card {
@@ -60,14 +61,14 @@
   border-radius: 999px;
   color: var(--state-color);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
 }
 .pipeline-cards-container:not(.expanded) .state-box { display: none; }
 .pipeline-cards-container:not(.expanded) .pipeline-first-author.is-empty { display: none; }
-.pipeline-cards-container:not(.expanded) .project-title { font-size: 15px; line-height: 1.4; }
-.pipeline-cards-container:not(.expanded) .project-meta { font-size: 11.5px; line-height: 1.45; }
+.pipeline-cards-container:not(.expanded) .project-title { font-size: 15px; line-height: 1.6; }
+.pipeline-cards-container:not(.expanded) .project-meta { font-size: 12px; line-height: 1.6; }
 .pipeline-cards-container:not(.expanded) .core-label { font-size: 12px; }
 .pipeline-cards-container:not(.expanded) .core-value strong { font-size: 26px; }
 
@@ -78,7 +79,7 @@
 .btn-pipeline-open {
   border-color: hsl(var(--workspace-accent) / 0.28);
   color: hsl(var(--workspace-accent));
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .btn-pipeline-open:hover,
@@ -102,7 +103,7 @@
 .kanban-board { display: flex; gap: 12px; }
 .kanban-col { flex: 1 0 250px; min-width: 250px; }
 .kanban-board:not(.show-empty-columns):not(.all-empty) .kanban-col.is-empty { display: none; }
-.kanban-card h4 { font-size: 14.5px; line-height: 1.46; -webkit-line-clamp: 4; }
+.kanban-card h4 { font-size: 14px; font-weight: 500; line-height: 1.65; -webkit-line-clamp: 4; }
 .kanban-card-meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
 .kanban-card-meta-row .kanban-status-pill { width: fit-content; max-width: 100%; font-size: 11.5px; }
 .kanban-card-meta-row p { margin: 0; font-size: 12.5px; }
@@ -137,7 +138,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   font-size: 13px;
-  line-height: 1.45;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 .submission-list-head .text-muted { font-size: 12px; line-height: 1.5; }
@@ -199,4 +201,87 @@
   .journal-portals-dock .portal-item-card { scroll-snap-align: start; }
   .journal-portals-dock .portal-actions { top: 1px; right: 1px; }
   .journal-portals-dock .btn-portal-add { flex: 0 0 34px; }
+}
+
+/* Consistent hierarchy without condensed faces, tracking or heavy display numerals. */
+.brand h2 { font-size: 14px; font-weight: 600; }
+.brand .version { color: hsl(var(--text-muted)); background: hsl(var(--card-glow)); font-weight: 400; padding: 2px 6px; }
+.logo-orb { box-shadow: none; }
+.nav-item { font-weight: 400; gap: 10px; }
+.nav-item.active { font-weight: 500; background: hsl(var(--workspace-accent) / 0.06); border-color: transparent; border-left-color: hsl(var(--workspace-accent)); }
+.view-header h1 { font-size: 21px; line-height: 1.45; font-weight: 600; }
+.view-header > p, .view-header > div > p { margin-top: 4px; font-size: 13px; color: hsl(var(--text-muted)); line-height: 1.65; }
+.pipeline-module-header h3, .submission-list-head h3, .workflow-context-head h3 { font-size: 15px; font-weight: 500; line-height: 1.5; }
+.pipeline-module-header .text-muted { line-height: 1.65; }
+.stat-number, .summary-card .value, .core-value strong { font-family: var(--font-ui); font-weight: 500; letter-spacing: normal; }
+#view-dashboard .stat-box { align-items: flex-start; text-align: left; border-radius: 8px; box-shadow: none; gap: 10px; min-height: 106px; }
+#view-dashboard .stat-box h4 { font-weight: 400; }
+#view-dashboard .interactive-stat-card.active { background: hsl(var(--card-bg)) !important; border-color: hsl(var(--workspace-accent) / 0.36) !important; box-shadow: none !important; }
+#view-dashboard .stat-number { color: hsl(var(--text-primary)); -webkit-text-fill-color: currentColor; font-size: 30px; }
+.timeline-summary-header .summary-card { border-radius: 8px; box-shadow: none; background: hsl(var(--card-glow) / 0.6); }
+.timeline-summary-header .summary-card .label { font-weight: 400; }
+.timeline-summary-header .summary-card .value { font-size: 22px; font-weight: 500; }
+.pipeline-card { border-radius: 10px; box-shadow: none; border-left: 1px solid hsl(var(--card-border)); }
+.pipeline-card:hover { transform: none; border-color: hsl(var(--text-muted) / 0.4); box-shadow: none; }
+.pipeline-card .project-meta { gap: 8px; }
+.pipeline-card .project-meta strong, .workflow-context-item strong { font-weight: 500; }
+.pipeline-card .project-title { margin-top: 7px; margin-bottom: 6px; letter-spacing: normal; }
+.project-heading-row { gap: 8px; }
+.submission-index, .project-info .journal { color: hsl(var(--text-muted)); background: hsl(var(--card-glow)); border-color: hsl(var(--card-border)); font-weight: 400; }
+.doi-link, .doi-missing { font-size: 12px; font-weight: 400; border-radius: 5px; }
+.pipeline-compact-status { font-weight: 400; }
+.core-panel { background: hsl(var(--card-bg)); border-color: hsl(var(--card-border)); border-radius: 8px; box-shadow: none; }
+.core-label { font-weight: 400; letter-spacing: normal; text-transform: none; }
+.core-value strong { font-weight: 500; }
+.rail-track { height: 3px; top: 24px; }
+.rail-track::before { opacity: 0.68; }
+.rail-track.pending::before { animation: none; background: var(--panel-color); opacity: 0.5; }
+.dot, .dot.emphasis, .dot.today { box-shadow: 0 0 0 2px hsl(var(--card-bg)), 0 0 0 3px color-mix(in srgb, var(--dot-color) 25%, transparent); }
+.dot.today::after { animation: none; }
+.milestone-name { font-weight: 400; line-height: 1.5; }
+.kanban-col { background: hsl(var(--card-glow) / 0.45); border-radius: 8px; border-top-width: 2px; }
+.col-header h3 { font-weight: 500; }
+.kanban-card { background: hsl(var(--card-bg)); box-shadow: none; border-radius: 7px; }
+.kanban-card:hover { transform: none; box-shadow: none; }
+.kanban-card-meta-row p strong { font-weight: 400; color: hsl(var(--text-primary)); }
+.kanban-card-select { font-family: var(--font-ui); font-weight: 400; border-radius: 5px; }
+.badge, .kanban-status-pill, .pipeline-filter-label { font-weight: 400; letter-spacing: normal; text-transform: none; }
+.submission-tools-row { border-radius: 8px; background: hsl(var(--card-bg)); }
+.journal-portals-dock .portal-avatar { box-shadow: none; font-weight: 500; }
+.journal-portals-dock .portal-name { font-weight: 400; }
+.submission-card-item { box-shadow: none; border-radius: 7px; }
+.submission-card-item.selected { border-color: hsl(var(--workspace-accent) / 0.35); background: hsl(var(--workspace-accent) / 0.025); }
+.submission-card-heading h4 { font-weight: 500; }
+.submission-detail-card h2 { font-size: 20px; font-weight: 500; letter-spacing: normal; }
+.submission-edit-center, .submission-edit-center-error { background: hsl(var(--card-bg)); box-shadow: none; border-color: hsl(var(--card-border)); }
+.submission-edit-center-error { border-color: hsl(var(--accent-rose) / 0.4); }
+.submission-entry-editor-card { outline: none; }
+.submission-entry-editor-card::before { content: none; }
+.submission-entry-editor-card.submission-edit-center-focused { outline: none; animation: none; transform: none; border-color: hsl(var(--accent-cyan) / 0.35); box-shadow: none; }
+.submission-entry-editor-card.submission-edit-center-focused::after { display: none; }
+.submission-entry-editor-card.submission-edit-center-focused .submission-edit-center-head { background: hsl(var(--card-glow) / 0.5); border-bottom-color: hsl(var(--card-border)); }
+.submission-edit-title-row h3 { font-size: 16px; font-weight: 500; line-height: 1.5; }
+.submission-edit-emblem { box-shadow: none; background: hsl(var(--card-bg)); border-color: hsl(var(--card-border)); color: hsl(var(--text-muted)); }
+.submission-edit-section { background: hsl(var(--card-bg)); border-radius: 7px; padding: 16px; }
+.submission-edit-section-head { font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: normal; }
+.submission-edit-center label, .form-group label { font-size: 12px; font-weight: 400; letter-spacing: normal; text-transform: none; line-height: 1.6; }
+.submission-edit-title-field input { font-weight: 400; }
+.submission-edit-center input, .submission-edit-center select { background: var(--input-bg); }
+.workflow-context-card, .submission-first-author-module { background: hsl(var(--card-bg)); box-shadow: none; border-color: hsl(var(--card-border)); }
+.submission-edit-section-icon, .workflow-context-head .submission-work-icon { background: hsl(var(--card-glow)); border-color: hsl(var(--card-border)); color: hsl(var(--text-muted)); box-shadow: none; }
+#view-settings h3 { font-weight: 500; }
+#view-settings .settings-card::before, #view-settings .settings-security-assurance::before { display: none; }
+#view-settings .settings-security-assurance { border-color: hsl(var(--card-border)); }
+#view-settings .settings-security-copy h2 { font-size: 15px; font-weight: 500; letter-spacing: normal; }
+.modal-header h2, .share-preview-header h2, .share-visibility-heading strong { font-family: var(--font-ui); font-weight: 500; letter-spacing: normal; }
+.share-preview-kicker, .share-timeline-start-control, .share-size-control { font-weight: 400; letter-spacing: normal; text-transform: none; }
+:root[data-theme="dark"] .pipeline-compact-status { color: color-mix(in srgb, var(--state-color) 65%, white); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pipeline-compact-status { color: color-mix(in srgb, var(--state-color) 65%, white); }
+}
+@media (max-width: 620px) {
+  .view-header h1 { font-size: 19px; }
+  #view-dashboard .stat-box { align-items: flex-start; text-align: left; min-height: 105px; gap: 8px; }
+  #view-dashboard .stat-number { font-size: 27px; }
+  .pipeline-card .project-title { font-size: 14px; }
 }

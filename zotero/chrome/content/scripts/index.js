@@ -1186,7 +1186,7 @@
       if (toolsPopup) {
         const toolsItem = this.createXULElement(doc, 'menuitem');
         toolsItem.id = 'researchflow-tools-menu';
-        toolsItem.setAttribute('label', 'ResearchFlow OS 科研工作台');
+        toolsItem.setAttribute('label', 'ResearchFlow 科研工作台');
         toolsItem.setAttribute('image', `${CHROME_ROOT}icons/researchflow.svg`);
         toolsItem.setAttribute('class', 'menuitem-iconic');
         toolsItem.addEventListener('command', () => {
@@ -1965,7 +1965,7 @@
           // Open new internal tab
           const tabResult = tabs.add({
             type: 'researchflow',
-            title: 'ResearchFlow OS',
+            title: 'ResearchFlow',
             select: true,
             data: options,
             onClose: () => {

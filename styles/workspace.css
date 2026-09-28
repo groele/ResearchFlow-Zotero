@@ -1,6 +1,6 @@
 /* Shared workspace components. Colors follow the user's appearance preference. */
 :root {
-  --workspace-accent: 358 75% 48%; /* Zotero Brand Crimson (#cc292b) */
+  --workspace-accent: 355 43% 43%; /* Muted Zotero crimson for navigation */
   --workspace-accent-blue: 221 83% 53%; /* Zotero Academic Blue (#2563eb) */
   --workspace-radius: 6px;
   --workspace-shadow: 0 1px 3px hsl(var(--text-primary) / 0.05);
@@ -11,7 +11,7 @@
 }
 .main-content { max-width: 1800px; width: 100%; }
 #view-settings { padding-bottom: 48px; }
-.view-header h1 { letter-spacing: -0.025em; font-weight: 650; }
+.view-header h1 { letter-spacing: normal; font-weight: 600; }
 .view-header p { max-width: 65ch; line-height: 1.6; }
 .glass-panel,
 .glass-card {
@@ -32,18 +32,18 @@
 }
 .nav-item:hover { background: hsl(var(--text-primary) / 0.04); }
 .btn-primary {
-  background: #cc292b;
+  background: #a53e46;
   color: white;
-  border: 1px solid #b71c1c;
-  box-shadow: 0 1px 2px rgba(204, 41, 43, 0.2);
+  border: 1px solid #943740;
+  box-shadow: none;
   border-radius: 6px;
   min-height: 32px;
   font-weight: 500;
 }
 .btn-primary:hover {
-  background: #b91c1c;
-  border-color: #991b1b;
-  box-shadow: 0 2px 4px rgba(204, 41, 43, 0.3);
+  background: #943740;
+  border-color: #84313a;
+  box-shadow: none;
   transform: none;
 }
 .btn-secondary {
@@ -102,7 +102,7 @@ textarea:focus-visible {
   -webkit-text-fill-color: currentColor;
 }
 .stat-box { background: hsl(var(--card-bg)); text-align: left; }
-.stat-number { font-variant-numeric: tabular-nums; letter-spacing: -0.045em; }
+.stat-number { font-variant-numeric: tabular-nums; letter-spacing: normal; }
 .pipeline-module { background: hsl(var(--card-bg)); }
 .pipeline-module-header { gap: 16px; }
 .summary-card { box-shadow: none; }
