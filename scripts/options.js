@@ -38,7 +38,7 @@ let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '9.1.3';
+const RF_OPTIONS_RENDER_VERSION = '9.1.4';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
 const SHARE_PREFS_STORAGE_KEY = 'researchflow_share_visibility';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
@@ -3265,9 +3265,11 @@ function renderDashboard() {
       // Col 2 Event Rail details
       const milestones = a.display.milestones.filter(m => m.name && m.date !== undefined);
       const count = Math.max(2, milestones.length);
+      const timelineIsActive = a.display.pending &&
+        ['submitted', 'under_review', 'revision'].includes(normalizeSubmissionStatus(sub.status));
 
       let railHtml = `
-        <div class="event-rail" style="--count:${count}">
+        <div class="event-rail ${timelineIsActive ? 'is-tracking' : ''}" style="--count:${count}">
           <div class="rail-track ${a.display.pending ? "pending" : ""}"></div>
       `;
 

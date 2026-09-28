@@ -4,9 +4,9 @@
 
 本仓库仅维护 **Zotero 桌面版插件**。已移除 Chrome Companion 的扩展入口、后台服务、网页识别脚本、ZIP 安装包及相关说明。
 
-## 安装 9.1.3
+## 安装 9.1.4
 
-1. 下载 [researchflow-zotero-9.1.3.xpi](https://github.com/groele/ResearchFlow-Zotero/releases/download/v9.1.3/researchflow-zotero-9.1.3.xpi)。
+1. 下载 [researchflow-zotero-9.1.4.xpi](https://github.com/groele/ResearchFlow-Zotero/releases/download/v9.1.4/researchflow-zotero-9.1.4.xpi)。
 2. 打开 Zotero 的“工具 → 插件”（部分版本为“附加组件”），选择“从文件安装附加组件”，选中 XPI。
 3. 重启 Zotero，从 ResearchFlow 工具栏按钮或工具菜单打开工作区。
 
@@ -49,6 +49,6 @@ pwsh -NoProfile -File tests/verify.ps1 -Browser
 
 源码中的 zotero/chrome、chrome.manifest、chrome:// 与 ChromeUtils 属于 Zotero 使用的 Gecko 机制，是桌面插件必需部分。
 
-参见[使用说明](guide.md)、[架构说明](ARCHITECTURE.md)和[版本记录](RELEASE_NOTES_v9.1.3.md)。报告问题时请附 Zotero 版本、操作步骤及“帮助 → 调试输出日志”中的 ResearchFlow 错误。
+参见[使用说明](guide.md)、[架构说明](ARCHITECTURE.md)和[版本记录](RELEASE_NOTES_v9.1.4.md)。报告问题时请附 Zotero 版本、操作步骤及“帮助 → 调试输出日志”中的 ResearchFlow 错误。
 
 界面使用本机字体，不加载远程字体。中文优先使用已有的 Noto Sans SC 简体中文字体，缺失时回退到微软雅黑 UI 等字体；英文使用 Segoe UI。正文、标题、数字与表单采用同一套字族和适度字重。

@@ -1638,7 +1638,6 @@
       if (!btn) {
         btn = this.createXULElement(doc, 'toolbarbutton');
         btn.id = 'researchflow-toolbar-button';
-        btn.setAttribute('label', 'ResearchFlow');
         btn.setAttribute('tooltiptext', '打开 ResearchFlow 科研全流程工作台 (Ctrl+Alt+R)');
         btn.setAttribute('image', `${CHROME_ROOT}icons/researchflow.svg`);
         btn.setAttribute('class', 'zotero-tb-button toolbarbutton-1 chromeclass-toolbar-additional');
@@ -1654,6 +1653,10 @@
           this.triggerResearchFlowOpen(window);
         });
       }
+
+      // XUL toolbars may display a clipped label beside the icon.
+      btn.setAttribute('label', '');
+      btn.setAttribute('aria-label', 'ResearchFlow');
 
       const constrainIcon = () => {
         try {

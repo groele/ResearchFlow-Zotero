@@ -45,7 +45,7 @@ assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud
 assert(optionsCss.includes('hsl(var(--card-bg))'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
 assert(optionsHtml.includes(`v${manifest.version} Zotero`), 'workspace version label should match the current Zotero release');
-assert.equal(manifest.version, '9.1.3', 'manifest version should match the current Zotero release');
+assert.equal(manifest.version, '9.1.4', 'manifest version should match the current Zotero release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);

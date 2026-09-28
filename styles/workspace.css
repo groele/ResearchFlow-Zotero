@@ -4,12 +4,46 @@
   --workspace-accent-blue: 221 83% 53%; /* Zotero Academic Blue (#2563eb) */
   --workspace-radius: 6px;
   --workspace-shadow: 0 1px 3px hsl(var(--text-primary) / 0.05);
+  --ui-navy: 214 44% 29%;
+  --ui-teal: 172 54% 30%;
+  --ui-amber: 28 67% 38%;
+  --ui-rose: 354 48% 43%;
+  --ui-shadow: 0 3px 12px hsl(214 35% 25% / 0.045), 0 1px 2px hsl(214 35% 25% / 0.025);
 }
-:root[data-theme="dark"] { --workspace-accent: 358 72% 60%; }
+:root[data-theme="dark"] {
+  --workspace-accent: 358 72% 60%;
+  --ui-navy: 211 62% 74%;
+  --ui-teal: 168 46% 62%;
+  --ui-amber: 32 72% 68%;
+  --ui-rose: 354 65% 71%;
+  --ui-shadow: 0 4px 16px hsl(220 35% 3% / 0.22);
+}
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --workspace-accent: 358 72% 60%; }
+  :root:not([data-theme="light"]) {
+    --workspace-accent: 358 72% 60%;
+    --ui-navy: 211 62% 74%;
+    --ui-teal: 168 46% 62%;
+    --ui-amber: 32 72% 68%;
+    --ui-rose: 354 65% 71%;
+    --ui-shadow: 0 4px 16px hsl(220 35% 3% / 0.22);
+  }
 }
 .main-content { max-width: 1800px; width: 100%; }
+.main-content { background: linear-gradient(160deg, hsl(var(--ui-navy) / 0.035), transparent 460px), hsl(var(--bg-color)); }
+.content-view { --view-accent: var(--ui-navy); }
+#view-manuscripts { --view-accent: var(--ui-teal); }
+#view-submissions, #view-settings { --view-accent: var(--ui-rose); }
+.view-header {
+  position: relative;
+  padding: 20px 24px;
+  border: 1px solid hsl(var(--view-accent) / 0.13);
+  border-left: 4px solid hsl(var(--view-accent));
+  border-radius: 12px;
+  background: linear-gradient(115deg, hsl(var(--view-accent) / 0.075), hsl(var(--card-bg)) 72%);
+  box-shadow: var(--ui-shadow);
+  gap: 16px;
+}
+.view-header h1 { color: hsl(var(--view-accent)); }
 #view-settings { padding-bottom: 48px; }
 .view-header h1 { letter-spacing: normal; font-weight: 600; }
 .view-header p { max-width: 65ch; line-height: 1.6; }
@@ -32,18 +66,18 @@
 }
 .nav-item:hover { background: hsl(var(--text-primary) / 0.04); }
 .btn-primary {
-  background: #a53e46;
+  background: linear-gradient(115deg, #b34c57, #993441);
   color: white;
   border: 1px solid #943740;
-  box-shadow: none;
-  border-radius: 6px;
+  box-shadow: 0 3px 8px hsl(var(--ui-rose) / 0.16);
+  border-radius: 8px;
   min-height: 32px;
   font-weight: 500;
 }
 .btn-primary:hover {
   background: #943740;
   border-color: #84313a;
-  box-shadow: none;
+  box-shadow: 0 4px 10px hsl(var(--ui-rose) / 0.2);
   transform: none;
 }
 .btn-secondary {
@@ -137,6 +171,7 @@ textarea:focus-visible {
 }
 
 @media (max-width: 760px) {
+  .view-header { padding: 16px 18px; border-radius: 10px; }
   #view-dashboard.active { gap: 16px; }
   #view-dashboard > .grid-cols-3 { grid-template-columns: 1fr; gap: 10px; }
   .submission-edit-savebar { position: static; }
