@@ -850,6 +850,38 @@
       return this.saveDatabase(restored);
     },
 
+    async saveShareImageFile(pngBytes, fileName, language = 'en', window = null) {
+      if (this._shareImageSavePending) return { success: false, error: 'An image save is already in progress.' };
+      this._shareImageSavePending = true;
+      try {
+        const bytes = new Uint8Array(pngBytes);
+        const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+        if (bytes.length < 8 || bytes.length > 64 * 1024 * 1024 || !signature.every((value, index) => bytes[index] === value)) {
+          throw new Error('Invalid PNG image.');
+        }
+        const { FilePicker } = ChromeUtils.importESModule('chrome://zotero/content/modules/filePicker.mjs');
+        const fp = new FilePicker();
+        const win = window || Zotero.getMainWindow?.() || Services.wm?.getMostRecentWindow('navigator:browser');
+        if (!win?.browsingContext) throw new Error('Zotero window is unavailable.');
+        fp.init(win, language === 'zh' ? '另存为 ResearchFlow 图片' : 'Save ResearchFlow image as', fp.modeSave);
+        fp.defaultExtension = 'png';
+        fp.appendFilter('PNG (*.png)', '*.png');
+        const safeName = String(fileName || 'researchflow-journey.png').replace(/[<>:"/\\|?*\x00-\x1f]/g, '-').slice(0, 140).replace(/[. ]+$/g, '');
+        fp.defaultString = /\.png$/i.test(safeName) ? safeName : `${safeName || 'researchflow-journey'}.png`;
+        const result = await fp.show();
+        if (result !== fp.returnOK && result !== fp.returnReplace) return { success: false, cancelled: true };
+        const filePath = fp.file;
+        if (!filePath) throw new Error('No save path was selected.');
+        await IOUtils.write(filePath, bytes);
+        return { success: true, filePath };
+      } catch (error) {
+        Zotero.logError?.('[ResearchFlow] saveShareImageFile error: ' + error);
+        return { success: false, error: String(error?.message || error) };
+      } finally {
+        this._shareImageSavePending = false;
+      }
+    },
+
     async exportDatabaseFile(window = null) {
       try {
         const { FilePicker } = ChromeUtils.importESModule('chrome://zotero/content/modules/filePicker.mjs');
@@ -1519,6 +1551,13 @@
             const item = Zotero.Items.getByLibraryAndKey(Zotero.Libraries?.userLibraryID || 1, data.itemKey);
             const notes = item ? getLiteratureNotes(item) : [];
             replyResult({ requestId: data.requestId, notes });
+            return;
+          }
+
+          if (data.type === 'RESEARCHFLOW_SAVE_SHARE_IMAGE') {
+            this.saveShareImageFile(data.pngBytes, data.fileName, data.language, window).then((result) => {
+              replyResult({ requestId: data.requestId, ...result });
+            });
             return;
           }
 

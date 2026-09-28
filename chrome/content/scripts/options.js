@@ -38,7 +38,7 @@ let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '9.1.6';
+const RF_OPTIONS_RENDER_VERSION = '10.0.0';
 const PRE_IMPORT_BACKUP_KEY = 'researchflow_pre_import_backup';
 const SHARE_PREFS_STORAGE_KEY = 'researchflow_share_visibility';
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
@@ -108,15 +108,18 @@ const I18N = {
     openSubmissionDetails: 'Details',
     shareJourney: 'Share journey',
     shareJourneyTitle: 'Submission journey',
-    shareJourneyHelp: 'Generated locally. Nothing is uploaded until you choose to share it.',
-    shareJourneySystem: 'Share image',
-    shareJourneyDownload: 'Download PNG',
+    shareJourneyHelp: 'Generated locally. Save or copy the image to use it elsewhere.',
+    shareJourneyDownload: 'Save PNG as…',
     shareJourneyCopy: 'Copy image',
     shareJourneyCopied: 'Share image copied to clipboard.',
-    shareJourneyDownloaded: 'Share image downloaded.',
+    shareJourneySaved: 'Image saved to: {path}',
+    shareJourneySaveHelp: 'Choose a folder in the Save As dialog. The saved path will appear here.',
+    shareJourneySaving: 'Choose a folder and save the PNG…',
+    shareJourneySaveCancelled: 'Save cancelled. No image was saved.',
+    shareJourneySaveFailed: 'Could not save the image: {error}',
+    shareJourneyCopyFailed: 'Could not copy the image. Use Save PNG as… instead.',
     shareJourneyReady: 'Share image is ready.',
     shareJourneyFailed: 'Could not generate the share image.',
-    shareJourneyUnsupported: 'Image sharing is unavailable here. Download the PNG instead.',
     shareJourneyEyebrow: 'RESEARCHFLOW · SUBMISSION JOURNEY',
     shareJourneyStatus: 'CURRENT STATUS',
     shareJourneyDuration: 'DAYS IN THIS JOURNEY',
@@ -590,15 +593,18 @@ const I18N = {
     openSubmissionDetails: '详情',
     shareJourney: '分享历程',
     shareJourneyTitle: '投稿历程分享图',
-    shareJourneyHelp: '图片仅在本地生成，只有在你主动分享时才会离开设备。',
-    shareJourneySystem: '分享图片',
-    shareJourneyDownload: '下载 PNG',
+    shareJourneyHelp: '图片仅在本地生成，可另存为或复制后使用。',
+    shareJourneyDownload: '另存为 PNG…',
     shareJourneyCopy: '复制图片',
     shareJourneyCopied: '分享图已复制到剪贴板。',
-    shareJourneyDownloaded: '分享图已下载。',
+    shareJourneySaved: '图片已保存至：{path}',
+    shareJourneySaveHelp: '点击“另存为 PNG”选择保存文件夹，保存后将在此显示完整路径。',
+    shareJourneySaving: '请选择文件夹并保存 PNG…',
+    shareJourneySaveCancelled: '已取消保存，未保存图片。',
+    shareJourneySaveFailed: '图片保存失败：{error}',
+    shareJourneyCopyFailed: '复制图片失败，请使用“另存为 PNG”。',
     shareJourneyReady: '分享图已生成。',
     shareJourneyFailed: '分享图生成失败。',
-    shareJourneyUnsupported: '当前环境无法直接分享图片，请下载 PNG。',
     shareJourneyEyebrow: 'RESEARCHFLOW · 投稿历程',
     shareJourneyStatus: '当前状态',
     shareJourneyDuration: '历程天数',
@@ -1602,13 +1608,16 @@ function safeShareFileName(title) {
   return `${base || 'submission'}${/journey$/i.test(base) ? '' : '-journey'}.png`;
 }
 
-function downloadShareBlob(blob, fileName) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+async function downloadShareBlob(blob, fileName) {
+  if (typeof ZoteroBridge === 'undefined' || !ZoteroBridge.isZotero || !ZoteroBridge.saveShareImage) {
+    throw new Error(currentLanguage === 'zh' ? '请在 Zotero 中打开 ResearchFlow 后保存图片。' : 'Open ResearchFlow in Zotero to save the image.');
+  }
+  const result = await ZoteroBridge.saveShareImage(blob, fileName, currentLanguage);
+  if (result?.cancelled) return result;
+  if (!result?.success || !result.filePath) {
+    throw new Error(result?.error || (currentLanguage === 'zh' ? 'Zotero 未确认文件保存。' : 'Zotero did not confirm the file was saved.'));
+  }
+  return result;
 }
 
 async function openSubmissionSharePreview(submissionId, triggerButton) {
@@ -1625,7 +1634,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     let visibility = normalizeShareVisibility(stored?.[SHARE_PREFS_STORAGE_KEY]);
     let currentBlob = null;
     let currentFileName = '';
-    let currentTitle = '';
+    let savePending = false;
     let previewRenderId = 0;
     const fields = [
       ['title', 'shareFieldTitle'],
@@ -1697,9 +1706,9 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         <div class="share-preview-actions">
           <span class="share-local-note" id="share-output-details" role="status">${escapeHTML(t('shareJourneyHelp'))}</span>
           <button class="btn-secondary" id="btn-share-zoom" type="button" aria-pressed="false">${escapeHTML(t('shareZoom'))}</button>
-          <button class="btn-primary" id="btn-share-system" type="button">${escapeHTML(t('shareJourneySystem'))}</button>
-          <button class="btn-secondary" id="btn-share-download" type="button">${escapeHTML(t('shareJourneyDownload'))}</button>
+          <button class="btn-primary" id="btn-share-download" type="button" aria-describedby="share-save-status">${escapeHTML(t('shareJourneyDownload'))}</button>
           <button class="btn-secondary" id="btn-share-copy" type="button">${escapeHTML(t('shareJourneyCopy'))}</button>
+          <span class="share-save-status" id="share-save-status" role="status" aria-live="polite">${escapeHTML(t('shareJourneySaveHelp'))}</span>
         </div>
       </div>
     `);
@@ -1717,7 +1726,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     let closed = false;
     let renderTimer = null;
     const pendingUrls = new Set();
-    const actionButtons = modalContent.querySelectorAll('#btn-share-system, #btn-share-download, #btn-share-copy');
+    const actionButtons = modalContent.querySelectorAll('#btn-share-download, #btn-share-copy');
     const setBusy = () => {
       currentBlob = null;
       actionButtons.forEach(button => { button.disabled = true; });
@@ -1762,7 +1771,6 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         activeSharePreviewUrl = nextUrl;
         pendingUrls.delete(nextUrl);
         currentBlob = blob;
-        currentTitle = title;
         currentFileName = safeShareFileName(title);
         previewFrame.dataset.shareSize = chosen.size;
         previewFrame.dataset.appearance = chosen.appearance;
@@ -1771,7 +1779,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         image.classList.remove('is-rendering');
         image.hidden = false;
         loading.hidden = true;
-        actionButtons.forEach(button => { button.disabled = false; });
+        actionButtons.forEach(button => { button.disabled = savePending; });
         document.getElementById('share-output-details').textContent = `${exportWidth} × ${exportHeight} · PNG · ${Math.ceil(blob.size / 1024)} KB${resolutionLimited ? ` · ${t('shareResolutionLimited')}` : ''}${layout.omitted ? ` · ${t('shareOmitted').replace('{count}', layout.omitted)}` : ''}`;
         if (previousUrl) URL.revokeObjectURL(previousUrl);
       } catch (error) {
@@ -1824,26 +1832,32 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
     await renderPreviewSafe(++previewRenderId);
     if (closed) return;
 
-    const systemButton = document.getElementById('btn-share-system');
-    const canSystemShare = Boolean(navigator.share && navigator.canShare);
-    if (!canSystemShare) systemButton.hidden = true;
-    systemButton?.addEventListener('click', async () => {
-      if (!currentBlob) return;
-      const file = new File([currentBlob], currentFileName, { type: 'image/png' });
-      if (!navigator.canShare?.({ files: [file] })) {
-        showGlobalToast(t('shareJourneyUnsupported'), 'warning');
-        return;
-      }
+    const saveButton = document.getElementById('btn-share-download');
+    const saveStatus = document.getElementById('share-save-status');
+    saveButton?.addEventListener('click', async () => {
+      if (!currentBlob || savePending) return;
+      // Capture the displayed image before awaiting the native dialog.
+      const blob = currentBlob, fileName = currentFileName;
+      savePending = true;
+      saveButton.setAttribute('aria-busy', 'true');
+      actionButtons.forEach(button => { button.disabled = true; });
+      saveStatus.textContent = t('shareJourneySaving');
       try {
-        await navigator.share({ files: [file], title: t('shareJourneyTitle'), text: currentTitle });
+        const result = await downloadShareBlob(blob, fileName);
+        if (closed) return;
+        saveStatus.textContent = result.cancelled ? t('shareJourneySaveCancelled') : t('shareJourneySaved').replace('{path}', result.filePath);
+        if (result.success) showGlobalToast(saveStatus.textContent, 'success');
       } catch (error) {
-        if (error?.name !== 'AbortError') showGlobalToast(t('shareJourneyUnsupported'), 'warning');
+        if (closed) return;
+        saveStatus.textContent = t('shareJourneySaveFailed').replace('{error}', String(error?.message || error));
+        showGlobalToast(saveStatus.textContent, 'error');
+      } finally {
+        savePending = false;
+        if (!closed) {
+          saveButton.removeAttribute('aria-busy');
+          actionButtons.forEach(button => { button.disabled = !currentBlob; });
+        }
       }
-    });
-    document.getElementById('btn-share-download')?.addEventListener('click', () => {
-      if (!currentBlob) return;
-      downloadShareBlob(currentBlob, currentFileName);
-      showGlobalToast(t('shareJourneyDownloaded'), 'success');
     });
     const copyButton = document.getElementById('btn-share-copy');
     const canCopyImage = Boolean(window.ClipboardItem && navigator.clipboard?.write);
@@ -1854,8 +1868,7 @@ async function openSubmissionSharePreview(submissionId, triggerButton) {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': currentBlob })]);
         showGlobalToast(t('shareJourneyCopied'), 'success');
       } catch {
-        downloadShareBlob(currentBlob, currentFileName);
-        showGlobalToast(t('shareJourneyDownloaded'), 'success');
+        showGlobalToast(t('shareJourneyCopyFailed'), 'warning');
       }
     });
   } catch (error) {

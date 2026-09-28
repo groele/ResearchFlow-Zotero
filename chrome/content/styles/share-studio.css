@@ -35,6 +35,7 @@
 .share-preview-actions .btn-primary { background: hsl(var(--workspace-accent)); color: hsl(var(--card-bg)); box-shadow: none; }
 .share-preview-actions .btn-secondary { color: hsl(var(--text-primary)); background: hsl(var(--card-bg)); border-color: hsl(var(--card-border)); box-shadow: none; }
 .share-preview-actions button { min-height: 40px; }
+.share-preview-actions button[hidden] { display: none; }
 .share-preview-actions button:disabled { opacity: .45; cursor: progress; }
 @media (max-width: 700px) {
   #modal-card-content.share-preview-card { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
@@ -84,6 +85,7 @@
 .share-visibility-chip:has(input[data-share-field="journal"]:checked) { color: hsl(var(--text-primary)); background: hsl(var(--workspace-accent) / .08); border-color: hsl(var(--workspace-accent) / .4); box-shadow: none; }
 .share-preview-actions { flex-wrap: wrap; }
 .share-local-note { overflow-wrap: anywhere; }
+.share-save-status { flex-basis: 100%; min-width: 0; color: hsl(var(--text-muted)); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; user-select: text; }
 @media (max-width: 820px) {
   .share-preview-workbench { grid-template-columns: 1fr; }
   .share-visibility-panel { max-height: none; padding: 12px 16px; }

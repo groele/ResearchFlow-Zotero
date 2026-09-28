@@ -140,7 +140,7 @@ window.ResearchFlow_Preferences = (() => {
           const diag = {
             exportedAt: new Date().toISOString(),
             zoteroVersion: Zotero.version,
-            researchflowVersion: '9.1.0',
+            researchflowVersion: '10.0.0',
             schemaVersion: db?.schemaVersion,
             counts: {
               manuscripts: db?.manuscripts?.length || 0,

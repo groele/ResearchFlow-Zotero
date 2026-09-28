@@ -167,13 +167,13 @@ const ZoteroBridge = {
     if (!this.isZotero) return Promise.resolve(null);
     const requestId = `rf_req_${++this._pendingRequestId}_${Date.now()}`;
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => {
+      const timeout = timeoutMs > 0 ? setTimeout(() => {
         this._requestCallbacks.delete(requestId);
         resolve(null);
-      }, timeoutMs);
+      }, timeoutMs) : null;
 
       this._requestCallbacks.set(requestId, (data) => {
-        clearTimeout(timeout);
+        if (timeout !== null) clearTimeout(timeout);
         resolve(data);
       });
 
@@ -334,6 +334,20 @@ const ZoteroBridge = {
     } catch (_) {}
     const res = await this.request('RESEARCHFLOW_ADD_TO_PIPELINE_COLLECTION', { itemKey });
     return Boolean(res?.success);
+  },
+
+  async saveShareImage(blob, fileName, language = 'en') {
+    try {
+      const pngBytes = new Uint8Array(await blob.arrayBuffer());
+      const zotero = window.Zotero || window.parent?.Zotero;
+      if (zotero?.ResearchFlow?.saveShareImageFile) {
+        return await zotero.ResearchFlow.saveShareImageFile(pngBytes, fileName, language);
+      }
+      // A native Save As dialog must stay pending until the user responds.
+      return await this.request('RESEARCHFLOW_SAVE_SHARE_IMAGE', { pngBytes, fileName, language }, 0);
+    } catch (error) {
+      return { success: false, error: String(error?.message || error) };
+    }
   },
 
   async exportDatabase() {
