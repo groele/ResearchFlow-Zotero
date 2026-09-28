@@ -1,22 +1,22 @@
 # ResearchFlow for Zotero
 
 [![Zotero Version](https://img.shields.io/badge/Zotero-7%2B%20%7C%2010-2563eb.svg)](https://github.com/groele/ResearchFlow-Zotero)
-[![Version](https://img.shields.io/badge/version-10.0.0-10b981.svg)](https://github.com/groele/ResearchFlow-Zotero/releases/latest)
+[![Version](https://img.shields.io/badge/version-10.0.1-10b981.svg)](https://github.com/groele/ResearchFlow-Zotero/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/groele/ResearchFlow-Zotero)
 
 **ResearchFlow for Zotero** 是专为学术科研、论文写作、期刊投稿与同行评审打造的全流程工作台，完美支持 **Zotero 7+** 与 **Zotero 10**。
 
 ---
 
-## 🚀 快速安装 (v10.0.0)
+## 🚀 快速安装 (v10.0.1)
 
 1. 前往 [Releases](https://github.com/groele/ResearchFlow-Zotero/releases/latest) 下载最新的插件安装包：
    ```text
-   researchflow-zotero-10.0.0.xpi
+   researchflow-zotero-10.0.1.xpi
    ```
 2. 打开 Zotero 桌面端，点击顶部菜单 **工具 (Tools) → 插件 (Plugins / Add-ons)**。
 3. 点击右上角齿轮图标，选择 **从文件安装附加组件... (Install Add-on From File...)**。
-4. 选中下载的 `researchflow-zotero-10.0.0.xpi` 文件并确认安装。
+4. 选中下载的 `researchflow-zotero-10.0.1.xpi` 文件并确认安装。
 5. 重启 Zotero 即可在工具栏或“工具”菜单中打开 ResearchFlow 工作区。
 
 ---
@@ -49,10 +49,10 @@ python tools/build-xpi.py
 ```text
 ├── bootstrap.js               # Zotero 插件启动与宿主生命周期入口
 ├── chrome.manifest            # Gecko 资源映射清单
-├── manifest.json              # 插件元数据与版本定义 (v10.0.0)
+├── manifest.json              # 插件元数据与版本定义 (v10.0.1)
 ├── prefs.js                   # 默认偏好设置
 ├── update.json                # 自动更新校验清单
-├── researchflow-zotero-10.0.0.xpi # 预构建编译安装包
+├── researchflow-zotero-10.0.1.xpi # 预构建编译安装包
 ├── chrome/                    # 界面、样式、交互脚本与图标资源
 └── locale/                    # 国际化多语言资源 (zh-CN, en-US)
 ```

@@ -1325,13 +1325,13 @@
 
             #researchflow-toolbar-button,
             toolbarbutton#researchflow-toolbar-button {
-              width: 24px !important;
-              height: 24px !important;
-              min-width: 24px !important;
+              width: 28px !important;
+              height: 28px !important;
+              min-width: 28px !important;
               max-width: 28px !important;
               max-height: 28px !important;
-              padding: 2px !important;
-              margin: 0 2px !important;
+              padding: 0 4px !important;
+              margin: 0 4px !important;
               box-sizing: border-box !important;
               display: inline-flex !important;
               align-items: center !important;
@@ -1342,12 +1342,12 @@
             #researchflow-toolbar-button .toolbarbutton-icon,
             #researchflow-toolbar-button image,
             #researchflow-toolbar-button img {
-              width: 16px !important;
-              height: 16px !important;
-              min-width: 16px !important;
-              max-width: 16px !important;
-              min-height: 16px !important;
-              max-height: 16px !important;
+              width: 20px !important;
+              height: 20px !important;
+              min-width: 20px !important;
+              max-width: 20px !important;
+              min-height: 20px !important;
+              max-height: 20px !important;
               object-fit: contain !important;
               display: block !important;
               margin: 0 auto !important;
@@ -1682,7 +1682,7 @@
         btn.setAttribute('class', 'zotero-tb-button toolbarbutton-1 chromeclass-toolbar-additional');
         btn.setAttribute(
           'style',
-          'cursor: pointer; margin: 0 2px; width: 24px; height: 24px; min-width: 24px; max-width: 28px; max-height: 28px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden;'
+          'cursor: pointer; margin: 0 4px; width: 28px; height: 28px; min-width: 28px; max-width: 28px; max-height: 28px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden;'
         );
         btn.addEventListener('command', (e) => {
           if (e) {
@@ -1701,12 +1701,12 @@
         try {
           const img = btn?.querySelector('.toolbarbutton-icon') || btn?.querySelector('image') || btn?.querySelector('img');
           if (img) {
-            img.style.width = '16px';
-            img.style.height = '16px';
-            img.style.maxWidth = '16px';
-            img.style.maxHeight = '16px';
-            img.setAttribute('width', '16');
-            img.setAttribute('height', '16');
+            img.style.width = '20px';
+            img.style.height = '20px';
+            img.style.maxWidth = '20px';
+            img.style.maxHeight = '20px';
+            img.setAttribute('width', '20');
+            img.setAttribute('height', '20');
           }
         } catch (_) {}
       };
