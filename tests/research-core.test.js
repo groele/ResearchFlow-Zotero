@@ -52,4 +52,16 @@ assert.throws(
   /Record title is required/
 );
 
+const attempts = { submissions: [
+  { id: 'old', manuscriptId: 'm', status: 'accepted', submissionDate: '2025-12-01' },
+  { id: 'new', manuscriptId: 'm', status: 'submitted', previousSubmissionId: 'old', roundIndex: 2, submissionDate: '2025-11-01' },
+  { id: 'other', manuscriptId: 'unrelated', roundIndex: 20 }
+] };
+assert.equal(RFCore.getCurrentSubmission(attempts, 'm').id, 'new', 'transfer lineage must win over a historical status or date');
+assert.equal(RFCore.getCurrentSubmission({ submissions: [
+  { id: 'first', manuscriptId: 'm', submittedAt: '2025-01-01' },
+  { id: 'last', manuscriptId: 'm', submittedAt: '2025-02-01', status: 'rejected' }
+] }, 'm').id, 'last', 'the latest rejected attempt is still the current workflow');
+assert.equal(RFCore.getCurrentSubmission(attempts, 'missing'), null);
+
 console.log('research core tests passed');

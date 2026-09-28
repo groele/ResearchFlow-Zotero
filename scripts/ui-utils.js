@@ -388,7 +388,30 @@
       .replace(/'/g, '&#39;');
   }
 
+  function setHTML(target, markup) {
+    if (!target) return;
+    if (!markup) { target.replaceChildren(); return; }
+    const doc = target.ownerDocument;
+    const parsed = new doc.defaultView.DOMParser().parseFromString(String(markup), 'text/html');
+    // Render application templates as DOM nodes. Gecko's privileged fragment
+    // parser removes form controls from innerHTML, so all templates use this
+    // path. Keep executable content out even if a caller forgets to escape data.
+    parsed.querySelectorAll('script,iframe,object,embed,link,meta,base,style').forEach(node => node.remove());
+    parsed.querySelectorAll('*').forEach(node => {
+      for (const attribute of [...node.attributes]) {
+        const name = attribute.name.toLowerCase();
+        if (name.startsWith('on') || name === 'srcdoc') node.removeAttribute(attribute.name);
+        else if (['href', 'src', 'action', 'formaction', 'xlink:href'].includes(name)) {
+          const value = attribute.value.replace(/[\u0000-\u0020]/g, '');
+          if (/^(?:javascript|vbscript):/i.test(value) || /^data:/i.test(value) && !/^data:image\/(?:png|jpeg|gif|webp);base64,/i.test(value)) node.removeAttribute(attribute.name);
+        }
+      }
+    });
+    target.replaceChildren(...[...parsed.body.childNodes].map(node => doc.importNode(node, true)));
+  }
+
   const api = {
+    setHTML,
     cleanDoiFromText,
     cleanResearchTitle,
     normalizeFeedbackType,

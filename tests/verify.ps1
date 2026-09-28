@@ -23,6 +23,8 @@ try {
       Start-Sleep -Milliseconds 600
       & node tests/workspace-browser-smoke.js
       if ($LASTEXITCODE -ne 0) { throw 'Mocked workspace browser smoke failed.' }
+      & node tests/workflow-browser-smoke.js
+      if ($LASTEXITCODE -ne 0) { throw 'Cross-view workflow browser smoke failed.' }
     } finally {
       Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
     }

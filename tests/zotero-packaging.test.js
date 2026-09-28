@@ -12,7 +12,7 @@ const manifestPath = path.join(distZotero, 'manifest.json');
 assert(fs.existsSync(manifestPath), 'dist-zotero/manifest.json must exist');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert.equal(manifest.applications?.zotero?.id, 'researchflow@groele.org');
-assert.equal(manifest.version, '9.1.0');
+assert.equal(manifest.version, '9.1.1');
 
 // 2. Verify bootstrap.js and chrome.manifest
 const bootstrapPath = path.join(distZotero, 'bootstrap.js');
@@ -50,8 +50,8 @@ assert.match(prefMarkup, /onshowing="ResearchFlow_Preferences\.init\(window\)"/,
 assert.match(prefMarkup, /id="rf-cloud-settings-frame"/, 'cloud settings must be embedded in Zotero preferences');
 
 // 4. Verify XPI archive
-const xpiPath = path.join(distZip, 'researchflow-zotero-9.1.0.xpi');
-assert(fs.existsSync(xpiPath), 'researchflow-zotero-9.1.0.xpi must exist in dist-zip');
+const xpiPath = path.join(distZip, `researchflow-zotero-${manifest.version}.xpi`);
+assert(fs.existsSync(xpiPath), 'the current Zotero XPI must exist in dist-zip');
 const xpiStats = fs.statSync(xpiPath);
 assert(xpiStats.size > 50000, 'XPI file must be at least 50KB');
 

@@ -18,6 +18,7 @@ Desktop.ini
 # Environment
 .env
 .env.local
+researchflow-export-*.json
 
 # Build output
 dist/

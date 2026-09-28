@@ -49,8 +49,8 @@ assert(optionsJs.includes('function applyThemePreference'), 'appearance selectio
 assert(optionsJs.includes('autoSyncToggle.dataset.savedValue'), 'automatic cloud sync should retain its saved state across route changes');
 assert(optionsCss.includes('hsl(var(--card-bg))'), 'explicit dark appearance should override the system preference');
 assert(optionsJs.includes("mainContent.scrollTop = 0"), 'workspace navigation should reveal the beginning of each settings view');
-assert(optionsHtml.includes('v9.1.0 Companion'), 'workspace version label should match the current companion release');
-assert.equal(manifest.version, '9.1.0', 'manifest version should match the current companion release');
+assert(optionsHtml.includes(`v${manifest.version} Companion`), 'workspace version label should match the current companion release');
+assert.equal(manifest.version, '9.1.1', 'manifest version should match the current companion release');
 
 ['view-projects', 'view-library', 'metric-projects', 'metric-records', 'metric-evidence', 'recent-records'].forEach((removedSection) => {
   assert(!optionsHtml.includes(removedSection), `options page should not expose removed ${removedSection}`);
@@ -149,6 +149,8 @@ assert(
   'celebration should run only after the accepted state is persisted'
 );
 assert(optionsJs.includes('structuredClone(db)'), 'submission edits should be applied to an isolated transaction copy');
+assert(!/\.innerHTML\s*=/.test(optionsJs), 'workspace templates must retain form controls in privileged Zotero pages');
+assert(optionsJs.includes('window.RFUI.setHTML'), 'workspace templates should use the shared DOM renderer');
 assert(optionsJs.includes('function refreshSubmissionStatusPresentation'), 'auto-save should refresh status chrome without rebuilding the active form');
 assert(optionsJs.includes('function persistManuscriptStatusChange'), 'kanban status changes should use an isolated persistence transaction');
 assert(optionsJs.includes('showAcceptanceCelebration({ title: result.manuscript.title'), 'kanban acceptance should share the milestone celebration');

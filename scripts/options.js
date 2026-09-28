@@ -7,14 +7,22 @@ let db = null;
 
 function applyDatabaseUpdate(newData) {
   if (!newData) return;
+  // Zotero echoes a successful save to the originating page. A delayed echo
+  // must not replace newer edits or rebuild the editor between keystrokes.
+  if (db && Number(newData.revision || 0) <= Number(db.revision || 0)
+    && Number(newData.lastUpdated || 0) <= Number(db.lastUpdated || 0)) return;
   db = newData;
+  syncManuscriptStatusesFromSubmissions(db);
   if (typeof window.storage !== 'undefined') {
     window.storage.cache = newData;
   }
   const activeView = document.querySelector('.content-view.active')?.id;
   if (activeView === 'view-dashboard') renderDashboard();
   else if (activeView === 'view-manuscripts') renderKanban();
-  else if (activeView === 'view-submissions') renderSubmissions();
+  else if (activeView === 'view-submissions') {
+    const editorState = document.querySelector('[data-submission-autosave-status]')?.dataset.state;
+    renderSubmissions({ refreshDetails: pendingSubmissionSaves === 0 && !['pending', 'saving', 'invalid', 'error'].includes(editorState) });
+  }
 }
 let selectedProjectId = null;
 let selectedSubmissionId = null;
@@ -31,7 +39,7 @@ let activeSharePreviewUrl = null;
 let activeSharePreviewCleanup = null;
 let sharePreferenceWrites = Promise.resolve();
 
-const RF_OPTIONS_RENDER_VERSION = '9.1.0';
+const RF_OPTIONS_RENDER_VERSION = '9.1.1';
 const SUBMISSION_ASSIST_STORAGE_KEY = 'researchflow_submission_assist';
 const PENDING_SUBMISSION_DRAFT_KEY = 'researchflow_pending_submission_draft';
 const PENDING_ACADEMIC_DRAFT_KEY = 'researchflow_pending_academic_draft';
@@ -1097,6 +1105,7 @@ function normalizeSubmissionStatus(value) {
 function normalizeSubmissionStatuses(database) {
   let changed = false;
   (database?.submissions || []).forEach((submission) => {
+    changed = normalizeWorkflowFields(submission) || changed;
     const canonical = normalizeSubmissionStatus(submission.status);
     if (submission.status !== canonical) {
       submission.status = canonical;
@@ -1149,7 +1158,7 @@ function setNavText(selector, value) {
   const el = document.querySelector(selector);
   if (!el) return;
   const icon = el.querySelector('svg');
-  el.innerHTML = '';
+  window.RFUI.setHTML(el, '');
   if (icon) el.appendChild(icon);
   el.appendChild(document.createTextNode(value));
 }
@@ -1158,7 +1167,7 @@ function setButtonText(selector, value) {
   const el = document.querySelector(selector);
   if (!el) return;
   const icon = el.querySelector('svg');
-  el.innerHTML = '';
+  window.RFUI.setHTML(el, '');
   if (icon) el.appendChild(icon);
   el.appendChild(document.createTextNode(value));
 }
@@ -1166,7 +1175,7 @@ function setButtonText(selector, value) {
 function setFilterCardTitle(selector, value) {
   const el = document.querySelector(selector);
   if (!el) return;
-  el.innerHTML = `${escapeHTML(value)} <span class="filter-tip">${escapeHTML(t('clickToFilter'))}</span>`;
+  window.RFUI.setHTML(el, `${escapeHTML(value)} <span class="filter-tip">${escapeHTML(t('clickToFilter'))}</span>`);
 }
 
 function applyLanguage() {
@@ -1283,7 +1292,7 @@ function applyLanguage() {
 async function renderAllViews() {
   submissionAutoSaveCleanup?.();
   const panel = document.getElementById('submission-detail-panel');
-  if (panel) { panel.innerHTML = ''; delete panel.dataset.currentSubmissionId; }
+  if (panel) { window.RFUI.setHTML(panel, ''); delete panel.dataset.currentSubmissionId; }
   currentLanguage = resolvePreferredLanguage();
   applyThemePreference(db.settings?.profile?.theme || 'system');
   applyLanguage();
@@ -1360,6 +1369,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
 
   // Dynamic Database Migration: Translate Chinese nodes to English & filter out '手稿定稿'
+  const originalDatabase = structuredClone(db);
   let dbMigrationChanged = false;
   if (db && db.submissions) {
     dbMigrationChanged = normalizeSubmissionStatuses(db) || dbMigrationChanged;
@@ -1405,7 +1415,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     db.submissions.forEach(sub => { dbMigrationChanged = normalizeSubmissionTimeline(sub) || dbMigrationChanged; });
     if (dbMigrationChanged) {
-      try { db = await window.storage.saveAll(db, { mergeOnConflict: true }); }
+      try {
+        const backupKey = 'researchflow_pre_workflow_sync_backup';
+        const existing = await chrome.storage.local.get([backupKey]);
+        if (!existing[backupKey]) await chrome.storage.local.set({ [backupKey]: { createdAt: new Date().toISOString(), database: originalDatabase } });
+        db = await window.storage.saveAll(db, { mergeOnConflict: true });
+      }
       catch (error) { showGlobalToast(error.message, 'error'); }
     }
   }
@@ -1413,57 +1428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Set up synchronization alerts/updates
   chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'DATABASE_UPDATED') {
-      db = message.data;
-
-      // Migrate on update too
-      if (db && db.submissions) {
-        let updateChanged = normalizeSubmissionStatuses(db);
-        db.submissions.forEach(sub => {
-          if (sub.timelineNodes && sub.timelineNodes.length > 0) {
-            const origLen = sub.timelineNodes.length;
-            sub.timelineNodes = sub.timelineNodes.filter(node => {
-              const nameTrimmed = (node.name || '').trim();
-              return nameTrimmed !== '手稿定稿' && nameTrimmed !== 'Manuscript Finalization';
-            });
-            const nameMapping = {
-              '实验完成': 'Experiments Completed',
-              '数据整理': 'Data Organization',
-              '初稿完成': 'Draft Completed',
-              '投稿': 'Manuscript Submitted',
-              '审稿意见 R1': 'Review Comments R1',
-              'R1 修回提交': 'R1 Revision Submitted',
-              '审稿意见 R2': 'Review Comments R2',
-              'R2 修回提交': 'R2 Revision Submitted',
-              '接收': 'Accepted',
-              'Online': 'Online Publication',
-              'Proof': 'Proof'
-            };
-            sub.timelineNodes.forEach(node => {
-              const nameTrimmed = (node.name || '').trim();
-              if (nameMapping[nameTrimmed]) {
-                node.name = nameMapping[nameTrimmed];
-                updateChanged = true;
-              }
-            });
-            if (sub.timelineNodes.length !== origLen) {
-              updateChanged = true;
-            }
-          }
-        });
-        // Broadcasts update the view; they must not trigger another write cascade.
-      }
-
-      clearUnacceptedPublicationLinks(db);
-      syncManuscriptStatusesFromSubmissions(db);
-
-      // Reload active view
-      const activeNav = document.querySelector('.nav-item.active');
-      if (activeNav) {
-        const viewId = activeNav.getAttribute('data-view');
-        if (viewId === 'view-dashboard') renderDashboard();
-        if (viewId === 'view-manuscripts') renderKanban();
-        if (viewId === 'view-submissions') renderSubmissions();
-      }
+      applyDatabaseUpdate(message.data);
     }
   });
 
@@ -2359,20 +2324,20 @@ function applyInlineEventToSubmission(sub, key, eventDate, note = '') {
   const isoDate = dateInputToIso(eventDate);
   if (key === 'submit') {
     sub.submissionDate = isoDate;
-    if (!hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'submitted';
   } else if (key === 'r1_comments' || key === 'r2_comments') {
     if (key === 'r1_comments') sub.firstDecisionDate = isoDate;
     if (!hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'revision';
   } else if (key === 'r1_revised' || key === 'r2_revised') {
     if (!hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'under_review';
-  } else if (key === 'accept' || key === 'online') {
+  } else if (key === 'accept') {
     sub.decisionDate = isoDate;
-    sub.status = key === 'online' ? 'published' : 'accepted';
-    if (key === 'accept') sub.acceptedAt = isoDate;
-    if (key === 'online') {
-      sub.publishedAt = isoDate;
-      sub.acceptedAt = sub.acceptedAt || isoDate;
-    }
+    sub.acceptedAt = isoDate;
+    if (sub.status !== 'published') sub.status = 'accepted';
+  } else if (key === 'online') {
+    sub.decisionDate = sub.decisionDate || isoDate;
+    sub.status = 'published';
+    sub.publishedAt = isoDate;
+    sub.acceptedAt = sub.acceptedAt || sub.decisionDate;
   } else if (key === 'rejected') {
     markSubmissionRejected(sub, eventDate, note);
   }
@@ -2633,13 +2598,21 @@ function normalizeSubmissionTimeline(sub) {
 
   const decisionDate = normalizeDateString(sub.decisionDate);
   if (decisionDate && hasPublicationStatus(sub)) {
-    const key = sub.status === 'published' ? 'online' : 'accept';
-    const result = ensureTimelineNode(sub, key, key === 'online' ? 'Online Publication' : 'Accepted', 'publication', 'completed');
+    const result = ensureTimelineNode(sub, 'accept', 'Accepted', 'publication', 'completed');
     changed = result.changed || changed;
     changed = setTimelineNodeDate(result.node, decisionDate, 'completeDate') || changed;
     if (result.node.status !== 'completed') {
       result.node.status = 'completed';
       changed = true;
+    }
+  }
+  if (sub.status === 'published') {
+    const onlineDate = normalizeDateString(sub.publishedAt || getTimelineNodeByKey(sub, 'online')?.completeDate || sub.decisionDate);
+    if (onlineDate) {
+      const result = ensureTimelineNode(sub, 'online', 'Online Publication', 'publication', 'completed');
+      changed = result.changed || changed;
+      changed = setTimelineNodeDate(result.node, onlineDate, 'completeDate') || changed;
+      if (result.node.status !== 'completed') { result.node.status = 'completed'; changed = true; }
     }
   }
 
@@ -2978,28 +2951,42 @@ function getSubmissionLifecycleRank(status) {
 }
 
 function getLinkedActiveSubmissions(manuscriptId, database = db) {
-  return (database?.submissions || []).filter(sub => sub.manuscriptId === manuscriptId && sub.status !== 'rejected');
+  const current = window.RFCore.getCurrentSubmission(database, manuscriptId);
+  return current ? [current] : [];
 }
 
 function syncLinkedSubmissionsFromManuscript(manuscript, database = db) {
-  if (!manuscript || !isSubmissionLifecycleStatus(manuscript.status)) return false;
+  if (!manuscript) return false;
   const nextStatus = normalizeSyncedPublicationStatus(manuscript.status);
   let changed = false;
 
   getLinkedActiveSubmissions(manuscript.id, database).forEach(sub => {
-    if (sub.status !== nextStatus) {
-      sub.status = nextStatus;
+    const patch = {
+      title: manuscript.title,
+      targetJournal: manuscript.targetJournals?.[0] || null,
+      firstAuthor: manuscript.firstAuthor || firstAuthorFromList(manuscript.authors) || null
+    };
+    if (isSubmissionLifecycleStatus(nextStatus) || nextStatus === 'rejected') patch.status = nextStatus;
+    if (nextStatus === 'accepted' || nextStatus === 'published') {
+      patch.doi = manuscript.doi || sub.doi || null;
+      patch.articleUrl = manuscript.articleUrl || sub.articleUrl || null;
+    }
+    if (Object.entries(patch).some(([key, value]) => sub[key] !== value)) {
+      const previousStatus = sub.status;
+      Object.assign(sub, patch);
       sub.updatedAt = new Date().toISOString();
-      if (nextStatus !== 'accepted' && nextStatus !== 'published') {
+      if (isSubmissionLifecycleStatus(nextStatus) && nextStatus !== 'accepted' && nextStatus !== 'published') {
         clearPublicationLinkFields(sub);
         clearPublicationTimelineCompletion(sub);
       }
+      if (previousStatus === 'published' && nextStatus === 'accepted') clearOnlinePublicationCompletion(sub);
       normalizeSubmissionTimeline(sub);
       changed = true;
     }
+    changed = syncWorkflowAliases(sub, manuscript) || changed;
   });
 
-  return changed;
+  return syncLinkedManuscriptSnapshots(manuscript, database) || changed;
 }
 
 function setManuscriptStatus(manuscript, status, { syncSubmissions = true, database = db } = {}) {
@@ -3020,6 +3007,7 @@ function setManuscriptStatus(manuscript, status, { syncSubmissions = true, datab
 async function persistManuscriptStatusChange(manuscript, nextStatus) {
   const liveManuscript = db.manuscripts.find(item => item.id === manuscript.id);
   if (!liveManuscript) throw new Error(t('manuscriptNotFound'));
+  validateLinkedManuscriptStatus(liveManuscript, nextStatus);
   const previousStatus = normalizeSyncedPublicationStatus(liveManuscript.status);
   const workingDatabase = typeof structuredClone === 'function'
     ? structuredClone(db)
@@ -3050,30 +3038,92 @@ async function persistManuscriptStatusChange(manuscript, nextStatus) {
   };
 }
 
-function syncManuscriptStatusFromSubmission(submission) {
-  if (!submission || !isSubmissionLifecycleStatus(submission.status)) return false;
-  const manuscript = db?.manuscripts?.find(man => man.id === submission.manuscriptId);
+function syncManuscriptStatusFromSubmission(submission, database = db) {
+  if (!submission) return false;
+  const manuscript = database?.manuscripts?.find(man => man.id === submission.manuscriptId);
   if (!manuscript) return false;
-  return setManuscriptStatus(manuscript, submission.status, { syncSubmissions: false });
+  if (window.RFCore.getCurrentSubmission(database, manuscript.id)?.id !== submission.id) return false;
+  const normalized = normalizeWorkflowFields(submission);
+  const patch = {
+    status: normalizeSubmissionStatus(submission.status),
+    targetJournals: 'targetJournal' in submission ? (submission.targetJournal ? [submission.targetJournal] : []) : (manuscript.targetJournals || []),
+    firstAuthor: submission.firstAuthor || manuscript.firstAuthor || firstAuthorFromList(manuscript.authors) || null
+  };
+  if (hasPublicationStatus(submission)) {
+    patch.doi = submission.doi || manuscript.doi || null;
+    patch.articleUrl = submission.articleUrl || manuscript.articleUrl || null;
+  }
+  const changed = Object.entries(patch).some(([key, value]) => JSON.stringify(manuscript[key]) !== JSON.stringify(value));
+  if (changed) Object.assign(manuscript, patch, { updatedAt: submission.updatedAt || new Date().toISOString() });
+  return syncLinkedManuscriptSnapshots(manuscript, database) || changed || normalized;
+}
+
+function normalizeWorkflowFields(sub) {
+  let changed = false;
+  for (const [alias, key] of [['journalName', 'targetJournal'], ['submittedAt', 'submissionDate'], ['decisionAt', 'decisionDate'], ['revisionDeadline', 'revisionDueDate']]) {
+    if (!(key in sub) && alias in sub) { sub[key] = sub[alias]; changed = true; }
+  }
+  return changed;
+}
+
+function validateLinkedManuscriptStatus(manuscript, status) {
+  if (window.RFCore.getCurrentSubmission(db, manuscript.id) && !isSubmissionLifecycleStatus(status) && status !== 'rejected') {
+    throw new Error(currentLanguage === 'zh'
+      ? '该手稿已有投稿记录，请选择投稿、审稿、返修、接收、发表或拒稿状态。若需退回准备阶段，请先删除对应投稿跟踪。'
+      : 'This manuscript has a submission. Choose a submission status, or delete its submission tracking before returning to preparation.');
+  }
+}
+
+function syncWorkflowAliases(sub, manuscript) {
+  let changed = normalizeWorkflowFields(sub);
+  const set = (object, key, value) => {
+    if (JSON.stringify(object[key]) !== JSON.stringify(value)) { object[key] = value; changed = true; }
+  };
+  for (const [alias, key] of [['journalName', 'targetJournal'], ['submittedAt', 'submissionDate'], ['decisionAt', 'decisionDate'], ['revisionDeadline', 'revisionDueDate']]) {
+    if (alias in sub) set(sub, alias, sub[key] ?? null);
+  }
+  if ('title' in sub) set(sub, 'title', manuscript.title);
+  if ('targetJournal' in manuscript) set(manuscript, 'targetJournal', manuscript.targetJournals?.[0] || null);
+  if (sub.manuscript && typeof sub.manuscript === 'object' && !Array.isArray(sub.manuscript)) {
+    for (const key of ['id', 'title', 'status', 'firstAuthor', 'updatedAt']) set(sub.manuscript, key, manuscript[key] ?? null);
+    if ('targetJournal' in sub.manuscript) set(sub.manuscript, 'targetJournal', manuscript.targetJournals?.[0] || null);
+    if ('targetJournals' in sub.manuscript) set(sub.manuscript, 'targetJournals', manuscript.targetJournals || []);
+  }
+  return changed;
+}
+
+function syncLinkedManuscriptSnapshots(manuscript, database) {
+  let changed = false;
+  (database.submissions || []).filter(sub => sub.manuscriptId === manuscript.id).forEach(sub => {
+    changed = syncWorkflowAliases(sub, manuscript) || changed;
+  });
+  return changed;
 }
 
 function syncManuscriptStatusesFromSubmissions(database) {
   if (!database || !Array.isArray(database.manuscripts) || !Array.isArray(database.submissions)) return false;
   let changed = false;
   database.manuscripts.forEach(manuscript => {
-    const linked = database.submissions
-      .filter(sub => sub.manuscriptId === manuscript.id && sub.status !== 'rejected' && isSubmissionLifecycleStatus(sub.status))
-      .sort((a, b) => getSubmissionLifecycleRank(b.status) - getSubmissionLifecycleRank(a.status) || getSubmissionSortTime(b) - getSubmissionSortTime(a));
-    const strongest = linked[0];
-    if (!strongest) return;
-    const nextStatus = normalizeSyncedPublicationStatus(strongest.status);
-    if (getSubmissionLifecycleRank(nextStatus) > getSubmissionLifecycleRank(manuscript.status)) {
-      manuscript.status = nextStatus;
-      manuscript.updatedAt = new Date().toISOString();
+    const current = window.RFCore.getCurrentSubmission(database, manuscript.id);
+    if (!current) return;
+    // Repair the legacy accepted/published split only when an online event is completed.
+    const online = getTimelineNodeByKey(current, 'online');
+    if (current.status === 'accepted' && manuscript.status === 'published' && online?.completeDate) {
+      current.status = 'published';
+      current.publishedAt = current.publishedAt || dateInputToIso(normalizeDateString(online.completeDate));
       changed = true;
     }
+    changed = syncManuscriptStatusFromSubmission(current, database) || changed;
   });
   return changed;
+}
+
+function clearOnlinePublicationCompletion(sub) {
+  delete sub.publishedAt;
+  (sub.timelineNodes || []).filter(node => inferKey(node) === 'online').forEach(node => {
+    node.completeDate = '';
+    node.status = 'pending';
+  });
 }
 
 function createRejectedTimelineNode(sub, rejectionDate, note = '') {
@@ -3208,7 +3258,7 @@ function renderDashboard() {
 
   // 1. Pipeline Timeline Cards
   const ganttBox = document.getElementById('dashboard-gantt');
-  ganttBox.innerHTML = '';
+  window.RFUI.setHTML(ganttBox, '');
 
   // Apply active filter state
   let submissionsList = visibleSubmissions;
@@ -3220,7 +3270,7 @@ function renderDashboard() {
   submissionsList = sortDashboardSubmissions(submissionsList);
 
   if (submissionsList.length === 0) {
-    ganttBox.innerHTML = `<p class="empty-state">${t('noPipelines')}</p>`;
+    window.RFUI.setHTML(ganttBox, `<p class="empty-state">${t('noPipelines')}</p>`);
   } else {
     submissionsList.forEach((sub, index) => {
       const displayIndex = submissionsList.length - index;
@@ -3291,7 +3341,7 @@ function renderDashboard() {
         </div>
       `;
 
-      card.innerHTML = `
+      window.RFUI.setHTML(card, `
         <!-- Col 1: Manuscript Info -->
         <div class="project-info">
           <div class="project-heading-row">
@@ -3361,7 +3411,7 @@ function renderDashboard() {
           <div class="state-note">${escapeHTML(a.stateNote)}</div>
         </div>
         ${buildInlineStageEditor(sub.id)}
-      `;
+      `);
 
       // Setup click listeners for interactive dots in Col 2
       card.querySelectorAll('.dot.interactive-dot').forEach(dot => {
@@ -3494,7 +3544,7 @@ function renderDashboard() {
 
   // 3. Timeline alerts and review milestones
   const reviewMilestones = document.getElementById('dashboard-pending-milestones');
-  reviewMilestones.innerHTML = '';
+  window.RFUI.setHTML(reviewMilestones, '');
 
   const timelineAlerts = [];
   db.submissions
@@ -3530,7 +3580,7 @@ function renderDashboard() {
   });
 
   if (timelineAlerts.length === 0) {
-    reviewMilestones.innerHTML = `<p class="empty-state">${t('noUrgentEvents')}</p>`;
+    window.RFUI.setHTML(reviewMilestones, `<p class="empty-state">${t('noUrgentEvents')}</p>`);
   } else {
     timelineAlerts.slice(0, 5).forEach(alert => {
       const item = document.createElement('div');
@@ -3778,12 +3828,17 @@ function openStageDrawer(subId, nodeId) {
     const nodeKey = inferKey(node);
     if (nodeKey === 'submit') {
       sub.submissionDate = eventDate ? dateInputToIso(eventDate) : null;
-      if (eventDate && !hasPublicationStatus(sub) && sub.status !== 'rejected') sub.status = 'submitted';
     } else if (nodeKey === 'r1_comments') {
       sub.firstDecisionDate = eventDate ? dateInputToIso(eventDate) : null;
     } else if (nodeKey === 'accept' || nodeKey === 'online') {
-      sub.decisionDate = eventDate ? dateInputToIso(eventDate) : null;
-      if (eventDate) sub.status = nodeKey === 'online' ? 'published' : 'accepted';
+      if (eventDate) applyInlineEventToSubmission(sub, nodeKey, eventDate);
+      else if (nodeKey === 'online') {
+        sub.publishedAt = null;
+        if (sub.status === 'published') sub.status = 'accepted';
+      } else {
+        sub.decisionDate = null;
+        sub.acceptedAt = null;
+      }
     }
     normalizeSubmissionTimeline(sub);
     syncManuscriptStatusFromSubmission(sub);
@@ -3813,7 +3868,7 @@ function openStageDrawer(subId, nodeId) {
 function renderKanban() {
   const columns = ['idea', 'drafting', 'submitted', 'accepted'];
   columns.forEach(col => {
-    document.getElementById(`cards-${col}`).innerHTML = '';
+    window.RFUI.setHTML(document.getElementById(`cards-${col}`), '');
   });
 
   // Handle pending Zotero literature link banner
@@ -3829,7 +3884,7 @@ function renderKanban() {
       else viewSection.prepend(banner);
     }
     const pItem = window._pendingZoteroLinkItem;
-    banner.innerHTML = `
+    window.RFUI.setHTML(banner, `
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="font-size:20px;">📎</span>
         <div>
@@ -3838,7 +3893,7 @@ function renderKanban() {
         </div>
       </div>
       <button class="btn-secondary" id="btn-cancel-zotero-link" style="padding:4px 10px; font-size:12px;">取消关联</button>
-    `;
+    `);
     document.getElementById('btn-cancel-zotero-link')?.addEventListener('click', () => {
       window._pendingZoteroLinkItem = null;
       renderKanban();
@@ -3859,12 +3914,12 @@ function renderKanban() {
     // Map granular status to simple column headers
     let col = 'idea';
     if (m.status === 'outline' || m.status === 'idea' || m.status === 'data_collection') col = 'idea';
-    else if (m.status === 'drafting' || m.status === 'figure_preparation' || m.status === 'internal_review') col = 'drafting';
+    else if (m.status === 'drafting' || m.status === 'figure_preparation' || m.status === 'internal_review' || m.status === 'rejected') col = 'drafting';
     else if (m.status === 'submitted' || m.status === 'under_review' || m.status === 'revision') col = 'submitted';
     else if (m.status === 'accepted' || m.status === 'published') col = 'accepted';
 
     mCount[col]++;
-    const linkedSubmission = sortDashboardSubmissions(db.submissions.filter(sub => sub.manuscriptId === m.id))[0];
+    const linkedSubmission = window.RFCore.getCurrentSubmission(db, m.id);
     const currentJournal = linkedSubmission?.targetJournal || linkedSubmission?.journalName || m.targetJournals?.[0] || (currentLanguage === 'zh' ? '待定' : 'TBD');
 
     const card = document.createElement('div');
@@ -3907,7 +3962,7 @@ function renderKanban() {
     const targetJournalLabel = currentLanguage === 'zh' ? '目标期刊' : 'Target';
     const editLabel = currentLanguage === 'zh' ? '编辑' : 'Edit';
 
-    card.innerHTML = `
+    window.RFUI.setHTML(card, `
       <div class="kanban-card-title-row">
         <h4 title="${escapeHTML(m.title)}">${escapeHTML(m.title)}</h4>
       </div>
@@ -3928,6 +3983,7 @@ function renderKanban() {
           <option value="revision" ${m.status === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
           <option value="accepted" ${m.status === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
           <option value="published" ${m.status === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
+          <option value="rejected" ${m.status === 'rejected' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('rejected'))}</option>
         </select>
         <div class="kanban-card-actions">
           ${pendingLinkBtnHtml}
@@ -3935,7 +3991,7 @@ function renderKanban() {
           <button type="button" class="btn-secondary btn-edit-manuscript" id="btn-edit-man-${m.id}">${editLabel}</button>
         </div>
       </div>
-    `;
+    `);
 
     // HTML5 Drag Event Listeners
     card.addEventListener('dragstart', (e) => {
@@ -4130,7 +4186,8 @@ function getManuscriptStatusLabel(status) {
     under_review: getSubmissionStatusLabel('under_review'),
     revision: getSubmissionStatusLabel('revision'),
     accepted: getSubmissionStatusLabel('accepted'),
-    published: getSubmissionStatusLabel('published')
+    published: getSubmissionStatusLabel('published'),
+    rejected: getSubmissionStatusLabel('rejected')
   };
   return labels[status] || String(status || 'idea').replace(/_/g, ' ');
 }
@@ -4360,6 +4417,7 @@ function openManuscriptModal(man = null, prefill = null) {
           <option value="revision" ${initialStatus === 'revision' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('revision'))}</option>
           <option value="accepted" ${initialStatus === 'accepted' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('accepted'))}</option>
           <option value="published" ${initialStatus === 'published' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('published'))}</option>
+          <option value="rejected" ${initialStatus === 'rejected' ? 'selected' : ''}>${escapeHTML(getSubmissionStatusLabel('rejected'))}</option>
         </select>
       </div>
       <div class="form-group">
@@ -4436,7 +4494,7 @@ function openManuscriptModal(man = null, prefill = null) {
         currentRelatedItems = item.relatedItems || [];
 
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:#059669; font-weight:600; display:inline-flex; align-items:center; gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>已关联: ${escapeHTML((item.title || '').slice(0, 22))}…</span>`;
+          window.RFUI.setHTML(statusEl, `<span style="color:#059669; font-weight:600; display:inline-flex; align-items:center; gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>已关联: ${escapeHTML((item.title || '').slice(0, 22))}…</span>`);
           if (currentCiteKey) {
             const citeEl = document.createElement('span');
             citeEl.className = 'zotero-citekey-badge';
@@ -4464,7 +4522,7 @@ function openManuscriptModal(man = null, prefill = null) {
         const relPanel = document.getElementById('man-zotero-related-panel');
         const relChips = document.getElementById('man-zotero-related-chips');
         if (relPanel && relChips && Array.isArray(item.relatedItems) && item.relatedItems.length > 0) {
-          relChips.innerHTML = '';
+          window.RFUI.setHTML(relChips, '');
           item.relatedItems.forEach(r => {
             const chip = document.createElement('span');
             chip.className = 'zotero-related-chip';
@@ -4490,7 +4548,7 @@ function openManuscriptModal(man = null, prefill = null) {
         currentCitationApa = '';
         currentRelatedItems = [];
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:#64748b; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${escapeHTML(currentLanguage === 'zh' ? '未绑定 Zotero 文献条目 (点击可搜索关联)' : 'No Zotero item linked (Click to search)')}</span>`;
+          window.RFUI.setHTML(statusEl, `<span style="color:#64748b; font-weight:500; display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>${escapeHTML(currentLanguage === 'zh' ? '未绑定 Zotero 文献条目 (点击可搜索关联)' : 'No Zotero item linked (Click to search)')}</span>`);
         }
         if (pdfBtn) pdfBtn.style.display = 'none';
         if (syncBtn) syncBtn.style.display = 'none';
@@ -4516,7 +4574,7 @@ function openManuscriptModal(man = null, prefill = null) {
           const textEl = document.getElementById('zotero-active-item-text');
           const quickBindBtn = document.getElementById('btn-zotero-quick-bind-active');
           if (activeItem && activeItem.title && banner && textEl) {
-            textEl.innerHTML = `📌 <strong>检测到 Zotero 选中文献：</strong>《${escapeHTML(activeItem.title)}》`;
+            window.RFUI.setHTML(textEl, `📌 <strong>检测到 Zotero 选中文献：</strong>《${escapeHTML(activeItem.title)}》`);
             banner.style.display = 'flex';
             quickBindBtn?.addEventListener('click', () => {
               applyItemToForm(activeItem);
@@ -4575,7 +4633,7 @@ function openManuscriptModal(man = null, prefill = null) {
         return;
       }
       panel.style.display = 'flex';
-      panel.innerHTML = '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">⏳ 正在读取 Zotero 研读资产库 (PDF划线、独立笔记、分类标签)...</div>';
+      window.RFUI.setHTML(panel, '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">⏳ 正在读取 Zotero 研读资产库 (PDF划线、独立笔记、分类标签)...</div>');
 
       const assets = typeof ZoteroBridge.getReadingAssets === 'function'
         ? await ZoteroBridge.getReadingAssets(currentZoteroItemKey)
@@ -4586,7 +4644,7 @@ function openManuscriptModal(man = null, prefill = null) {
       const collections = assets.collections || [];
       const tags = assets.tags || [];
 
-      panel.innerHTML = `
+      window.RFUI.setHTML(panel, `
         <div class="zotero-drawer-tabs">
           <button type="button" class="zotero-drawer-tab active" data-tab="annos">
             🖍️ PDF 批注 <span class="zotero-drawer-badge">${annos.length}</span>
@@ -4601,7 +4659,7 @@ function openManuscriptModal(man = null, prefill = null) {
         <div id="zotero-tab-content-annos" class="zotero-drawer-section"></div>
         <div id="zotero-tab-content-notes" class="zotero-drawer-section" style="display:none;"></div>
         <div id="zotero-tab-content-meta" class="zotero-drawer-section" style="display:none;"></div>
-      `;
+      `);
 
       // Tab switching
       panel.querySelectorAll('.zotero-drawer-tab').forEach(tabBtn => {
@@ -4622,17 +4680,17 @@ function openManuscriptModal(man = null, prefill = null) {
       // 1. Populate Annotations
       const annosContainer = panel.querySelector('#zotero-tab-content-annos');
       if (annos.length === 0) {
-        annosContainer.innerHTML = '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">该文献 PDF 暂无高亮划线。您可在 Zotero 阅读器中选中文字添加高亮与批注。</div>';
+        window.RFUI.setHTML(annosContainer, '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">该文献 PDF 暂无高亮划线。您可在 Zotero 阅读器中选中文字添加高亮与批注。</div>');
       } else {
         if (annos.length > 1) {
           const batchBar = document.createElement('div');
           batchBar.className = 'zotero-batch-toolbar';
-          batchBar.innerHTML = `
+          window.RFUI.setHTML(batchBar, `
             <span>共检测到 <strong>${annos.length}</strong> 条 PDF 批注划线</span>
             <button type="button" class="btn-secondary" id="btn-batch-insert-annos" style="font-size:10px; padding:2px 8px; color:var(--text-accent, #cc292b); font-weight:600; cursor:pointer;">
               ➕ 全部汇入研读草稿
             </button>
-          `;
+          `);
           batchBar.querySelector('#btn-batch-insert-annos')?.addEventListener('click', () => {
             const absBox = document.getElementById('man-abstract');
             if (absBox) {
@@ -4650,7 +4708,7 @@ function openManuscriptModal(man = null, prefill = null) {
         annos.forEach(a => {
           const itemEl = document.createElement('div');
           itemEl.className = 'zotero-annotation-item';
-          itemEl.innerHTML = `
+          window.RFUI.setHTML(itemEl, `
             <div class="zotero-annotation-head">
               <span style="font-weight:600; color:${a.color || '#cc292b'};">● 第 ${a.page} 页 ${a.type === 'note' ? '独立批注' : '高亮划线'}</span>
               <span>${a.date ? new Date(a.date).toLocaleDateString() : ''}</span>
@@ -4661,7 +4719,7 @@ function openManuscriptModal(man = null, prefill = null) {
               <button type="button" class="btn-secondary btn-quote-insert" style="font-size:10px; padding:2px 6px;">➕ 插入草稿</button>
               <button type="button" class="btn-secondary btn-quote-jump" style="font-size:10px; padding:2px 6px;">📖 原文第 ${a.page} 页</button>
             </div>
-          `;
+          `);
           itemEl.querySelector('.btn-quote-insert')?.addEventListener('click', () => {
             const absBox = document.getElementById('man-abstract');
             if (absBox) {
@@ -4682,12 +4740,12 @@ function openManuscriptModal(man = null, prefill = null) {
       // 2. Populate Notes
       const notesContainer = panel.querySelector('#zotero-tab-content-notes');
       if (notes.length === 0) {
-        notesContainer.innerHTML = '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">该文献在 Zotero 中暂无独立文献笔记。您可在 Zotero 中为该条目添加子笔记记录研读心得。</div>';
+        window.RFUI.setHTML(notesContainer, '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">该文献在 Zotero 中暂无独立文献笔记。您可在 Zotero 中为该条目添加子笔记记录研读心得。</div>');
       } else {
         notes.forEach(n => {
           const noteEl = document.createElement('div');
           noteEl.className = 'zotero-note-item';
-          noteEl.innerHTML = `
+          window.RFUI.setHTML(noteEl, `
             <div class="zotero-note-head">
               <span>📝 ${escapeHTML(n.title || 'Zotero 笔记')}</span>
               <span style="font-size:10px; color:#64748b; font-weight:normal;">${n.date ? new Date(n.date).toLocaleDateString() : ''}</span>
@@ -4697,7 +4755,7 @@ function openManuscriptModal(man = null, prefill = null) {
               <button type="button" class="btn-secondary btn-insert-note" style="font-size:10px; padding:2px 6px;">➕ 插入草稿</button>
               <button type="button" class="btn-secondary btn-locate-note" style="font-size:10px; padding:2px 6px;">🔗 定位笔记</button>
             </div>
-          `;
+          `);
           noteEl.querySelector('.btn-insert-note')?.addEventListener('click', () => {
             const absBox = document.getElementById('man-abstract');
             if (absBox) {
@@ -4717,10 +4775,10 @@ function openManuscriptModal(man = null, prefill = null) {
 
       // 3. Populate Collections & Tags
       const metaContainer = panel.querySelector('#zotero-tab-content-meta');
-      metaContainer.innerHTML = '';
+      window.RFUI.setHTML(metaContainer, '');
       if (collections.length > 0) {
         const colSection = document.createElement('div');
-        colSection.innerHTML = `<strong style="font-size:11px; color:hsl(var(--text-secondary)); display:block; margin-bottom:4px;">📁 所属 Zotero 知识库分类：</strong>`;
+        window.RFUI.setHTML(colSection, `<strong style="font-size:11px; color:hsl(var(--text-secondary)); display:block; margin-bottom:4px;">📁 所属 Zotero 知识库分类：</strong>`);
         const pillsWrap = document.createElement('div');
         pillsWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px;';
         collections.forEach(col => {
@@ -4736,12 +4794,12 @@ function openManuscriptModal(man = null, prefill = null) {
       if (tags.length > 0) {
         const tagSection = document.createElement('div');
         tagSection.style.marginTop = '6px';
-        tagSection.innerHTML = `
+        window.RFUI.setHTML(tagSection, `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
             <strong style="font-size:11px; color:hsl(var(--text-secondary));">🏷️ Zotero 文献标签：</strong>
             <button type="button" class="btn-secondary" id="btn-extract-tags-to-notes" style="font-size:10px; padding:2px 6px;">➕ 提取为主题标签</button>
           </div>
-        `;
+        `);
         const tagsWrap = document.createElement('div');
         tagsWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px;';
         tags.forEach(tg => {
@@ -4764,7 +4822,7 @@ function openManuscriptModal(man = null, prefill = null) {
       }
 
       if (collections.length === 0 && tags.length === 0) {
-        metaContainer.innerHTML = '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">该文献暂未分配分类目录与标签。</div>';
+        window.RFUI.setHTML(metaContainer, '<div style="font-size:11px; color:#64748b; padding:8px; text-align:center;">该文献暂未分配分类目录与标签。</div>');
       }
     });
 
@@ -4779,27 +4837,27 @@ function openManuscriptModal(man = null, prefill = null) {
         clearTimeout(searchTimer);
         if (query.length < 2) {
           dropdown.style.display = 'none';
-          dropdown.innerHTML = '';
+          window.RFUI.setHTML(dropdown, '');
           return;
         }
         searchTimer = setTimeout(async () => {
-          dropdown.innerHTML = `<div class="zotero-search-empty">🔍 ${escapeHTML(currentLanguage === 'zh' ? '检索中...' : 'Searching...')}</div>`;
+          window.RFUI.setHTML(dropdown, `<div class="zotero-search-empty">🔍 ${escapeHTML(currentLanguage === 'zh' ? '检索中...' : 'Searching...')}</div>`);
           dropdown.style.display = 'block';
           const results = typeof ZoteroBridge !== 'undefined'
             ? await ZoteroBridge.searchLibrary(query, 10)
             : [];
           if (!results || results.length === 0) {
-            dropdown.innerHTML = `<div class="zotero-search-empty">${escapeHTML(currentLanguage === 'zh' ? '未找到匹配的 Zotero 文献' : 'No matching Zotero items found')}</div>`;
+            window.RFUI.setHTML(dropdown, `<div class="zotero-search-empty">${escapeHTML(currentLanguage === 'zh' ? '未找到匹配的 Zotero 文献' : 'No matching Zotero items found')}</div>`);
             return;
           }
-          dropdown.innerHTML = '';
+          window.RFUI.setHTML(dropdown, '');
           results.forEach(res => {
             const itemEl = document.createElement('div');
             itemEl.className = 'zotero-search-result-item';
-            itemEl.innerHTML = `
+            window.RFUI.setHTML(itemEl, `
               <div class="zotero-search-result-title">${escapeHTML(res.title || '无标题文献')}</div>
               <div class="zotero-search-result-meta">${escapeHTML(res.authors || '')} ${res.year ? `· ${escapeHTML(res.year)}` : ''} ${res.publication ? `· ${escapeHTML(res.publication)}` : ''}</div>
-            `;
+            `);
             itemEl.addEventListener('click', () => {
               applyItemToForm(res);
               dropdown.style.display = 'none';
@@ -4880,6 +4938,8 @@ function openManuscriptModal(man = null, prefill = null) {
 
     const targetManuscript = isEdit ? man : duplicate;
     if (targetManuscript) {
+      try { validateLinkedManuscriptStatus(targetManuscript, status); }
+      catch (error) { showGlobalToast(error.message, 'error'); return; }
       // The manuscript editor no longer exposes project context. Preserve a
       // legacy relationship on edits so existing records remain intact, while
       // new manuscripts stay independent of the retired project framework.
@@ -4901,6 +4961,7 @@ function openManuscriptModal(man = null, prefill = null) {
       }
       if (prefill) targetManuscript.academicCaptureProvenance = academicCaptureProvenance(prefill);
       targetManuscript.updatedAt = new Date().toISOString();
+      syncLinkedSubmissionsFromManuscript(targetManuscript);
     } else {
       const newMan = {
         id: 'man_' + Math.random().toString(36).substring(2, 9),
@@ -5078,7 +5139,7 @@ function createSubmissionReviewEditorRow(row = {}, index = 0) {
   rowDiv.className = 'submission-edit-review-row';
   rowDiv.dataset.reviewId = safeId;
   rowDiv.dataset.recordId = row.recordId || '';
-  rowDiv.innerHTML = `
+  window.RFUI.setHTML(rowDiv, `
     <div class="submission-edit-review-field">
       <div class="submission-edit-review-label">${escapeHTML(tf('reviewerCommentLabel', { count: index + 1 }))}</div>
       <textarea class="sub-edit-review-comment" placeholder="${escapeHTML(t('reviewerCommentPlaceholder'))}">${escapeHTML(row.comment || '')}</textarea>
@@ -5098,7 +5159,7 @@ function createSubmissionReviewEditorRow(row = {}, index = 0) {
       </div>
       <textarea class="sub-edit-review-response" placeholder="${escapeHTML(t('authorResponsePlaceholder'))}">${escapeHTML(row.response || '')}</textarea>
     </div>
-  `;
+  `);
   return rowDiv;
 }
 
@@ -5115,7 +5176,7 @@ function renderSubmissionChecklistEditor(sub, checklistKeys) {
   const compliance = sub.complianceChecklist && typeof sub.complianceChecklist === 'object' && !Array.isArray(sub.complianceChecklist)
     ? sub.complianceChecklist
     : {};
-  checklistBox.innerHTML = '';
+  window.RFUI.setHTML(checklistBox, '');
   checklistKeys.forEach(chk => {
     const label = document.createElement('label');
     label.className = 'submission-edit-check-item';
@@ -5137,9 +5198,9 @@ function renderSubmissionReviewMatrixEditor(sub, manAbstract) {
   const addButton = document.getElementById('btn-add-review-comment');
   if (!reviewBox) return;
   const rows = getSubmissionReviewMatrixRows(sub);
-  reviewBox.innerHTML = '';
+  window.RFUI.setHTML(reviewBox, '');
   if (rows.length === 0) {
-    reviewBox.innerHTML = `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`;
+    window.RFUI.setHTML(reviewBox, `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`);
   } else {
     rows.forEach((row, index) => {
       reviewBox.appendChild(createSubmissionReviewEditorRow(row, index));
@@ -5149,7 +5210,7 @@ function renderSubmissionReviewMatrixEditor(sub, manAbstract) {
   if (addButton) {
     addButton.addEventListener('click', () => {
       const empty = reviewBox.querySelector('.empty-state');
-      if (empty) reviewBox.innerHTML = '';
+      if (empty) window.RFUI.setHTML(reviewBox, '');
       reviewBox.appendChild(createSubmissionReviewEditorRow({ comment: '', response: '', recordId: '' }, reviewBox.querySelectorAll('.submission-edit-review-row').length));
       reviewBox.dispatchEvent(new CustomEvent('submission-autosave-request', {
         bubbles: true,
@@ -5182,7 +5243,7 @@ function renderSubmissionReviewMatrixEditor(sub, manAbstract) {
       row?.remove();
       reindexSubmissionReviewEditorRows(reviewBox);
       if (reviewBox.querySelectorAll('.submission-edit-review-row').length === 0) {
-        reviewBox.innerHTML = `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`;
+        window.RFUI.setHTML(reviewBox, `<p class="empty-state">${escapeHTML(t('emptyReviewEditor'))}</p>`);
       }
       reviewBox.dispatchEvent(new CustomEvent('submission-autosave-request', {
         bubbles: true,
@@ -5211,14 +5272,14 @@ function renderSubmissionReviewPreview(sub, checklistKeys) {
         </div>
       `).join('')
     : `<p class="empty-state">${escapeHTML(t('emptyReviewPreview'))}</p>`;
-  previewBox.innerHTML = `
+  window.RFUI.setHTML(previewBox, `
     <div class="workflow-context-grid submission-review-preview-grid">
       <div class="workflow-context-item"><span>${escapeHTML(t('checklistLabel'))}</span><strong>${completedChecks}/${checklistKeys.length}</strong></div>
       <div class="workflow-context-item"><span>${escapeHTML(t('workflowReviewerCommentsLabel'))}</span><strong>${reviewRows.length}</strong></div>
       <div class="workflow-context-item"><span>${escapeHTML(t('responsesLabel'))}</span><strong>${reviewRows.filter(row => row.response).length}/${reviewRows.length}</strong></div>
     </div>
     <div class="submission-review-preview-list">${reviewPreview}</div>
-  `;
+  `);
 }
 
 function getSubmissionEditValues(prefix) {
@@ -5240,9 +5301,13 @@ function getSubmissionEditValues(prefix) {
   };
 }
 
-function applySubmissionEditSync(sub, man, syncPlan) {
+function applySubmissionEditSync(sub, man, syncPlan, database = db) {
+  const previousStatus = sub.status;
   if (man) {
-    Object.assign(man, syncPlan.manuscriptPatch);
+    man.title = syncPlan.manuscriptPatch.title;
+    if (window.RFCore.getCurrentSubmission(database, man.id)?.id === sub.id) {
+      man.targetJournals = syncPlan.manuscriptPatch.targetJournals;
+    }
     man.updatedAt = new Date().toISOString();
   } else {
     sub.title = syncPlan.detachedSubmissionTitle;
@@ -5259,9 +5324,10 @@ function applySubmissionEditSync(sub, man, syncPlan) {
   if (syncPlan.submissionPatch.status === 'accepted') {
     sub.acceptedAt = sub.decisionDate || sub.acceptedAt || new Date().toISOString();
   } else if (syncPlan.submissionPatch.status === 'published') {
-    sub.publishedAt = sub.decisionDate || sub.publishedAt || new Date().toISOString();
+    sub.publishedAt = sub.publishedAt || getTimelineNodeByKey(sub, 'online')?.completeDate || sub.decisionDate || new Date().toISOString();
     sub.acceptedAt = sub.acceptedAt || sub.publishedAt;
   }
+  if (previousStatus === 'published' && sub.status === 'accepted') clearOnlinePublicationCompletion(sub);
 
   if (syncPlan.publicationPatch) {
     const doi = normalizeDoi(syncPlan.publicationPatch.doi);
@@ -5274,7 +5340,8 @@ function applySubmissionEditSync(sub, man, syncPlan) {
 
   sub.updatedAt = new Date().toISOString();
   normalizeSubmissionTimeline(sub);
-  syncManuscriptStatusFromSubmission(sub);
+  syncManuscriptStatusFromSubmission(sub, database);
+  if (man) syncLinkedManuscriptSnapshots(man, database);
 }
 
 function refreshSubmissionStatusPresentation(sub) {
@@ -5313,9 +5380,9 @@ function refreshSubmissionStatusPresentation(sub) {
         : tf('submissionCycleText', { start: cycle.startDateStr, days: cycle.days });
     }
     if (icon) {
-      icon.innerHTML = cycle.isCompleted
+      window.RFUI.setHTML(icon, cycle.isCompleted
         ? '<svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>'
-        : '<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+        : '<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>');
     }
   }
 }
@@ -5339,10 +5406,11 @@ async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
   if (!workingSub) throw new Error(t('submissionNotFound'));
   const workingMan = workingDatabase.manuscripts.find(item => item.id === workingSub.manuscriptId);
 
-  applySubmissionEditSync(workingSub, workingMan, syncPlan);
+  applySubmissionEditSync(workingSub, workingMan, syncPlan, workingDatabase);
   const firstAuthor = String(editValues.firstAuthor || '').trim().slice(0, 160);
   workingSub.firstAuthor = firstAuthor || null;
   if (workingMan) workingMan.firstAuthor = firstAuthor || null;
+  if (workingMan) syncLinkedManuscriptSnapshots(workingMan, workingDatabase);
   workingSub.complianceChecklist = editValues.complianceChecklist;
   workingSub.complianceChecklistKeys = editValues.complianceChecklistKeys;
   workingSub.reviewMatrix = editValues.reviewMatrix;
@@ -5368,7 +5436,7 @@ async function saveSubmissionEditFromValues(sub, prefix, options = {}) {
   const activeView = document.querySelector('.content-view.active')?.id;
   if (activeView === 'view-dashboard') renderDashboard();
   if (activeView === 'view-manuscripts') renderKanban();
-  if (activeView === 'view-submissions') renderSubmissions();
+  if (activeView === 'view-submissions') renderSubmissions({ refreshDetails: options.renderDetails !== false });
   if (options.renderDetails !== false) renderSubmissionDetails(savedSub);
   else if (selectedSubmissionId === savedSub.id) refreshSubmissionStatusPresentation(savedSub);
   if (options.notify !== false) showGlobalToast(t('submissionEditsSaved'), 'success');
@@ -5532,12 +5600,12 @@ function applySubmissionSearch() {
   document.getElementById('submission-search-count').textContent = tf('submissionSearchCount', { count, total: cards.length });
 }
 
-function renderSubmissions() {
+function renderSubmissions({ refreshDetails = true } = {}) {
   const container = document.getElementById('submissions-list-container');
-  container.innerHTML = '';
+  window.RFUI.setHTML(container, '');
 
   if (db.submissions.length === 0) {
-    container.innerHTML = `<p class="empty-state">${escapeHTML(t('noSubmissionsTracked'))}</p>`;
+    window.RFUI.setHTML(container, `<p class="empty-state">${escapeHTML(t('noSubmissionsTracked'))}</p>`);
     selectedSubmissionId = null;
   } else {
     const sortedSubmissions = sortDashboardSubmissions(db.submissions);
@@ -5564,7 +5632,7 @@ function renderSubmissions() {
         ? `<span class="submission-card-meta">${escapeHTML(t('transferToJournal'))}: ${escapeHTML(sub.previousJournal)}</span>`
         : '';
 
-      card.innerHTML = `
+      window.RFUI.setHTML(card, `
         <div class="submission-card-heading">
           <div class="submission-card-title-group">
             <span class="submission-index">${displayIndex}</span>
@@ -5587,7 +5655,7 @@ function renderSubmissions() {
             </span>
           ` : ''}
         </div>
-      `;
+      `);
 
       card.addEventListener('click', () => {
         openSubmissionForEditing(sub);
@@ -5615,7 +5683,7 @@ function renderSubmissions() {
     container.appendChild(cards);
 
     const detailPanel = document.getElementById('submission-detail-panel');
-    if (detailPanel?.dataset.currentSubmissionId !== selectedSubmission.id) {
+    if (refreshDetails || detailPanel?.dataset.currentSubmissionId !== selectedSubmission.id) {
       renderSubmissionDetails(selectedSubmission);
     }
   }
@@ -5628,7 +5696,7 @@ function renderSubmissions() {
 function renderJournalPortals() {
   const portalList = document.getElementById('journal-portals-list');
   if (!portalList) return;
-  portalList.innerHTML = '';
+  window.RFUI.setHTML(portalList, '');
 
   if (!db.settings) db.settings = {};
   if (!db.settings.journalPortals) {
@@ -5643,7 +5711,7 @@ function renderJournalPortals() {
   const portals = db.settings.journalPortals;
 
   if (portals.length === 0) {
-    portalList.innerHTML = `<p class="empty-state" style="padding: 12px; font-size: 11px;">${escapeHTML(t('portalEmpty'))}</p>`;
+    window.RFUI.setHTML(portalList, `<p class="empty-state" style="padding: 12px; font-size: 11px;">${escapeHTML(t('portalEmpty'))}</p>`);
     return;
   }
 
@@ -5663,7 +5731,7 @@ function renderJournalPortals() {
     const portalColor = /^#[0-9a-f]{6}$/i.test(portal.color || '') ? portal.color : 'var(--accent-purple)';
     card.title = `${portal.name} - ${domain}`;
 
-    card.innerHTML = `
+    window.RFUI.setHTML(card, `
       <a class="portal-open" href="${escapeHTML(safeUrl || '#')}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHTML(portal.name)} · ${escapeHTML(domain)}">
       <div class="portal-info">
         <div class="portal-avatar" style="background-color: ${portalColor};">
@@ -5681,7 +5749,7 @@ function renderJournalPortals() {
           ✕
         </button>
       </div>
-    `;
+    `);
 
     card.querySelector('.portal-open').addEventListener('click', event => {
       if (!safeUrl) event.preventDefault();
@@ -5895,7 +5963,7 @@ function renderSubmissionDetails(sub) {
     `;
   }
 
-  detailPanel.innerHTML = `
+  window.RFUI.setHTML(detailPanel, `
     <div class="submission-detail-hero">
       <div class="submission-detail-heading">
         <span class="submission-detail-kicker">${escapeHTML(t('submissionDetailKicker'))}</span>
@@ -6160,7 +6228,7 @@ function renderSubmissionDetails(sub) {
       </div>
       <div class="submission-review-preview" id="submission-review-preview"></div>
     </div>
-  `;
+  `);
 
   const workflowContextCard = detailPanel.querySelector('[data-submission-workflow-context="true"]');
   const editCenter = detailPanel.querySelector('.submission-edit-center');
@@ -6205,6 +6273,7 @@ function renderSubmissionDetails(sub) {
   document.getElementById('btn-mark-sub-rejected').addEventListener('click', async () => {
     if (!confirm(t('confirmMarkRejected'))) return;
     markSubmissionRejected(sub, todayString());
+    syncManuscriptStatusFromSubmission(sub);
     await window.storage.saveAll(db);
     renderDashboard();
     renderKanban();
@@ -6227,12 +6296,12 @@ function renderSubmissionDetails(sub) {
       renderDashboard();
       renderKanban();
       renderSubmissions();
-      document.getElementById('submission-detail-panel').innerHTML = `
+      window.RFUI.setHTML(document.getElementById('submission-detail-panel'), `
         <div class="empty-state">
           <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <h3>${escapeHTML(t('submissionEmptyDetail'))}</h3>
         </div>
-      `;
+      `);
     }
   });
 
@@ -6712,7 +6781,7 @@ document.getElementById('btn-add-submission').addEventListener('click', () => {
         const textEl = document.getElementById('sub-zotero-active-item-text');
         const quickBindBtn = document.getElementById('btn-sub-zotero-quick-bind-active');
         if (activeItem && activeItem.title && banner && textEl) {
-          textEl.innerHTML = `📌 <strong>${escapeHTML(currentLanguage === 'zh' ? '检测到 Zotero 选中文献：' : 'Active Zotero item: ')}</strong>《${escapeHTML(activeItem.title)}》`;
+          window.RFUI.setHTML(textEl, `📌 <strong>${escapeHTML(currentLanguage === 'zh' ? '检测到 Zotero 选中文献：' : 'Active Zotero item: ')}</strong>《${escapeHTML(activeItem.title)}》`);
           banner.style.display = 'flex';
           quickBindBtn?.addEventListener('click', () => {
             const match = (db.manuscripts || []).find(m =>
@@ -7769,6 +7838,7 @@ function setupSettingsListeners() {
         // Native backups must round-trip tombstones, capture provenance and extension fields.
         // Legacy conversions above remain available for older third-party formats.
         if (Number(importJson.schemaVersion) === 7) {
+          Object.assign(newDb, importJson, { settings: newDb.settings, deviceId: db.deviceId, revision: db.revision });
           for (const key of ['researchAreas', 'projects', 'researchRecords', 'manuscripts', 'submissions', 'tasks']) {
             newDb[key] = Array.isArray(importJson[key]) ? importJson[key] : [];
           }
@@ -7826,7 +7896,7 @@ function openModal(htmlContent) {
       ? activeElement
       : null;
   }
-  modalContent.innerHTML = htmlContent;
+  window.RFUI.setHTML(modalContent, htmlContent);
   modalContent.classList.toggle('stage-modal-wide', htmlContent.includes('stage-editor'));
   modalContent.classList.toggle('share-preview-card', htmlContent.includes('share-preview-shell'));
   const isCaptureReview = htmlContent.includes('submission-capture-review')
@@ -7939,12 +8009,12 @@ function showAcceptanceCelebration(submission) {
   const seal = document.createElement('span');
   seal.className = 'acceptance-celebration-seal';
   seal.setAttribute('aria-hidden', 'true');
-  seal.innerHTML = `
+  window.RFUI.setHTML(seal, `
     <svg viewBox="0 0 24 24">
       <path d="M7 12.4 10.2 16 17.4 8.2"></path>
       <circle cx="12" cy="12" r="9"></circle>
     </svg>
-  `;
+  `);
 
   const copy = document.createElement('span');
   copy.className = 'acceptance-celebration-copy';
@@ -8122,7 +8192,7 @@ function setupZoteroIntegrations() {
   const quickImportBtn = document.getElementById('btn-zotero-quick-import');
   if (quickImportBtn) {
     quickImportBtn.style.display = 'inline-flex';
-    quickImportBtn.innerHTML = `<span>📥 ${currentLanguage === 'zh' ? '从 Zotero 选中导入' : 'Import from Zotero Selection'}</span>`;
+    window.RFUI.setHTML(quickImportBtn, `<span>📥 ${currentLanguage === 'zh' ? '从 Zotero 选中导入' : 'Import from Zotero Selection'}</span>`);
     if (!quickImportBtn.dataset.bound) {
       quickImportBtn.dataset.bound = 'true';
       quickImportBtn.addEventListener('click', async () => {
@@ -8164,7 +8234,7 @@ function setupZoteroIntegrations() {
       const p = zSettingsCard.querySelector('.text-muted');
       if (p) p.textContent = 'Manage Zotero database storage and bi-directional child note synchronization';
       const desc = zSettingsCard.querySelector('div[style*="font-size:12px"]');
-      if (desc) desc.innerHTML = 'ResearchFlow is running directly inside Zotero 10. Data is persisted to <code>researchflow-data.json</code> in your Zotero data directory.';
+      if (desc) window.RFUI.setHTML(desc, 'ResearchFlow is running directly inside Zotero 10. Data is persisted to <code>researchflow-data.json</code> in your Zotero data directory.');
       const syncBtnText = zSettingsCard.querySelector('#btn-zotero-sync-all-notes span');
       if (syncBtnText) syncBtnText.textContent = '📝 Batch sync all manuscript pipelines to Zotero child notes';
       const prefsBtnText = zSettingsCard.querySelector('#btn-zotero-open-prefs span');
@@ -8207,7 +8277,7 @@ function setupZoteroIntegrations() {
     if (collections && collections.length > 0) {
       if (collectionFilterContainer) collectionFilterContainer.style.display = 'inline-flex';
       const prevVal = collectionSelect.value;
-      collectionSelect.innerHTML = `<option value="">📁 ${escapeHTML(currentLanguage === 'zh' ? '全部文献分类' : 'All Collections')}</option>`;
+      window.RFUI.setHTML(collectionSelect, `<option value="">📁 ${escapeHTML(currentLanguage === 'zh' ? '全部文献分类' : 'All Collections')}</option>`);
       collections.forEach(col => {
         const opt = document.createElement('option');
         opt.value = col.key;

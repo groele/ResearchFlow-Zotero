@@ -14,6 +14,19 @@
     return Array.isArray(value) ? value : [];
   }
 
+  function getCurrentSubmission(database, manuscriptId) {
+    const linked = asArray(database?.submissions).filter(item => item.manuscriptId === manuscriptId);
+    const predecessors = new Set(linked.map(item => item.previousSubmissionId).filter(Boolean));
+    const current = linked.filter(item => !predecessors.has(item.id));
+    const time = value => Date.parse(value || '') || 0;
+    return [...(current.length ? current : linked)].sort((a, b) =>
+      (Number(b.roundIndex) || 1) - (Number(a.roundIndex) || 1)
+      || time(b.submissionDate || b.submittedAt || b.createdAt) - time(a.submissionDate || a.submittedAt || a.createdAt)
+      || time(b.createdAt) - time(a.createdAt)
+      || String(a.id).localeCompare(String(b.id))
+    )[0] || null;
+  }
+
   function createId(prefix) {
     return `${prefix}_${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2)}`}`;
   }
@@ -113,6 +126,7 @@
 
   global.RFCore = {
     CORE_COLLECTIONS,
+    getCurrentSubmission,
     normalizeDatabase,
     getProject,
     projectName,

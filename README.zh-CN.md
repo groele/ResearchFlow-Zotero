@@ -4,11 +4,11 @@
 
 **简体中文** · [English](README.md)
 
-- 当前版本：**9.1.0**
+- 当前版本：**9.1.1**
 - 浏览器要求：**Google Chrome 116 或更高版本**
 - 运行方式：**Manifest V3、原生 JavaScript、无需构建**
 
-**9.1 新增：**Zotero 插件设置已整合到 Zotero 首选项，修复 JSON 文件操作与三视图关联；工作区提升长标题、时间轴和看板的阅读效率，并可直达投稿详情。详见 [9.1 发布说明](RELEASE_NOTES_v9.1.0.md)。
+**9.1.1 修复：**仪表盘、手稿看板、投稿详情共享编辑关联字段，返回已打开的投稿时刷新编辑器。Zotero 保存通知不会覆盖待保存编辑，历史投稿保留各自的期刊和状态。详见 [9.1.1 发布说明](RELEASE_NOTES_v9.1.1.md)。
 
 > ResearchFlow 将论文从撰写、投稿、审稿、返修到接收和发表的过程集中到一个工作区，重点保存最容易散落在投稿网站、邮件、表格和笔记中的流程信息。
 
@@ -660,6 +660,7 @@ ftp://dav.example.com/researchflow
 
 实际安装版本以 `manifest.json` 为准。当前主要文档：
 
+- [ResearchFlow Companion v9.1.1 发布说明](RELEASE_NOTES_v9.1.1.md)
 - [ResearchFlow Companion v9.1.0 发布说明](RELEASE_NOTES_v9.1.0.md)
 - [ResearchFlow Companion v9.0.0 发布说明](RELEASE_NOTES_v9.0.0.md)
 - [ResearchFlow Companion v6.1.0 发布说明](RELEASE_NOTES_v6.1.0.md)
