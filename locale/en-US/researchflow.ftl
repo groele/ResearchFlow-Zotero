@@ -8,6 +8,10 @@ researchflow-reader-add-record = Add Selection/Annotation to Manuscript Pipeline
 researchflow-item-pane-header = Manuscript Pipelines
     .label = Manuscript Pipelines
     .tooltiptext = ResearchFlow Manuscript Pipelines & Journal Submissions
+researchflow-item-pane-sidenav =
+    .label =
+    .tooltiptext = ResearchFlow Manuscript Pipelines & Journal Submissions
+    .aria-label = Manuscript Pipelines
 researchflow-item-pane-count =
     { $count ->
         [0] No manuscript pipelines linked to this item

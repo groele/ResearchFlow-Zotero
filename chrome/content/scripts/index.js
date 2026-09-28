@@ -2117,7 +2117,10 @@
           paneID: 'researchflow-item-pane',
           pluginID: ADDON_ID,
           header: { l10nID: 'researchflow-item-pane-header', icon },
-          sidenav: { l10nID: 'researchflow-item-pane-header', icon },
+          // Keep the compact item-pane navigation icon-only. The localized
+          // tooltip remains available on hover while the full title stays in
+          // the section header.
+          sidenav: { l10nID: 'researchflow-item-pane-sidenav', icon },
           onInit: ({ doc, body, item, refresh }) => {
             const document = doc || body?.ownerDocument;
             if (document) {

@@ -8,6 +8,10 @@ researchflow-reader-add-record = 将选中文本/批注添加至稿件管线 (Ct
 researchflow-item-pane-header = 稿件管线
     .label = 稿件管线
     .tooltiptext = ResearchFlow 论文稿件管线与期刊投稿管理
+researchflow-item-pane-sidenav =
+    .label =
+    .tooltiptext = ResearchFlow 论文稿件管线与期刊投稿管理
+    .aria-label = 稿件管线
 researchflow-item-pane-count =
     { $count ->
         [0] 此文献尚未关联稿件管线
