@@ -91,7 +91,7 @@ If an older version cannot update automatically, install the latest XPI manually
 
 1. 点击 ResearchFlow 工具栏图标，进入工作区。
 2. 在设置中选择语言、主题和默认窗口模式。
-3. 在“手稿看板”中新建手稿，或在 Zotero 条目右键菜单中创建并关联手稿。
+3. 在“手稿看板”中新建手稿，或在 Zotero 条目侧边栏中创建并关联手稿（右键菜单快捷项默认隐藏，可在偏好设置中开启）。
 4. 补充标题、作者、研究阶段等信息。
 5. 在“投稿与审稿”中建立投稿记录，填写期刊、日期、状态及审稿意见。
 6. 返回仪表盘查看进展；随后导出 JSON 备份。需要跨设备使用时，再配置云同步。
@@ -100,7 +100,7 @@ If an older version cannot update automatically, install the latest XPI manually
 
 1. Click the ResearchFlow toolbar icon to open the workspace.
 2. Choose a language, theme, and default window mode in settings.
-3. Create a manuscript in the manuscript board, or create and link one from a Zotero item's context menu.
+3. Create a manuscript in the manuscript board, or create and link one from the Zotero item pane (context menu shortcuts are disabled by default and can be enabled in preferences).
 4. Complete its title, authors, research stage, and other details.
 5. Add a submission in Submissions & Review, including the journal, dates, status, and reviewer comments.
 6. Review progress in the dashboard and export a JSON backup. Configure cloud synchronization if you need multiple devices.
@@ -177,8 +177,7 @@ If a text export does not produce a file in your Zotero environment, copy the pr
 | --- | --- | --- |
 | 主工具栏 / Main toolbar | 点击 ResearchFlow 图标打开工作区。 | Click the ResearchFlow icon to open the workspace. |
 | 工具菜单 / Tools menu | 打开工作区或插件偏好设置。 | Open the workspace or add-on preferences. |
-| 条目右键菜单 / Item context menu | 根据选中文献创建手稿，或关联已有手稿。 | Create a manuscript from a selected item or link it to an existing manuscript. |
-| 分类右键菜单 / Collection context menu | 根据分类信息与条目列表建立手稿工作流。 | Build a manuscript workflow from collection information and its items. |
+| 条目右键菜单 / Item context menu | 可选快捷入口：根据选中文献创建手稿或关联已有手稿（默认关闭，可在偏好设置中按需开启）。 | Optional shortcuts: Create a manuscript from a selected item or link it to an existing manuscript (disabled by default, configurable in preferences). |
 | PDF 阅读器 / PDF reader | 将可用的选中文本、页码与来源链接捕获到关联记录。 | Capture available selected text, page information, and source links into linked records. |
 | 条目侧栏 / Item pane | 查看关联手稿信息，打开记录、同步笔记或使用相关文献操作。 | Inspect linked manuscript information, open records, synchronize notes, and access related item actions. |
 | 引文辅助 / Citation helpers | 使用 APA / BibTeX 等内容辅助写作，投稿前核对输出格式。 | Use APA / BibTeX helpers and check the output against journal requirements. |
@@ -451,13 +450,16 @@ ResearchFlow-Zotero/
 │       ├── data/                      # Bundled initial data / 预置数据
 │       └── icons/                     # Icon resources / 图标资源
 ├── locale/                            # Locale resources / 本地化资源
-├── tests/share-image.test.js           # Image-save tests / 图片保存测试
+├── tests/                             # Automated test suites / 自动化测试套件
+│   ├── share-image.test.js            # Image-save tests / 图片保存测试
+│   └── context-menu.test.js           # Context menu tests / 右键菜单测试
 ├── tools/build-xpi.py                  # XPI builder / 安装包打包脚本
 ├── docs/images/                       # Documentation images / 文档图片
 ├── RELEASE_NOTES_v10.0.0.md            # V10 release notes / V10 发布说明
-├── RELEASE_NOTES_v10.0.1.md             # Toolbar icon notes / 工具栏图标说明
-├── RELEASE_NOTES_v10.0.2.md             # Sidebar icon notes / 侧边栏图标说明
-├── researchflow-zotero-10.0.2.xpi       # Current installer / 当前安装包
+├── RELEASE_NOTES_v10.0.1.md            # Toolbar icon notes / 工具栏图标说明
+├── RELEASE_NOTES_v10.0.2.md            # Sidebar icon notes / 侧边栏图标说明
+├── RELEASE_NOTES_v10.0.3.md            # Context menu notes / 右键菜单优化说明
+├── researchflow-zotero-10.0.3.xpi      # Current installer / 当前安装包
 └── README.md                          # Bilingual guide / 双语说明
 ```
 
@@ -470,14 +472,15 @@ Historical installers may remain in the repository; use assets from the latest R
 
 | 版本 / Version | 中文变更 | English changes |
 | --- | --- | --- |
+| [10.0.3](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.3) | 默认隐藏文献条目右键菜单以避免菜单冗长，解决 Zotero 7+ 中空白无字图标的渲染异常，提供偏好设置切换项并自动清理残留节点。 | Hide item context menu shortcuts by default to keep menus tidy, resolve blank icon rendering glitches in Zotero 7+, add a preference toggle, and purge legacy DOM nodes. |
 | [10.0.2](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.2) | 文献条目侧边栏入口改为仅显示图标；完整标题保留在内容区，图标悬停仍显示提示。 | Make the item-pane navigation icon-only while retaining the full section title and hover tooltip. |
 | [10.0.1](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.1) | 统一 Zotero 主工具栏图标尺寸、按钮尺寸与垂直对齐。 | Align the main toolbar icon's size, button dimensions, and vertical position with native controls. |
 | [10.0.0](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.0) | 移除系统分享按钮；PNG 使用原生另存为，成功后显示完整路径，处理取消与错误。 | Remove system sharing; use native Save As for PNGs, show the full path after success, and handle cancellation and errors. |
 | 9.1.6 | 此仓库的早期版本基线。 | Earlier version baseline in this repository. |
 
-详细说明见 [V10.0.0 发布说明](RELEASE_NOTES_v10.0.0.md)、[V10.0.1 发布说明](RELEASE_NOTES_v10.0.1.md) 和 [V10.0.2 发布说明](RELEASE_NOTES_v10.0.2.md)。
+详细说明见 [V10.0.0 发布说明](RELEASE_NOTES_v10.0.0.md)、[V10.0.1 发布说明](RELEASE_NOTES_v10.0.1.md)、[V10.0.2 发布说明](RELEASE_NOTES_v10.0.2.md) 和 [V10.0.3 发布说明](RELEASE_NOTES_v10.0.3.md)。
 
-See the [V10.0.0 release notes](RELEASE_NOTES_v10.0.0.md), [V10.0.1 release notes](RELEASE_NOTES_v10.0.1.md), and [V10.0.2 release notes](RELEASE_NOTES_v10.0.2.md).
+See the [V10.0.0 release notes](RELEASE_NOTES_v10.0.0.md), [V10.0.1 release notes](RELEASE_NOTES_v10.0.1.md), [V10.0.2 release notes](RELEASE_NOTES_v10.0.2.md), and [V10.0.3 release notes](RELEASE_NOTES_v10.0.3.md).
 
 ### 工具栏效果 / Toolbar appearance
 

@@ -7,7 +7,8 @@ window.ResearchFlow_Preferences = (() => {
   const DEFAULTS = {
     // Window Modes
     windowMode: 'tab',
-    subwindowAlwaysOnTop: false
+    subwindowAlwaysOnTop: false,
+    showContextMenu: false
   };
 
   const FIELDS = {
@@ -17,7 +18,8 @@ window.ResearchFlow_Preferences = (() => {
         ['subwindow', '🗗 伴读紧凑子窗口 (480×780，轻量悬浮，边读文献边跟踪稿件)'],
         ['window', '⬚ 独立桌面大窗口 (1240×820，大屏全景规划)']
       ]],
-      ['subwindowAlwaysOnTop', '伴读子窗口始终置顶', 'check']
+      ['subwindowAlwaysOnTop', '伴读子窗口始终置顶', 'check'],
+      ['showContextMenu', '在文献右键菜单中显示快捷操作 (默认关闭，保持右键菜单整洁)', 'check']
     ]
   };
 
@@ -89,6 +91,7 @@ window.ResearchFlow_Preferences = (() => {
   const notifyConfigChanged = () => {
     try {
       Zotero?.ResearchFlow?.notifyDataChanged?.();
+      Zotero?.ResearchFlow?.updateItemContextMenu?.();
     } catch (_) {}
   };
 
@@ -140,7 +143,7 @@ window.ResearchFlow_Preferences = (() => {
           const diag = {
             exportedAt: new Date().toISOString(),
             zoteroVersion: Zotero.version,
-            researchflowVersion: '10.0.2',
+            researchflowVersion: '10.0.3',
             schemaVersion: db?.schemaVersion,
             counts: {
               manuscripts: db?.manuscripts?.length || 0,

@@ -629,8 +629,68 @@
       }
     },
 
+    initPrefObserver() {
+      if (Zotero.Prefs?.registerObserver) {
+        try {
+          this._prefObserverSymbol = Symbol('ResearchFlowPrefObserver');
+          Zotero.Prefs.registerObserver('extensions.researchflow.showContextMenu', () => {
+            this.updateItemContextMenu();
+          }, this._prefObserverSymbol);
+        } catch (_) {}
+      }
+    },
+
+    destroyPrefObserver() {
+      if (this._prefObserverSymbol && Zotero.Prefs?.unregisterObserver) {
+        try {
+          Zotero.Prefs.unregisterObserver(this._prefObserverSymbol);
+        } catch (_) {}
+        this._prefObserverSymbol = null;
+      }
+    },
+
     registerMenus() {
+      this.updateItemContextMenu();
+
       if (Zotero.MenuManager && typeof Zotero.MenuManager.registerMenu === 'function') {
+        try {
+          this._menuManagerReader = Zotero.MenuManager.registerMenu({
+            menuID: 'researchflow-reader-context',
+            pluginID: ADDON_ID,
+            target: 'reader/menubar/edit',
+            menus: [
+              {
+                menuType: 'menuitem',
+                label: '📝 摘录至 ResearchFlow 稿件研究笔记',
+                icon: `${CHROME_ROOT}icons/researchflow.svg`,
+                onCommand: (event) => {
+                  try {
+                    this.createRecordFromReader(event?.target?.ownerGlobal);
+                  } catch (err) {
+                    Zotero.logError?.('[ResearchFlow] Reader context error: ' + err);
+                  }
+                }
+              }
+            ]
+          });
+        } catch (err) {
+          Zotero.logError?.('[ResearchFlow] MenuManager register failed: ' + err);
+        }
+      }
+    },
+
+    updateItemContextMenu() {
+      if (this._menuManagerItem && Zotero.MenuManager?.unregisterMenu) {
+        try {
+          Zotero.MenuManager.unregisterMenu(this._menuManagerItem);
+        } catch (_) {}
+        this._menuManagerItem = null;
+      }
+
+      this.purgeStaleContextMenus();
+
+      const showContextMenu = Boolean(this.getPref('showContextMenu', false));
+      if (showContextMenu && Zotero.MenuManager && typeof Zotero.MenuManager.registerMenu === 'function') {
         try {
           this._menuManagerItem = Zotero.MenuManager.registerMenu({
             menuID: 'researchflow-itemmenu-actions',
@@ -663,30 +723,42 @@
               }
             ]
           });
-
-          this._menuManagerReader = Zotero.MenuManager.registerMenu({
-            menuID: 'researchflow-reader-context',
-            pluginID: ADDON_ID,
-            target: 'reader/menubar/edit',
-            menus: [
-              {
-                menuType: 'menuitem',
-                label: '📝 摘录至 ResearchFlow 稿件研究笔记',
-                icon: `${CHROME_ROOT}icons/researchflow.svg`,
-                onCommand: (event) => {
-                  try {
-                    this.createRecordFromReader(event?.target?.ownerGlobal);
-                  } catch (err) {
-                    Zotero.logError?.('[ResearchFlow] Reader context error: ' + err);
-                  }
-                }
-              }
-            ]
-          });
         } catch (err) {
           Zotero.logError?.('[ResearchFlow] MenuManager register failed: ' + err);
         }
       }
+    },
+
+    purgeStaleContextMenus(targetWindow) {
+      const staleMenuIds = [
+        'researchflow-itemmenu-separator',
+        'researchflow-itemmenu-create',
+        'researchflow-itemmenu-link',
+        'researchflow-collectionmenu-separator',
+        'researchflow-collectionmenu-create',
+      ];
+      const windows = targetWindow
+        ? [targetWindow]
+        : (() => {
+            const list = [];
+            if (typeof Services !== 'undefined' && Services.wm?.getEnumerator) {
+              try {
+                const en = Services.wm.getEnumerator('navigator:browser');
+                while (en.hasMoreElements()) list.push(en.getNext());
+              } catch (_) {}
+            }
+            return list;
+          })();
+
+      windows.forEach((win) => {
+        const doc = win?.document;
+        if (!doc) return;
+        staleMenuIds.forEach((id) => {
+          try {
+            doc.getElementById(id)?.remove();
+          } catch (_) {}
+        });
+      });
     },
 
     unregisterMenus() {
@@ -698,6 +770,7 @@
         try { Zotero.MenuManager.unregisterMenu(this._menuManagerReader); } catch (_) {}
         this._menuManagerReader = null;
       }
+      this.purgeStaleContextMenus();
     },
 
     async searchLibrary(query, limit = 15) {
@@ -1113,6 +1186,7 @@
       await this.loadDatabase();
 
       this.initNotifier();
+      this.initPrefObserver();
       this.registerMenus();
       this.initWindowListener();
 
@@ -1197,16 +1271,7 @@
       if (!window || !window.document) return;
       const doc = window.document;
 
-      const staleMenuIds = [
-        'researchflow-itemmenu-separator',
-        'researchflow-itemmenu-create',
-        'researchflow-itemmenu-link',
-        'researchflow-collectionmenu-separator',
-        'researchflow-collectionmenu-create',
-      ];
-      for (const id of staleMenuIds) {
-        try { doc.getElementById(id)?.remove(); } catch (_) {}
-      }
+      this.purgeStaleContextMenus(window);
 
       if (doc.getElementById('researchflow-tools-menu')) return;
 
@@ -1239,76 +1304,7 @@
         windowElements.push(prefItem);
       }
 
-      // 2. Add to Item Context Menu (文献右键菜单)
-      const itemMenu = doc.getElementById('zotero-itemmenu');
-      if (itemMenu) {
-        const separator = this.createXULElement(doc, 'menuseparator');
-        separator.id = 'researchflow-itemmenu-separator';
-        itemMenu.appendChild(separator);
-        windowElements.push(separator);
-
-        const createFromItem = this.createXULElement(doc, 'menuitem');
-        createFromItem.id = 'researchflow-itemmenu-create';
-        createFromItem.setAttribute('label', '新建论文稿件管线');
-        createFromItem.setAttribute('image', `${CHROME_ROOT}icons/researchflow.svg`);
-        createFromItem.setAttribute('class', 'menuitem-iconic');
-        createFromItem.addEventListener('command', () => {
-          try {
-            this.createManuscriptFromSelection(window);
-          } catch (err) {
-            Zotero.logError?.('[ResearchFlow] Failed to create manuscript from item context menu: ' + err);
-          }
-        });
-        itemMenu.appendChild(createFromItem);
-        windowElements.push(createFromItem);
-
-        const linkToItem = this.createXULElement(doc, 'menuitem');
-        linkToItem.id = 'researchflow-itemmenu-link';
-        linkToItem.setAttribute('label', '关联到现有稿件');
-        linkToItem.setAttribute('image', `${CHROME_ROOT}icons/researchflow.svg`);
-        linkToItem.setAttribute('class', 'menuitem-iconic');
-        linkToItem.addEventListener('command', () => {
-          try {
-            this.linkSelectionToManuscript(window);
-          } catch (err) {
-            Zotero.logError?.('[ResearchFlow] Failed to link item: ' + err);
-          }
-        });
-        itemMenu.appendChild(linkToItem);
-        windowElements.push(linkToItem);
-      }
-
-      // 3. Add to Collection Context Menu (分类文件夹右键菜单)
-      const collectionMenu = doc.getElementById('zotero-collectionmenu');
-      if (collectionMenu) {
-        const colSep = this.createXULElement(doc, 'menuseparator');
-        colSep.id = 'researchflow-collectionmenu-separator';
-        collectionMenu.appendChild(colSep);
-        windowElements.push(colSep);
-
-        const colCreate = this.createXULElement(doc, 'menuitem');
-        colCreate.id = 'researchflow-collectionmenu-create';
-        colCreate.setAttribute('label', '为此分类创建论文稿件管线');
-        colCreate.setAttribute('image', `${CHROME_ROOT}icons/researchflow.svg`);
-        colCreate.setAttribute('class', 'menuitem-iconic');
-        colCreate.addEventListener('command', () => {
-          try {
-            const pane = window.ZoteroPane || (Zotero.getMainWindow ? Zotero.getMainWindow().ZoteroPane : null);
-            const collection = pane?.getSelectedCollection?.();
-            if (collection) {
-              this.createManuscriptFromCollection(collection, window);
-            } else {
-              this.showToast('未选择分类', '请先在左侧选择一个分类文件夹。', 'warning');
-            }
-          } catch (err) {
-            Zotero.logError?.('[ResearchFlow] collection menu error: ' + err);
-          }
-        });
-        collectionMenu.appendChild(colCreate);
-        windowElements.push(colCreate);
-      }
-
-      // 4. Inject Tab & Toolbar Icon Style
+      // 2. Inject Tab & Toolbar Icon Style
       try {
         if (!doc.getElementById('researchflow-tab-style')) {
           const style = doc.createElement('style');
@@ -2369,6 +2365,7 @@
     async shutdown() {
       this._dataListeners.clear();
       this.destroyNotifier();
+      this.destroyPrefObserver();
       this.unregisterMenus();
       if (windowListener) {
         Services.wm.removeListener(windowListener);

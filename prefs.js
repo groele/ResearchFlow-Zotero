@@ -13,6 +13,7 @@ pref("extensions.researchflow.language", "en");
 pref("extensions.researchflow.enableItemPane", true);
 pref("extensions.researchflow.locateOnManuscriptClick", true);
 pref("extensions.researchflow.autoLinkSelectedPaper", true);
+pref("extensions.researchflow.showContextMenu", false);
 
 // Group 4: Sync & Backup
 pref("extensions.researchflow.autoSync", true);
