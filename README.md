@@ -4,7 +4,7 @@
 
 **A research workspace for manuscript planning, submission, peer review, and publication.**
 
-[![Version](https://img.shields.io/badge/version-10.0.2-10b981.svg)](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.2)
+[![Version](https://img.shields.io/badge/version-10.0.4-10b981.svg)](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.4)
 [![Zotero](https://img.shields.io/badge/Zotero-7%2B%20%7C%2010-2563eb.svg)](https://github.com/groele/ResearchFlow-Zotero/releases/latest)
 [![Languages](https://img.shields.io/badge/UI-简体中文%20%7C%20English-6366f1.svg)](#settings)
 
@@ -12,9 +12,9 @@ ResearchFlow 将手稿看板、投稿记录、审稿意见、科研时间线与 
 
 ResearchFlow connects manuscript boards, submission records, reviewer comments, research timelines, and Zotero items. Data is saved locally first, with optional WebDAV or GitHub synchronization.
 
-**当前版本 / Current version:** `10.0.2` · **插件 ID / Add-on ID:** `researchflow@groele.org`
+**当前版本 / Current version:** `10.0.4` · **插件 ID / Add-on ID:** `researchflow@groele.org`
 
-[下载最新版本 / Download the latest release](https://github.com/groele/ResearchFlow-Zotero/releases/latest) · [V10.0.2 安装包 / Installer](https://github.com/groele/ResearchFlow-Zotero/releases/download/v10.0.2/researchflow-zotero-10.0.2.xpi) · [报告问题 / Report an issue](https://github.com/groele/ResearchFlow-Zotero/issues)
+[下载最新版本 / Download the latest release](https://github.com/groele/ResearchFlow-Zotero/releases/latest) · [V10.0.4 安装包 / Installer](https://github.com/groele/ResearchFlow-Zotero/releases/download/v10.0.4/researchflow-zotero-10.0.4.xpi) · [报告问题 / Report an issue](https://github.com/groele/ResearchFlow-Zotero/issues)
 
 ## 目录 / Contents
 
@@ -56,7 +56,7 @@ ResearchFlow tracks research progress and the manuscript lifecycle: manuscript s
 
 **中文**
 
-1. 从 [GitHub Releases](https://github.com/groele/ResearchFlow-Zotero/releases/latest) 下载最新的 `.xpi` 安装包。当前文件名为 `researchflow-zotero-10.0.2.xpi`。
+1. 从 [GitHub Releases](https://github.com/groele/ResearchFlow-Zotero/releases/latest) 下载最新的 `.xpi` 安装包。当前文件名为 `researchflow-zotero-10.0.4.xpi`。
 2. 打开 Zotero，进入 **工具 → 插件**。不同 Zotero 版本可能显示为“附加组件”。
 3. 点击齿轮菜单，选择 **从文件安装附加组件…**。
 4. 选择下载的 XPI，按提示确认安装。
@@ -64,7 +64,7 @@ ResearchFlow tracks research progress and the manuscript lifecycle: manuscript s
 
 **English**
 
-1. Download the latest `.xpi` from [GitHub Releases](https://github.com/groele/ResearchFlow-Zotero/releases/latest). The current file is `researchflow-zotero-10.0.2.xpi`.
+1. Download the latest `.xpi` from [GitHub Releases](https://github.com/groele/ResearchFlow-Zotero/releases/latest). The current file is `researchflow-zotero-10.0.4.xpi`.
 2. In Zotero, open **Tools → Plugins**. Some versions use “Add-ons.”
 3. Open the gear menu and select **Install Add-on From File…**.
 4. Choose the XPI and confirm installation.
@@ -459,7 +459,8 @@ ResearchFlow-Zotero/
 ├── RELEASE_NOTES_v10.0.1.md            # Toolbar icon notes / 工具栏图标说明
 ├── RELEASE_NOTES_v10.0.2.md            # Sidebar icon notes / 侧边栏图标说明
 ├── RELEASE_NOTES_v10.0.3.md            # Context menu notes / 右键菜单优化说明
-├── researchflow-zotero-10.0.3.xpi      # Current installer / 当前安装包
+├── RELEASE_NOTES_v10.0.4.md            # Plugin Market fix / 插件市场修复说明
+├── researchflow-zotero-10.0.4.xpi      # Current installer / 当前安装包
 └── README.md                          # Bilingual guide / 双语说明
 ```
 
@@ -472,15 +473,16 @@ Historical installers may remain in the repository; use assets from the latest R
 
 | 版本 / Version | 中文变更 | English changes |
 | --- | --- | --- |
+| [10.0.4](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.4) | 将工具栏图标限制在 Zotero 主文献窗口，移除“插件市场”窗口中误插入的图标。 | Restrict the toolbar icon to the Zotero library window and remove unintended placement in Plugin Market. |
 | [10.0.3](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.3) | 默认隐藏文献条目右键菜单以避免菜单冗长，解决 Zotero 7+ 中空白无字图标的渲染异常，提供偏好设置切换项并自动清理残留节点。 | Hide item context menu shortcuts by default to keep menus tidy, resolve blank icon rendering glitches in Zotero 7+, add a preference toggle, and purge legacy DOM nodes. |
 | [10.0.2](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.2) | 文献条目侧边栏入口改为仅显示图标；完整标题保留在内容区，图标悬停仍显示提示。 | Make the item-pane navigation icon-only while retaining the full section title and hover tooltip. |
 | [10.0.1](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.1) | 统一 Zotero 主工具栏图标尺寸、按钮尺寸与垂直对齐。 | Align the main toolbar icon's size, button dimensions, and vertical position with native controls. |
 | [10.0.0](https://github.com/groele/ResearchFlow-Zotero/releases/tag/v10.0.0) | 移除系统分享按钮；PNG 使用原生另存为，成功后显示完整路径，处理取消与错误。 | Remove system sharing; use native Save As for PNGs, show the full path after success, and handle cancellation and errors. |
 | 9.1.6 | 此仓库的早期版本基线。 | Earlier version baseline in this repository. |
 
-详细说明见 [V10.0.0 发布说明](RELEASE_NOTES_v10.0.0.md)、[V10.0.1 发布说明](RELEASE_NOTES_v10.0.1.md)、[V10.0.2 发布说明](RELEASE_NOTES_v10.0.2.md) 和 [V10.0.3 发布说明](RELEASE_NOTES_v10.0.3.md)。
+详细说明见 [V10.0.0 发布说明](RELEASE_NOTES_v10.0.0.md)、[V10.0.1 发布说明](RELEASE_NOTES_v10.0.1.md)、[V10.0.2 发布说明](RELEASE_NOTES_v10.0.2.md)、[V10.0.3 发布说明](RELEASE_NOTES_v10.0.3.md) 和 [V10.0.4 发布说明](RELEASE_NOTES_v10.0.4.md)。
 
-See the [V10.0.0 release notes](RELEASE_NOTES_v10.0.0.md), [V10.0.1 release notes](RELEASE_NOTES_v10.0.1.md), [V10.0.2 release notes](RELEASE_NOTES_v10.0.2.md), and [V10.0.3 release notes](RELEASE_NOTES_v10.0.3.md).
+See the [V10.0.0 release notes](RELEASE_NOTES_v10.0.0.md), [V10.0.1 release notes](RELEASE_NOTES_v10.0.1.md), [V10.0.2 release notes](RELEASE_NOTES_v10.0.2.md), [V10.0.3 release notes](RELEASE_NOTES_v10.0.3.md), and [V10.0.4 release notes](RELEASE_NOTES_v10.0.4.md).
 
 ### 工具栏效果 / Toolbar appearance
 

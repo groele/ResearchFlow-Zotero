@@ -1648,8 +1648,7 @@
       const toolbar =
         doc.getElementById('zotero-item-toolbar') ||
         doc.getElementById('zotero-items-toolbar') ||
-        doc.getElementById('zotero-tb') ||
-        doc.querySelector('toolbar');
+        doc.getElementById('zotero-tb');
 
       if (!toolbar) {
         if (retryCount < 5) {
